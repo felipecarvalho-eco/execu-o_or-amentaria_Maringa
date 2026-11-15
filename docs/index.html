@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache">
-<title>Orçamento de Maringá</title>
+<title>Execução Orçamentária de Maringá</title>
 <style>
 :root{
   color-scheme: light;
@@ -18,6 +18,7 @@
   --accent:#2a78d6; --accent-ink:#ffffff;
   --good:#006300; --bad:#b42323;
   --warn-bg:#fff4d6; --warn-ink:#5c4200;
+  --amber:#a35f00; --cinza:#a7adb5;
   --shadow:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.04);
 }
 @media (prefers-color-scheme: dark){
@@ -31,6 +32,7 @@
     --arr:#199e70; --accent:#3987e5; --accent-ink:#ffffff;
     --good:#0ca30c; --bad:#e66767;
     --warn-bg:#3a2e0c; --warn-ink:#f5d98a;
+    --amber:#e0a43a; --cinza:#6d737b;
     --shadow:none;
   }
 }
@@ -44,6 +46,7 @@
   --arr:#199e70; --accent:#3987e5; --accent-ink:#ffffff;
   --good:#0ca30c; --bad:#e66767;
   --warn-bg:#3a2e0c; --warn-ink:#f5d98a;
+  --amber:#e0a43a; --cinza:#6d737b;
   --shadow:none;
 }
 *{box-sizing:border-box}
@@ -69,8 +72,8 @@ header.top p{margin:0;color:var(--ink-2)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chip{font-size:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:2px 6px 2px 10px;display:inline-flex;align-items:center;gap:4px}
 .chip button{border:0;background:none;color:var(--ink-2);cursor:pointer;font-size:15px;line-height:1;padding:0 4px}
-.tabs{display:flex;gap:4px;margin:16px 0 4px;border-bottom:1px solid var(--border)}
-.tab{font:inherit;font-weight:600;background:none;border:0;border-bottom:2px solid transparent;padding:8px 14px;color:var(--ink-2);cursor:pointer;margin-bottom:-1px}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;margin:16px 0 4px;border-bottom:1px solid var(--border)}
+.tab{white-space:nowrap;flex:none;font:inherit;font-weight:600;background:none;border:0;border-bottom:2px solid transparent;padding:8px 14px;color:var(--ink-2);cursor:pointer;margin-bottom:-1px}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 .summary{font-size:17px;margin:16px 0;max-width:900px}
 .summary b{font-weight:700}
@@ -135,6 +138,31 @@ tfoot td{font-weight:700;border-bottom:0;background:var(--surface-2)}
 footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
 .empty{padding:30px;text-align:center;color:var(--ink-2)}
 .hidden,.sem-info{display:none !important}
+.subtabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:thin;margin:0 0 12px;border-bottom:1px solid var(--border)}
+.subtab{white-space:nowrap;flex:none;font:inherit;font-size:14px;background:none;border:0;border-bottom:2px solid transparent;padding:7px 12px;color:var(--ink-2);cursor:pointer;margin-bottom:-1px}
+.subtab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.kpis6{grid-template-columns:repeat(6,minmax(0,1fr))}
+.kpis6 .kpi .val{font-size:23px}
+.kpi .val.ok{color:var(--good)} .kpi .val.bad{color:var(--bad)} .kpi .val.warn{color:var(--amber)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.semana{display:flex;flex-wrap:wrap;gap:10px 40px;margin:10px 0}
+.semana b{display:block;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.semana span{font-size:13px;color:var(--ink-2)}
+.hbars{display:flex;flex-direction:column;gap:2px}
+.hbar{display:grid;grid-template-columns:minmax(0,38%) minmax(0,1fr);gap:8px;align-items:center;padding:4px 6px;border:0;border-radius:6px;background:none;font:inherit;font-size:13px;color:inherit;cursor:pointer;text-align:left;width:100%}
+.hbar:hover{background:var(--surface-2)}
+.hbar.sel{background:var(--surface-2);box-shadow:inset 3px 0 0 var(--accent)}
+.hbar .nm{text-align:right;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbt{display:flex;align-items:center;gap:6px;min-width:0}
+.hbt i{display:block;height:16px;border-radius:0 3px 3px 0;flex:none;min-width:2px}
+.hbt em{font-style:normal;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12.5px;white-space:nowrap;background:color-mix(in srgb,var(--c) 15%,transparent);border:1px solid color-mix(in srgb,var(--c) 50%,transparent)}
+tr.clk{cursor:pointer} tr.det td{white-space:normal;text-align:left;background:var(--surface-2);font-size:13.5px;color:var(--ink-2)}
+#secLic th:first-child,#secLic td:first-child{min-width:0}
+@media (max-width:1100px){.kpis6{grid-template-columns:repeat(3,minmax(0,1fr))}.grid3{grid-template-columns:1fr 1fr}}
+@media (max-width:900px){.grid3{grid-template-columns:1fr}}
+@media (max-width:520px){.kpis6{grid-template-columns:1fr 1fr}.kpis6 .kpi .val{font-size:18px}.semana{gap:10px 24px}}
+footer,.desc,.banner{overflow-wrap:anywhere}
 @media (max-width:900px){.kpis{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
 @media (max-width:520px){
   header.top h1{font-size:21px}
@@ -153,10 +181,9 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
 <body>
 <div class="wrap">
   <header class="top">
-    <h1>Para onde vai o dinheiro de Maringá</h1>
-    <p>Acompanhamento da execução orçamentária da Prefeitura: quanto foi previsto, quanto já foi comprometido e quanto já foi pago.</p>
+    <h1>Prefeitura de Maringá - Execução Orçamentária</h1>
+    <p>Acompanhamento do dinheiro público do Município: orçamento, receitas, credores, licitações e diárias e passagens, com dados do Portal da Transparência.</p>
     <div class="meta-line" id="metaLine">Carregando dados…</div>
-    <div class="banner hidden" id="banner"></div>
   </header>
 </div>
 
@@ -166,12 +193,16 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
       <div class="f"><label for="fAno">Ano</label><select id="fAno"></select></div>
       <div class="f"><label for="fDe">De</label><select id="fDe"></select></div>
       <div class="f"><label for="fAte">Até</label><select id="fAte"></select></div>
-      <div class="f"><label for="f_entidade">Entidade</label><select id="f_entidade" data-dim="entidade"></select></div>
-      <div class="f desp-only"><label for="f_orgao">Órgão</label><select id="f_orgao" data-dim="orgao"></select></div>
-      <div class="f desp-only"><label for="f_funcao">Área (função)</label><select id="f_funcao" data-dim="funcao"></select></div>
-      <div class="f desp-only"><label for="f_grupo">Tipo de gasto</label><select id="f_grupo" data-dim="grupo"></select></div>
-      <div class="f desp-only"><label for="f_programa">Programa</label><select id="f_programa" data-dim="programa"></select></div>
-      <div class="f"><label for="f_fonte_recurso">Origem do recurso</label><select id="f_fonte_recurso" data-dim="fonte_recurso"></select></div>
+      <div class="f" data-tabs="desp rec cred lic diar"><label for="f_entidade">Entidade</label><select id="f_entidade" data-dim="entidade"></select></div>
+      <div class="f" data-tabs="desp diar"><label for="f_orgao">Órgão</label><select id="f_orgao" data-dim="orgao"></select></div>
+      <div class="f" data-tabs="desp"><label for="f_funcao">Área (função)</label><select id="f_funcao" data-dim="funcao"></select></div>
+      <div class="f" data-tabs="desp"><label for="f_grupo">Tipo de gasto</label><select id="f_grupo" data-dim="grupo"></select></div>
+      <div class="f" data-tabs="desp"><label for="f_programa">Programa</label><select id="f_programa" data-dim="programa"></select></div>
+      <div class="f" data-tabs="desp rec"><label for="f_fonte_recurso">Origem do recurso</label><select id="f_fonte_recurso" data-dim="fonte_recurso"></select></div>
+      <div class="f" data-tabs="lic"><label for="f_modalidade">Modalidade</label><select id="f_modalidade" data-dim="modalidade"></select></div>
+      <div class="f" data-tabs="lic"><label for="f_sit">Situação</label><select id="f_sit" data-dim="sit"></select></div>
+      <div class="f" data-tabs="lic"><label for="f_secretaria">Secretaria</label><select id="f_secretaria" data-dim="secretaria"></select></div>
+      <div class="f" data-tabs="diar"><label for="f_tipo">Tipo</label><select id="f_tipo" data-dim="tipo"></select></div>
       <button class="btn" id="btnLimpar" type="button">Limpar filtros</button>
     </div>
     <div class="chips" id="chips"></div>
@@ -183,10 +214,13 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
     <button class="tab" role="tab" id="tabD" aria-selected="true" data-tab="desp">Despesas</button>
     <button class="tab" role="tab" id="tabR" aria-selected="false" data-tab="rec">Receitas</button>
     <button class="tab" role="tab" id="tabC" aria-selected="false" data-tab="cred">Credores</button>
+    <button class="tab" role="tab" id="tabL" aria-selected="false" data-tab="lic">Licitações</button>
+    <button class="tab" role="tab" id="tabV" aria-selected="false" data-tab="diar">Diárias e Passagens</button>
   </div>
 
   <!-- DESPESAS -->
   <section id="secDesp">
+    <div id="despEmpresa" class="hidden"></div>
     <p class="summary" id="sumD"></p>
     <div class="kpis" id="kpisD"></div>
 
@@ -217,17 +251,19 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
       </div>
     </div>
 
-    <div class="card full hidden" id="cardFora">
-      <h2>Entidades fora do Portal da Transparência</h2>
-      <p class="desc">Estas entidades não publicam sua execução no portal da Prefeitura. Aqui aparecem os repasses que a Prefeitura fez a elas; o detalhe de como gastam está no site de transparência de cada uma.</p>
-      <div id="listaFora"></div>
-    </div>
 
     <div class="card full hidden" id="cardEntidade">
       <h2>Por entidade</h2>
       <p class="desc">Prefeitura (administração direta) e entidades da administração indireta, como autarquias e empresas públicas. Clique para filtrar.</p>
       <div class="legend"><span><i style="background:var(--track)"></i>Orçado</span><span><i style="background:var(--emp)"></i>Empenhado</span><span><i style="background:var(--pag)"></i>Pago</span></div>
       <div class="bars" id="barsEntidade"></div>
+      <div id="notaEntidade" class="desc" style="margin:10px 0 0;font-size:12.5px"></div>
+    </div>
+
+    <div class="card full hidden" id="cardEmpresas">
+      <h2>Empresas do Município</h2>
+      <p class="desc">Empresas públicas não têm orçamento como a Prefeitura: elas faturam, têm custos e dão lucro ou prejuízo. Os números vêm dos balancetes mensais. Clique para ver o detalhe.</p>
+      <div id="listaEmpresas"></div>
     </div>
 
     <div class="card full">
@@ -298,6 +334,86 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
     </div>
   </section>
 
+  <!-- LICITAÇÕES -->
+  <section id="secLic" class="hidden">
+    <p class="summary" id="sumL"></p>
+    <div id="licTopo">
+      <div class="subtabs" role="tablist" aria-label="Partes da aba Licitações">
+        <button class="subtab" role="tab" data-la="painel">Painel</button>
+        <button class="subtab" role="tab" data-la="lista">Licitações</button>
+        <button class="subtab" role="tab" data-la="acomp">Acompanhamento</button>
+        <button class="subtab" role="tab" data-la="hist">Histórico</button>
+      </div>
+      <div class="tblbar"><div class="f"><label for="lBusca">Buscar no objeto</label><input id="lBusca" type="search" placeholder="ex.: merenda, asfalto"></div></div>
+    </div>
+    <div id="licCorpo">
+      <!-- Painel -->
+      <div data-lpart="painel">
+        <div class="kpis kpis6" id="kpisL"></div>
+        <div class="card full" id="licSemana"></div>
+        <div class="card full">
+          <h2>Estimado x contratado por mês</h2>
+          <p class="desc">Licitações homologadas com valor contratado, em milhões de reais, pelo mês de publicação. A diferença entre as barras é a economia.</p>
+          <div class="legend"><span><i style="background:var(--cinza)"></i>Estimado</span><span><i style="background:var(--good)"></i>Contratado</span></div>
+          <div class="chart" id="chLicValor"></div>
+        </div>
+        <div class="grid3">
+          <div class="card"><h2>Licitações por mês de publicação</h2><p class="desc">Quantidade; passe o mouse para ver o valor estimado.</p><div class="chart" id="chLicQtd"></div></div>
+          <div class="card"><h2>Valor estimado por entidade</h2><p class="desc">Em milhões de reais. Clique para filtrar.</p><div class="hbars" id="barsLicEnt"></div></div>
+          <div class="card"><h2>Licitações por modalidade</h2><p class="desc">Quantidade de processos. Clique para filtrar.</p><div class="hbars" id="barsLicMod"></div></div>
+          <div class="card"><h2>Situação</h2><p class="desc">Quantidade de processos por grupo de situação. Clique para filtrar.</p><div class="hbars" id="barsLicSit"></div></div>
+          <div class="card"><h2>Secretarias que mais demandam</h2><p class="desc">Prefeitura, valor estimado em milhões; só quando o objeto cita a secretaria. Clique para filtrar.</p><div class="hbars" id="barsLicSec"></div></div>
+          <div class="card"><h2>Contratação direta por mês</h2><p class="desc">Parte das licitações do mês feita por dispensa ou inexigibilidade, em %.</p><div class="chart" id="chLicDireta"></div></div>
+          <div class="card"><h2>Agenda das próximas aberturas</h2><p class="desc">Licitações em andamento que abrem em cada uma das próximas 4 semanas, a partir de hoje.</p><div class="chart" id="chLicAgenda"></div></div>
+          <div class="card"><h2>Concentração do valor</h2><p class="desc">Licitações ordenadas pelo valor estimado: quanto do valor total (%) está nas 10 maiores, nas 40 seguintes e em todas as demais.</p><div class="hbars" id="barsLicConc"></div></div>
+          <div class="card"><h2>Contratação direta por secretaria</h2><p class="desc">Prefeitura: quantidade de dispensas e inexigibilidades, quando o objeto cita a secretaria.</p><div class="hbars" id="barsLicDirSec"></div></div>
+        </div>
+      </div>
+      <!-- Lista -->
+      <div data-lpart="lista">
+        <div class="card full"><h2>Todas as licitações</h2><p class="desc">Clique numa linha para ver o detalhe. Clique no título de uma coluna para ordenar.</p>
+          <div class="tblbar"><span class="desc" id="licCont" style="margin:0"></span><button class="btn" id="btnCsvL" type="button">Baixar CSV</button></div>
+          <div class="tablewrap"><table id="tblLic"></table></div><div id="licMais" style="margin-top:10px"></div></div>
+      </div>
+      <!-- Acompanhamento -->
+      <div data-lpart="acomp">
+        <div class="card full"><h2>Próximas aberturas</h2><p class="desc">Licitações em andamento que abrem nos próximos 15 dias.</p><div class="tablewrap"><table id="tblLicAb"></table></div></div>
+        <div class="card full"><h2>10 maiores licitações</h2><p class="desc">Por valor estimado, com os filtros escolhidos.</p><div class="tablewrap"><table id="tblLicTop"></table></div></div>
+        <div class="card full"><h2>Sem sucesso</h2><p class="desc">Revogadas, fracassadas (ninguém atendeu às exigências) ou desertas (ninguém apareceu).</p><div class="tablewrap"><table id="tblLicSem"></table></div></div>
+        <div class="card full"><h2>Não homologadas</h2><p class="desc">Suspensas primeiro, depois em andamento e sem sucesso.</p><div class="tablewrap"><table id="tblLicNao"></table></div></div>
+      </div>
+      <!-- Histórico -->
+      <div data-lpart="hist">
+        <div class="card full"><h2>O que mudou a cada atualização</h2><p class="desc">Licitações novas e mudanças de situação encontradas em cada busca semanal no portal. Os filtros do topo valem aqui também.</p>
+          <div class="tblbar"><div class="f"><label for="lHist">Atualização</label><select id="lHist"></select></div><span class="desc" id="licHistCont" style="margin:0"></span></div>
+          <div class="tablewrap"><table id="tblLicHist"></table></div></div>
+      </div>
+      <p class="desc" id="licNota" style="margin-top:10px"></p>
+    </div>
+  </section>
+
+  <!-- DIÁRIAS E PASSAGENS -->
+  <section id="secDiar" class="hidden">
+    <p class="summary" id="sumV"></p>
+    <div id="diarCorpo">
+      <div class="kpis" id="kpisV"></div>
+      <div class="card full">
+        <h2>Gasto por mês</h2><p class="desc">Diárias (hospedagem e alimentação em viagem a serviço) e passagens, pelo mês da viagem.</p>
+        <div class="legend"><span><i style="background:var(--emp)"></i>Diárias</span><span><i style="background:var(--pag)"></i>Passagens</span></div>
+        <div class="chart" id="chDiar"></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h2>Por órgão</h2><p class="desc">Clique para filtrar.</p><div class="legend"><span><i style="background:var(--emp)"></i>Total</span><span><i style="background:var(--pag)"></i>Passagens</span></div><div class="bars" id="barsDiarOrg"></div></div>
+        <div class="card"><h2>Quem mais viajou</h2><p class="desc">Por valor recebido em diárias e passagens. Clique para ver as viagens.</p><div class="legend"><span><i style="background:var(--emp)"></i>Total</span><span><i style="background:var(--pag)"></i>Passagens</span></div><div class="bars" id="barsDiarBen"></div></div>
+      </div>
+      <div class="card full"><h2>Destinos mais frequentes</h2><p class="desc">Por número de viagens.</p><div class="bars" id="barsDiarDest"></div></div>
+      <div class="card full"><h2>Todas as viagens</h2><p class="desc">Pesquise por nome, destino ou motivo, ordene pelas colunas e baixe em planilha.</p>
+        <div class="tblbar"><div class="f"><label for="vBusca">Pesquisar</label><input id="vBusca" type="search" placeholder="Nome, destino ou motivo…"></div><button class="btn" id="btnCsvV" type="button">Baixar CSV</button></div>
+        <div class="tablewrap"><table id="tblDiar"></table></div><div id="diarMais" style="margin-top:10px"></div></div>
+      <p class="desc" id="diarNota" style="margin-top:10px"></p>
+    </div>
+  </section>
+
   <div class="card full">
     <h2>Entenda os termos</h2>
     <dl class="glossary" style="margin:10px 0 0">
@@ -305,10 +421,15 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
       <div><dt><i style="width:10px;height:10px;border-radius:3px;background:var(--emp)"></i>Empenhado</dt><dd>Dinheiro reservado para uma compra ou contrato. A prefeitura assumiu o compromisso, mas o serviço ainda pode não ter sido entregue.</dd></div>
       <div><dt><i style="width:10px;height:10px;border-radius:3px;background:var(--liq)"></i>Liquidado</dt><dd>O fornecedor entregou o produto ou serviço e a prefeitura conferiu. Falta apenas pagar.</dd></div>
       <div><dt>Credor</dt><dd>Quem tem algo a receber da prefeitura: uma empresa fornecedora, uma entidade conveniada ou uma pessoa.</dd></div>
+      <div><dt>Dispensa e inexigibilidade</dt><dd>Contratação direta, sem disputa entre fornecedores. A lei permite em compras pequenas, emergências ou quando só existe um fornecedor possível.</dd></div>
+      <div><dt>Pregão e concorrência</dt><dd>Licitações com disputa: vários fornecedores apresentam propostas e ganha a melhor.</dd></div>
+      <div><dt>Homologada</dt><dd>Licitação concluída: o resultado foi aprovado e o contrato pode ser assinado.</dd></div>
+      <div><dt>Diária</dt><dd>Valor pago ao servidor para cobrir hospedagem e alimentação quando viaja a serviço.</dd></div>
       <div><dt>Anulado</dt><dd>Parte de um empenho que foi cancelada, por exemplo porque o serviço saiu mais barato ou não foi feito.</dd></div>
       <div><dt><i style="width:10px;height:10px;border-radius:3px;background:var(--pag)"></i>Pago</dt><dd>O dinheiro efetivamente saiu do caixa da prefeitura para o fornecedor ou servidor.</dd></div>
     </dl>
   </div>
+  <div class="banner hidden" id="banner" style="margin-top:12px"></div>
 </main>
 <div class="wrap"><footer id="foot"></footer></div>
 
@@ -323,9 +444,9 @@ document.write('<script src="dados/execucao.js?v=' + VERSAO_DADOS + '"><\/script
 const MESES=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
 const MESES_L=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
 const DIMS=["entidade","orgao","funcao","subfuncao","programa","categoria","grupo","elemento","fonte_recurso"];
-const FDIMS=["entidade","orgao","funcao","grupo","programa","fonte_recurso"];
+const FDIMS=["entidade","orgao","funcao","grupo","programa","fonte_recurso","modalidade","sit","secretaria","tipo"];
 const RDIMS=["entidade","categoria","origem","fonte_recurso"];
-const DIM_NOME={entidade:"Entidade",orgao:"Órgão",funcao:"Área",subfuncao:"Subfunção",programa:"Programa",categoria:"Categoria",grupo:"Tipo de gasto",elemento:"Elemento",fonte_recurso:"Origem do recurso",mes:"Mês"};
+const DIM_NOME={modalidade:"Modalidade",sit:"Situação",secretaria:"Secretaria",tipo:"Tipo",entidade:"Entidade",orgao:"Órgão",funcao:"Área",subfuncao:"Subfunção",programa:"Programa",categoria:"Categoria",grupo:"Tipo de gasto",elemento:"Elemento",fonte_recurso:"Origem do recurso",mes:"Mês"};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const nf0=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:0});
@@ -341,12 +462,12 @@ const pct=(a,b)=>b>0?a/b*100:0;
 const pctS=(a,b)=>b>0?nf1.format(a/b*100)+"%":"–";
 const num=v=>{const n=typeof v==="number"?v:parseFloat(String(v).replace(",","."));return isFinite(n)?n:0;};
 
-let D=null, DESP=[], REC=[], PARCIAL=null;
+let D=null, DESP=[], REC=[], EMP=[], PARCIAL=null;
 const SIGLAS=new Set("SUS FUNDEB MDE RPPS ICMS IPTU ISS ISSQN ITBI IRRF FPM IPVA SAMU CMEI UBS UPA LTDA ME EPP EIRELI SA S/A S.A. S.A CNPJ CPF PR BR CIA ONG APAE CEU SESC SENAC SESI SENAI SEBRAE FNDE FNAS FNS PNAE PDDE COSIP CIP TI II III IV VI VII VIII IX XI XII".split(" "));
 const MINUSC=new Set("DE DA DO DAS DOS E A O AS OS EM NA NO NAS NOS PARA COM POR À AO AOS SOBRE".split(" "));
 function legivel(t){t=String(t);if(/[a-zà-ÿ]/.test(t)||!/[A-Z]/.test(t))return t;
   return t.split(/(\s+|-|\/)/).map((w,i)=>{if(!w||/^\s+$|^-$|^\/$/.test(w))return w;if(SIGLAS.has(w))return w;if(i>0&&MINUSC.has(w))return w.toLowerCase();if(/\d/.test(w))return w;return w.charAt(0)+w.slice(1).toLowerCase();}).join("");}
-const st={tab:"desp",ano:null,de:1,ate:12,f:{},tDim:"orgao",busca:"",sort:{k:"pago",d:-1}};
+const st={tab:"desp",la:"painel",ano:null,de:1,ate:12,f:{},tDim:"orgao",busca:"",sort:{k:"pago",d:-1}};
 
 function boot(data){
   D=data||{meta:{},despesas:[],receitas:[]};
@@ -354,6 +475,8 @@ function boot(data){
   DESP=(D.despesas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};DIMS.forEach(k=>o[k]=txt(r[k]));
     ["dotacao_inicial","dotacao_atualizada","empenhado","liquidado","pago"].forEach(k=>o[k]=num(r[k]));
     o._key=DIMS.map(k=>o[k]).join("\u0001");return o;});
+  EMP=(D.empresas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes,entidade:txt(r.entidade),fonte:String(r.fonte||"")};
+    ["receita_liquida","custo_servicos","despesas_operacionais","resultado_financeiro","ir_csll","outros_resultados","lucro_liquido","caixa","ativo_total","emprestimos_curto_prazo","emprestimos_longo_prazo","patrimonio_liquido"].forEach(k=>o[k]=r[k]==null||r[k]===""?null:num(r[k]));return o;});
   REC=(D.receitas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};RDIMS.forEach(k=>o[k]=txt(r[k]));o.previsto=num(r.previsto);o.arrecadado=num(r.arrecadado);
     o._key=RDIMS.map(k=>o[k]).join("\u0001");return o;});
   if(!REC.length) $("#tabR").classList.add("hidden");
@@ -387,7 +510,8 @@ function readHash(){
   st.de=p.has("de")?Math.max(1,Math.min(12,+p.get("de"))):1;
   st.ate=p.has("ate")?Math.max(1,Math.min(um,+p.get("ate"))):um;
   if(st.de>st.ate) st.de=1;
-  const aba=p.get("aba");st.tab=aba==="rec"&&REC.length?"rec":aba==="cred"?"cred":"desp";
+  const aba=p.get("aba");st.tab=aba==="rec"&&REC.length?"rec":["cred","lic","diar"].includes(aba)?aba:"desp";
+  if(["lista","acomp","hist"].includes(p.get("la")))st.la=p.get("la");
   FDIMS.forEach(k=>{if(p.get(k)) st.f[k]=p.get(k);});
   // Entidade: por padrão mostra só a Prefeitura, porque somar todas conta duas vezes os repasses entre entidades
   if(st.f.entidade==="todas") delete st.f.entidade; else if(!st.f.entidade&&entPadrao()) st.f.entidade=entPadrao();
@@ -400,6 +524,7 @@ function writeHash(){
   const p=new URLSearchParams();p.set("ano",st.ano);p.set("de",st.de);p.set("ate",st.ate);
   if(!st.f.entidade&&entPadrao())p.set("entidade","todas");
   if(st.tab!=="desp")p.set("aba",st.tab);
+  if(st.tab==="lic"&&st.la!=="painel")p.set("la",st.la);
   Object.entries(st.f).forEach(([k,v])=>p.set(k,v));
   history.replaceState(null,"","#"+p.toString());
 }
@@ -419,6 +544,12 @@ function initControls(){
   $("#btnCsv").onclick=csv;
   $("#cBusca").oninput=e=>{cst.busca=e.target.value;cst.lim=50;if(CRED)renderCred();};
   $("#btnCsvC").onclick=csvCred;
+  $("#lBusca").oninput=e=>{lst.busca=e.target.value;lst.lim=100;render();};
+  document.querySelectorAll(".subtab").forEach(b=>b.onclick=()=>{st.la=b.dataset.la;render();});
+  $("#lHist").onchange=e=>{lst.hist=e.target.value;render();};
+  $("#btnCsvL").onclick=csvLic;
+  $("#vBusca").oninput=e=>{vst.busca=e.target.value;vst.lim=50;render();};
+  $("#btnCsvV").onclick=csvDiar;
 }
 function matchF(r,except){for(const k in st.f){if(k===except)continue;if(r[k]!==undefined&&r[k]!==st.f[k])return false;}return true;}
 function refreshFilterOptions(){
@@ -428,11 +559,13 @@ function refreshFilterOptions(){
   $("#fDe").innerHTML=MESES_L.slice(0,um).map((m,i)=>`<option value="${i+1}">${mlab(m,i)}</option>`).join("");
   $("#fAte").innerHTML=MESES_L.slice(0,um).map((m,i)=>`<option value="${i+1}">${mlab(m,i)}</option>`).join("");
   $("#fDe").value=st.de;$("#fAte").value=st.ate;
-  const src=st.tab==="rec"?REC:st.tab==="cred"?(CRED||[]):DESP;
+  const src={rec:REC,cred:CRED||[],lic:LIC||[],diar:DIA||[]}[st.tab]||DESP;
+  const peso=r=>st.tab==="rec"?r.arrecadado:st.tab==="cred"?r.qtd:st.tab==="lic"?1:st.tab==="diar"?r.valor:r.empenhado+r.dotacao_atualizada*1e-9;
   document.querySelectorAll("select[data-dim]").forEach(s=>{
     const k=s.dataset.dim;
     const tot=new Map();
-    src.forEach(r=>{if(r.ano!==st.ano||r[k]===undefined)return;if(!matchF(r,k))return;tot.set(r[k],(tot.get(r[k])||0)+(st.tab==="rec"?r.arrecadado:st.tab==="cred"?r.qtd:r.empenhado+r.dotacao_atualizada*1e-9));});
+    src.forEach(r=>{if(r.ano!==st.ano||r[k]===undefined)return;if(!matchF(r,k))return;tot.set(r[k],(tot.get(r[k])||0)+peso(r));});
+    if(k==="entidade"&&(st.tab==="desp"||st.tab==="rec")) EMP.forEach(r=>{if(r.ano===st.ano&&!tot.has(r.entidade))tot.set(r.entidade,0);});
     const opts=[...tot.keys()].sort((a,b)=>a.localeCompare(b,"pt-BR"));
     if(st.f[k]&&!tot.has(st.f[k])) opts.unshift(st.f[k]);
     s.innerHTML=`<option value="">${k==="entidade"?"Todas (consolidado)":"Todos"}</option>`+opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("");
@@ -440,14 +573,14 @@ function refreshFilterOptions(){
     // esconde filtros sem informação útil (ex.: fonte de recurso nas receitas)
     s.closest(".f").classList.toggle("sem-info",!st.f[k]&&opts.length<=1&&(opts[0]===undefined||opts[0]==="Não informado"||k==="entidade"));
   });
-  document.querySelectorAll(".desp-only").forEach(e=>e.classList.toggle("hidden",st.tab!=="desp"));
-  $("#f_fonte_recurso").closest(".f").classList.toggle("hidden",st.tab==="cred");
+  const dimsAba=[];
+  document.querySelectorAll(".f[data-tabs]").forEach(e=>{const on=e.dataset.tabs.split(" ").includes(st.tab);e.classList.toggle("hidden",!on);if(on)dimsAba.push(e.querySelector("select").dataset.dim);});
   // chips
   const per=st.de===1&&st.ate===um?null:`${MESES[st.de-1]}–${MESES[st.ate-1]}/${st.ano}`;
   let h=per?`<span class="chip">Período: ${per}<button aria-label="Remover filtro de período" data-x="per">×</button></span>`:"";
-  for(const k in st.f){ if((st.tab==="cred"&&k!=="entidade")||(st.tab==="rec"&&!RDIMS.includes(k)))continue;
+  for(const k in st.f){ if(!dimsAba.includes(k))continue;
     h+=`<span class="chip">${DIM_NOME[k]}: ${esc(st.f[k])}<button aria-label="Remover filtro ${DIM_NOME[k]}" data-x="${k}">×</button></span>`;}
-  if(!st.f.entidade&&entPadrao()) h+=`<span class="chip" style="padding-right:10px">Somando todas as entidades, os repasses entre elas (como a contribuição da Prefeitura à previdência) aparecem duas vezes.</span>`;
+  if(!st.f.entidade&&entPadrao()&&(st.tab==="desp"||st.tab==="rec")) h+=`<span class="chip" style="padding-right:10px">Somando todas as entidades, os repasses entre elas (como a contribuição da Prefeitura à previdência) aparecem duas vezes.</span>`;
   else if(entPadrao()&&st.f.entidade===entPadrao()&&st.tab!=="cred") h+=`<span class="chip" style="padding-right:10px;background:none">Mostrando só a Prefeitura. Autarquias e demais entidades estão no filtro “Entidade”.</span>`;
   $("#chips").innerHTML=h;
   $("#chips").querySelectorAll("button").forEach(b=>b.onclick=()=>{const k=b.dataset.x;if(k==="per"){st.de=1;st.ate=um;}else delete st.f[k];render();});
@@ -477,9 +610,9 @@ function grouped(rows,dim){
 /* ---------- render ---------- */
 function render(){
   writeHash();
-  [["#tabD","#secDesp","desp"],["#tabR","#secRec","rec"],["#tabC","#secCred","cred"]].forEach(([t,sec,k])=>{$(t).setAttribute("aria-selected",st.tab===k);$(sec).classList.toggle("hidden",st.tab!==k);});
+  [["#tabD","#secDesp","desp"],["#tabR","#secRec","rec"],["#tabC","#secCred","cred"],["#tabL","#secLic","lic"],["#tabV","#secDiar","diar"]].forEach(([t,sec,k])=>{$(t).setAttribute("aria-selected",st.tab===k);$(sec).classList.toggle("hidden",st.tab!==k);});
   refreshFilterOptions();
-  if(st.tab==="desp"&&DESP.length) renderDesp(); else if(st.tab==="rec") renderRec(); else if(st.tab==="cred") renderCred();
+  if(st.tab==="desp"&&DESP.length) renderDesp(); else if(st.tab==="rec") renderRec(); else if(st.tab==="cred") renderCred(); else if(st.tab==="lic") renderLic(); else if(st.tab==="diar") renderDiar();
 }
 function sujeito(){if(st.f.entidade&&/^prefeitura/i.test(st.f.entidade))return "a Prefeitura";
   if(st.f.entidade&&st.f.entidade!=="Não informado")return "a entidade <b>"+esc(st.f.entidade)+"</b>";
@@ -491,7 +624,11 @@ function kpi(lbl,color,val,sub,meter,tip,extra){
   <div class="val" title="${esc(brlFull(val))}">${brl(val)}</div><div class="sub">${sub}</div>${extra||""}
   ${meter!=null?`<div class="meter" role="img" aria-label="${nf1.format(meter)}% do orçado"><i style="width:${Math.min(100,meter)}%;background:${color}"></i></div>`:""}</div>`;
 }
+function ehEmpresa(e){return !!e&&EMP.some(r=>r.entidade===e)&&!DESP.some(r=>r.entidade===e);}
 function renderDesp(){
+  const emp=ehEmpresa(st.f.entidade);
+  [...$("#secDesp").children].forEach(el=>{if(el.id==="despEmpresa")el.classList.toggle("hidden",!emp);else if(emp)el.dataset.oculto="1",el.classList.add("hidden");else if(el.dataset.oculto){delete el.dataset.oculto;if(el.id!=="cardEntidade"&&el.id!=="cardEmpresas")el.classList.remove("hidden");}});
+  if(emp){renderEmpresa(st.f.entidade);return;}
   const rows=despRows(st.ano,st.ate);
   const dot=dotacao(rows), ex=execSum(rows,st.de);
   // comparação com o mesmo período do ano anterior
@@ -514,10 +651,11 @@ function renderDesp(){
   barList("#barsGrupo",grouped(rows,"grupo"),"grupo",8);
   barList("#barsOrgao",grouped(rows,"orgao"),"orgao",10);
   const ge=grouped(despRows(st.ano,st.ate,"entidade"),"entidade").filter(i=>i.orc>0||i.emp>0);
-  const mostraEnt=ge.length>1;
+  const fora=foraDoAno();
+  const mostraEnt=ge.length>1||fora.length>0;
   $("#cardEntidade").classList.toggle("hidden",!mostraEnt);
-  if(mostraEnt) barList("#barsEntidade",ge,"entidade",10);
-  renderFora();
+  if(mostraEnt){barList("#barsEntidade",ge,"entidade",10);renderFora(ge,fora);}
+  renderListaEmpresas();
   renderTable();
 }
 
@@ -622,6 +760,7 @@ function csv(){
 
 /* ---------- receitas ---------- */
 function renderRec(){
+  if(ehEmpresa(st.f.entidade)){$("#sumR").innerHTML=`A ${esc(st.f.entidade)} é uma empresa e não tem receita orçamentária no portal. Veja o faturamento e o lucro dela na aba <b>Despesas</b>.`;$("#kpisR").innerHTML="";$("#chRec").innerHTML="";$("#barsOrigem").innerHTML="";return;}
   const rows=REC.filter(r=>r.ano===st.ano&&r.mes<=st.ate&&matchF(r));
   const last=new Map();rows.forEach(r=>{const p=last.get(r._key);if(!p||r.mes>p.mes)last.set(r._key,r);});
   let prev=0;last.forEach(r=>prev+=r.previsto);
@@ -669,23 +808,360 @@ function renderRec(){
 
 
 /* ---------- entidades fora do portal (meta.fora_do_portal) ---------- */
-function renderFora(){
+function foraDoAno(){
   const lista=Array.isArray((D.meta||{}).fora_do_portal)?D.meta.fora_do_portal:[];
-  $("#cardFora").classList.toggle("hidden",!lista.length);if(!lista.length)return;
-  $("#listaFora").innerHTML=lista.map((e,i)=>{
-    const r=(e.repasses_por_ano||[]).find(x=>+x.ano===st.ano)||{};
-    const emp=num(r.empenhado)-num(r.anulado),pag=num(r.pago),url=/^https?:\/\//.test(e.transparencia||"")?e.transparencia:"";
-    return `<div class="bar" style="cursor:default;border-top:${i?"1px solid var(--grid)":"0"};border-radius:0;padding:10px 8px">
-      <div class="top"><span class="nm" style="white-space:normal"><b>${esc(e.nome||"")}</b>${e.tipo?` <span style="color:var(--ink-2)">· ${esc(e.tipo)}</span>`:""}${e.cnpj?`<br><span style="font-size:12px;color:var(--muted)">CNPJ ${esc(e.cnpj)}</span>`:""}</span>
-        <span class="vv">${r.ano?`Em ${st.ano}: <b>${brl(emp)}</b> empenhados · ${brl(pag)} pagos${r.qtd_empenhos?` · ${nf0.format(+r.qtd_empenhos)} empenhos`:""}`:`Sem repasses registrados em ${st.ano}`}</span></div>
-      ${e.observacao?`<div style="font-size:13px;color:var(--ink-2)">${esc(e.observacao)}</div>`:""}
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
-        ${url?`<a class="btn" href="${esc(url)}" target="_blank" rel="noopener" style="text-decoration:none">Abrir transparência da entidade ↗</a>`:""}
-        ${e.cnpj?`<button class="btn" type="button" data-cnpj="${esc(e.cnpj)}">Ver os empenhos na aba Credores</button>`:""}
-      </div></div>`;}).join("");
-  $("#listaFora").querySelectorAll("[data-cnpj]").forEach(b=>b.onclick=()=>{cst.busca=b.dataset.cnpj;cst.lim=50;$("#cBusca").value=cst.busca;
-    if(st.f.entidade&&entPadrao()&&st.f.entidade!==entPadrao())st.f.entidade=entPadrao();st.tab="cred";render();window.scrollTo({top:0});});
+  return lista.map(e=>({e,r:(e.repasses_por_ano||[]).find(x=>+x.ano===st.ano)})).filter(x=>x.r);
 }
+// Entidades sem execução no portal (ex.: INPACTA) entram no cartão "Por entidade", no mesmo modelo, com nota de rodapé.
+function renderFora(ge,fora){
+  const nota=$("#notaEntidade");
+  if(!fora.length){nota.innerHTML="";return;}
+  const max=Math.max(1,...ge.map(i=>Math.max(i.orc,i.emp)),...fora.map(x=>num(x.r.empenhado)-num(x.r.anulado)));
+  // redesenha as barras das entidades do portal na mesma escala das de fora
+  $("#barsEntidade").querySelectorAll(".bar").forEach(b=>{const it=ge.find(g=>g.nome===b.dataset.v);if(!it)return;
+    const t=b.querySelectorAll(".track i");t[0].style.width=it.orc/max*100+"%";t[1].style.width=it.emp/max*100+"%";t[2].style.width=it.pag/max*100+"%";});
+  const html=fora.map(({e,r})=>{const emp=num(r.empenhado)-num(r.anulado),pag=num(r.pago);
+    return `<button class="bar" data-cnpj="${esc(e.cnpj||"")}" title="${esc(e.nome)} — repasses da Prefeitura: empenhado ${brlFull(emp)} · pago ${brlFull(pag)}">
+      <div class="top"><span class="nm">${esc(e.nome)}<sup>1</sup></span><span class="vv"><b>${brl(pag)}</b> pagos de ${brl(emp)} empenhados · ${pctS(pag,emp)}</span></div>
+      <div class="track"><i class="e" style="width:${emp/max*100}%"></i><i class="p" style="width:${pag/max*100}%"></i></div></button>`;}).join("");
+  const more=$("#barsEntidade").querySelector("[data-more]");
+  if(more) more.insertAdjacentHTML("beforebegin",html); else $("#barsEntidade").insertAdjacentHTML("beforeend",html);
+  $("#barsEntidade").querySelectorAll("[data-cnpj]").forEach(b=>b.onclick=()=>{if(!b.dataset.cnpj)return;cst.busca=b.dataset.cnpj;cst.lim=50;$("#cBusca").value=cst.busca;
+    if(entPadrao())st.f.entidade=entPadrao();st.tab="cred";render();window.scrollTo({top:0});});
+  nota.innerHTML=fora.map(({e})=>{const url=/^https?:\/\//.test(e.transparencia||"")?e.transparencia:"";
+    return `<sup>1</sup> ${esc(e.nome)}${e.tipo?" ("+esc(e.tipo.toLowerCase())+")":""} não publica sua execução no Portal da Transparência. Os números são o que a Prefeitura empenhou e pagou a ele${e.cnpj?" (CNPJ "+esc(e.cnpj)+")":""}, e já estão dentro dos valores da Prefeitura. Clique na linha para ver esses empenhos na aba Credores.${url?` Documentos da própria entidade: <a href="${esc(url)}" target="_blank" rel="noopener" style="color:inherit">${esc(url.replace(/^https?:\/\//,""))}</a>.`:""}`;}).join("<br>");
+}
+
+
+/* ---------- empresas (contabilidade empresarial: balancetes mensais, ex.: SBMG) ---------- */
+function resumoEmpresa(nome){
+  const rows=EMP.filter(r=>r.entidade===nome&&r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate).sort((a,b)=>a.mes-b.mes);
+  if(!rows.length)return null;
+  const soma=k=>rows.reduce((a,r)=>a+(r[k]||0),0),ult=rows[rows.length-1];
+  return {rows,ult,rec:soma("receita_liquida"),custo:soma("custo_servicos")+soma("despesas_operacionais"),fin:soma("resultado_financeiro"),ir:soma("ir_csll"),out:soma("outros_resultados"),lucro:soma("lucro_liquido")};
+}
+function ultimoMesEmp(nome){let m=0;EMP.forEach(r=>{if(r.entidade===nome&&r.ano===st.ano&&r.mes>m)m=r.mes;});return m;}
+function notaEmpresas(){const n=(D.meta||{}).empresas_fonte;return n?`<p class="desc" style="margin:10px 0 0;font-size:12.5px">${esc(n)}</p>`:"";}
+function renderListaEmpresas(){
+  const nomes=[...new Set(EMP.filter(r=>r.ano===st.ano).map(r=>r.entidade))];
+  const card=$("#cardEmpresas"),mostra=nomes.length>0&&!st.f.entidade;
+  card.classList.toggle("hidden",!mostra);if(!mostra)return;
+  $("#listaEmpresas").innerHTML=nomes.map(n=>{const r=resumoEmpresa(n);
+    if(!r)return `<div class="bar" style="cursor:default"><div class="top"><span class="nm">${esc(n)}</span><span class="vv">Sem balancete publicado para o período escolhido</span></div></div>`;
+    return `<button class="bar" data-v="${esc(n)}"><div class="top"><span class="nm">${esc(n)}</span><span class="vv">Receita <b>${brl(r.rec)}</b> · ${r.lucro>=0?"lucro":"prejuízo"} <b>${brl(Math.abs(r.lucro))}</b> · caixa ${r.ult.caixa!=null?brl(r.ult.caixa):"–"} (${MESES[r.ult.mes-1]}/${st.ano})</span></div></button>`;}).join("")+notaEmpresas();
+  $("#listaEmpresas").querySelectorAll(".bar[data-v]").forEach(b=>b.onclick=()=>{st.f.entidade=b.dataset.v;render();window.scrollTo({top:0});});
+}
+function renderEmpresa(nome){
+  const box=$("#despEmpresa"),r=resumoEmpresa(nome),um=ultimoMesEmp(nome);
+  if(!r){box.innerHTML=`<div class="card empty">${esc(nome)} ainda não publicou balancete para ${um?"esse período. O último disponível é de "+MESES_L[um-1]+" de "+st.ano:"esse ano"}.</div>`+notaEmpresas();return;}
+  const u=r.ult,emprest=(u.emprestimos_curto_prazo||0)+(u.emprestimos_longo_prazo||0);
+  const periodo=`De ${MESES_L[r.rows[0].mes-1]} a ${MESES_L[u.mes-1]} de ${st.ano}`;
+  const aviso=um&&um<st.ate?`<div class="sub" style="margin-top:4px">Os balancetes publicados vão até ${MESES_L[um-1]} de ${st.ano}.</div>`:"";
+  const tile=(lbl,val,sub,tip,cls)=>`<div class="card kpi"><div class="lbl">${lbl}<span class="help" tabindex="0" data-tip="${esc(tip)}">?</span></div><div class="val${cls?" "+cls:""}">${val}</div><div class="sub">${sub}</div></div>`;
+  const pdf=u.fonte&&/^https?:\/\//.test(u.fonte)?u.fonte:"";
+  box.innerHTML=`<p class="summary">${periodo}, a <b>${esc(nome)}</b> teve receita líquida de <b>${brl(r.rec)}</b> e ${r.lucro>=0?"<b>lucro</b>":"<b>prejuízo</b>"} de <b>${brl(Math.abs(r.lucro))}</b>. No fim de ${MESES_L[u.mes-1]}, tinha <b>${u.caixa!=null?brl(u.caixa):"–"}</b> em caixa.${aviso}</p>
+    <div class="kpis">
+      ${tile("Receita líquida",brl(r.rec),"faturamento menos impostos sobre vendas","Quanto a empresa faturou no período, já descontados os impostos sobre o faturamento.")}
+      ${tile(r.lucro>=0?"Lucro líquido":"Prejuízo líquido",brl(Math.abs(r.lucro)),r.rec?`margem de ${pctS(r.lucro,r.rec)}`:"","Resultado final do período: receita menos custos, despesas, resultado financeiro e impostos sobre o lucro.",r.lucro>=0?"":"delta down")}
+      ${tile("Caixa",u.caixa!=null?brl(u.caixa):"–",`no fim de ${MESES_L[u.mes-1]}`,"Dinheiro disponível em caixa e bancos no fim do mês.")}
+      ${tile("Patrimônio líquido",u.patrimonio_liquido!=null?brl(u.patrimonio_liquido):"–",`empréstimos: ${brl(emprest)}`,"Patrimônio líquido = o que a empresa tem menos o que deve. Empréstimos = dívidas com bancos, de curto e longo prazo.")}
+    </div>
+    <div class="card full">
+      <h2>Mês a mês</h2>
+      <p class="desc">Resultado de cada mês, conforme o balancete. Clique em "PDF" para abrir o documento original.</p>
+      <div class="tablewrap"><table><thead><tr><th style="cursor:default">Mês</th><th style="cursor:default">Receita líquida</th><th style="cursor:default">Custos e despesas</th><th style="cursor:default">Lucro do mês</th><th style="cursor:default">Caixa no fim</th><th style="cursor:default">Balancete</th></tr></thead>
+      <tbody>${r.rows.map(x=>`<tr><td>${MESES_L[x.mes-1]}</td><td>${brl(x.receita_liquida||0)}</td><td>${brl(Math.abs((x.custo_servicos||0)+(x.despesas_operacionais||0)))}</td><td class="${(x.lucro_liquido||0)<0?"delta down":""}">${brl(x.lucro_liquido||0)}</td><td>${x.caixa!=null?brl(x.caixa):"–"}</td><td>${/^https?:\/\//.test(x.fonte)?`<a href="${esc(x.fonte)}" target="_blank" rel="noopener" style="color:var(--accent)">PDF ↗</a>`:"–"}</td></tr>`).join("")}</tbody>
+      <tfoot><tr><td>Total</td><td>${brl(r.rec)}</td><td>${brl(Math.abs(r.custo))}</td><td>${brl(r.lucro)}</td><td>${u.caixa!=null?brl(u.caixa):"–"}</td><td>${pdf?`<a href="${esc(pdf)}" target="_blank" rel="noopener" style="color:var(--accent)">último ↗</a>`:""}</td></tr></tfoot></table></div>
+      ${notaEmpresas()}
+    </div>`;
+}
+
+/* ---------- carregamento sob demanda (licitações, diárias) ---------- */
+let LIC=null, LICM=[], LICMETA={}, DIA=null, DIAMETA={};
+const carga={};
+function carregar(arq,global,ok){
+  if(carga[arq])return; carga[arq]="carregando";
+  const fim=d=>{carga[arq]=d?"ok":"erro";ok(d);render();};
+  if(window[global]){fim(window[global]);return;}
+  const sc=document.createElement("script");sc.src="dados/"+arq+".js?v="+(typeof VERSAO_DADOS!=="undefined"?VERSAO_DADOS:Date.now());
+  sc.onload=()=>fim(window[global]||null);
+  sc.onerror=()=>fetch("dados/"+arq+".json").then(r=>{if(!r.ok)throw 0;return r.json();}).then(fim).catch(()=>fim(null));
+  document.head.appendChild(sc);
+}
+function estadoCarga(arq,global,ok,sum,corpo,nome){
+  if(carga[arq]==="ok")return true;
+  $(corpo).classList.add("hidden");
+  if(carga[arq]==="erro"){$(sum).innerHTML=`<span class="card empty" style="display:block">Os dados de ${nome} ainda não estão disponíveis. Eles aparecem aqui depois que a coleta automática rodar.</span>`;return false;}
+  $(sum).textContent=`Carregando ${nome}…`;carregar(arq,global,ok);return false;
+}
+const MES_NUM={janeiro:1,fevereiro:2,"março":3,marco:3,abril:4,maio:5,junho:6,julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
+function mesNum(v,data){if(+v>=1&&+v<=12)return +v;const t=MES_NUM[String(v||"").toLowerCase()];if(t)return t;return data?+String(data).slice(5,7)||0:0;}
+const txtv=v=>(v==null||v==="")?"Não informado":legivel(v);
+function lerLic(d){d=d||{};LICMETA=d.meta||{};
+  LIC=(d.licitacoes||[]).map(r=>({id:String(r.id||""),ano:+r.ano||+String(r.publicacao||"").slice(0,4)||0,mes:mesNum(r.mes,r.publicacao),entidade:txtv(r.entidade),secretaria:txtv(r.secretaria),
+    numero:String(r.numero||""),modalidade:txtv(r.modalidade),objeto:String(r.objeto||""),est:num(r.valor_estimado),con:num(r.valor_contratado),situacao:txtv(r.situacao),
+    sit:txtv(r.grupo||r.situacao),publicacao:String(r.publicacao||""),abertura:String(r.abertura||""),fornecedor:r.fornecedor?String(r.fornecedor):"",link:/^https?:\/\//.test(r.link||"")?r.link:""}));
+  LICM=(d.mudancas||[]).map(r=>({atualizacao:String(r.atualizacao||""),id:String(r.id||""),entidade:txtv(r.entidade),numero:String(r.numero||""),modalidade:txtv(r.modalidade),objeto:String(r.objeto||""),
+    est:num(r.valor_estimado),con:num(r.valor_contratado),tipo:String(r.tipo||""),de:String(r.de||""),para:String(r.para||"")}));}
+function lerDia(d){d=d||{};DIAMETA=d.meta||{};
+  DIA=(d.diarias||[]).map(r=>({ano:+r.ano||+String(r.data_saida||"").slice(0,4)||0,mes:mesNum(r.mes,r.data_saida),entidade:txtv(r.entidade),orgao:txtv(r.orgao),tipo:txtv(r.tipo),
+    beneficiario:txtv(r.beneficiario),cargo:txtv(r.cargo),destino:txtv(r.destino),motivo:String(r.motivo||""),saida:String(r.data_saida||""),retorno:String(r.data_retorno||""),
+    qtd:num(r.quantidade),valor:num(r.valor)}));}
+const ehDireta=m=>/dispensa|inexig/i.test(m);
+const dataBR=d=>/^\d{4}-\d{2}-\d{2}/.test(d)?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(0,4)}`:(d||"–");
+function hojeISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+
+/* ---------- componentes reutilizáveis ---------- */
+// barras por mês: series=[{nome,cor,vals}] ; fmt para eixo e dica
+function barrasMes(el,months,series,fmt){
+  el=typeof el==="string"?$(el):el;fmt=fmt||brl;
+  const W=Math.max(300,el.clientWidth||800),H=W<560?200:240,ml=W<560?48:60,mr=12,mt=12,mb=28;
+  const ymax=niceMax(Math.max(1,...series.flatMap(s=>s.vals)));const bw=(W-ml-mr)/Math.max(1,months.length),y=v=>mt+(H-mt-mb)*(1-Math.max(0,v)/ymax);
+  const ax=v=>fmt===brl?axisFmt(v):nf0.format(v);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.map(x=>x.nome).join(" e "))} por mês">`;
+  for(let i=0;i<=4;i++){const v=ymax*i/4;s+=`<line x1="${ml}" x2="${W-mr}" y1="${y(v)}" y2="${y(v)}" stroke="var(${i?"--grid":"--axis"})"/><text x="${ml-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${ax(v)}</text>`;}
+  const n=series.length,gw=bw*.7,w=Math.max(3,(gw-(n-1)*2)/n);
+  const bar=(x,w,v,cor)=>{if(v<=0)return "";const h=y(0)-y(v),r=Math.min(4,h,w/2);return `<path d="M${x},${y(0)}V${y(v)+r}q0,-${r} ${r},-${r}h${w-2*r}q${r},0 ${r},${r}V${y(0)}Z" fill="${cor}"/>`;};
+  months.forEach((m,i)=>{const gx=ml+i*bw;series.forEach((se,j)=>{s+=bar(gx+bw*.15+j*(w+2),w,se.vals[i],se.cor);});
+    s+=`<rect x="${gx}" y="${mt}" width="${bw}" height="${H-mt-mb}" fill="transparent" data-i="${i}" class="hb"/><text x="${gx+bw/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${MESES[m-1]}</text>`;});
+  s+=`</svg><div class="tt"></div>`;el.innerHTML=s;
+  const tt=el.querySelector(".tt"),svg=el.querySelector("svg");
+  el.querySelectorAll(".hb").forEach(rc=>{rc.addEventListener("pointerenter",()=>{const i=+rc.dataset.i,r=svg.getBoundingClientRect();
+    tt.innerHTML=`<div class="h">${MESES_L[months[i]-1]} de ${st.ano}</div>`+series.map(se=>`<div class="r"><span><i style="background:${se.cor}"></i>${esc(se.nome)}</span><span>${fmt(se.vals[i])}</span></div>`).join("");
+    tt.style.opacity=1;const px=(ml+i*bw+bw/2)*r.width/W,tw=tt.offsetWidth;tt.style.left=Math.max(0,Math.min(r.width-tw,px-tw/2))+"px";tt.style.top="0px";});
+    rc.addEventListener("pointerleave",()=>tt.style.opacity=0);});
+}
+// lista de barras: items=[{nome,v,v2,txt}] ; v = barra clara, v2 = barra escura
+function listaBarras(sel,items,opt){
+  opt=opt||{};const el=$(sel),lim=opt.limite||10;
+  if(!items.length){el.innerHTML='<div class="empty">Sem dados para os filtros escolhidos.</div>';return;}
+  const max=Math.max(1,...items.map(i=>i.v));const show=expanded[sel]?items:items.slice(0,lim);
+  el.innerHTML=show.map((i,k)=>`<button class="bar${opt.sel===i.nome?" sel":""}" data-k="${k}" ${opt.onClick?"":'style="cursor:default"'}>
+    <div class="top"><span class="nm">${esc(i.nome)}</span><span class="vv">${i.txt}</span></div>
+    <div class="track"><i class="e" style="width:${Math.max(0,i.v)/max*100}%"></i>${i.v2!=null?`<i class="p" style="width:${Math.max(0,i.v2)/max*100}%"></i>`:""}</div></button>`).join("")+
+    (items.length>lim?`<button class="btn more" data-more>${expanded[sel]?"Mostrar menos":"Mostrar todos ("+items.length+")"}</button>`:"");
+  if(opt.onClick)el.querySelectorAll(".bar").forEach(b=>b.onclick=()=>opt.onClick(show[+b.dataset.k]));
+  const mb=el.querySelector("[data-more]");if(mb)mb.onclick=()=>{expanded[sel]=!expanded[sel];render();};
+}
+function agrupa(rows,chave,f){const g=new Map();rows.forEach(r=>{const k=chave(r);let t=g.get(k);if(!t){t={nome:k,n:0};g.set(k,t);}t.n++;f(t,r);});return [...g.values()];}
+// tabela: cols=[{k,t,f(r),num,sort(r)}]
+function tabela(el,cols,rows,ts,opt){
+  opt=opt||{};el=$(el);const k=ts.k,d=ts.d,c=cols.find(x=>x.k===k)||cols[0];
+  const val=r=>c.sort?c.sort(r):r[c.k];
+  rows=rows.slice().sort((a,b)=>{const va=val(a),vb=val(b);return (typeof va==="number"&&typeof vb==="number"?va-vb:String(va).localeCompare(String(vb),"pt-BR"))*d;});
+  const vis=opt.lim?rows.slice(0,opt.lim):rows;
+  el.innerHTML=`<thead><tr>${cols.map(x=>`<th data-k="${x.k}"${x.num?"":' style="text-align:left"'} ${k===x.k?`aria-sort="${d<0?"descending":"ascending"}"`:""}>${x.t}</th>`).join("")}</tr></thead>
+    <tbody>${vis.length?vis.map((r,i)=>`<tr${opt.det?` class="clk" data-i="${i}" tabindex="0"`:""}>${cols.map(x=>`<td style="${x.num?"":"text-align:left;"}${x.wrap?"white-space:normal;min-width:220px":""}">${x.f?x.f(r):esc(r[x.k])}</td>`).join("")}</tr>${opt.det&&r.id&&lst.aberto===r.id?`<tr class="det"><td colspan="${cols.length}">${opt.det(r)}</td></tr>`:""}`).join(""):`<tr><td colspan="${cols.length}" class="empty">${opt.vazio||"Nada encontrado."}</td></tr>`}</tbody>`;
+  if(opt.det)el.querySelectorAll("tr.clk").forEach(tr=>{const r=vis[+tr.dataset.i],tg=()=>{lst.aberto=lst.aberto===r.id?null:r.id;render();};tr.onclick=tg;tr.onkeydown=e=>{if(e.key==="Enter")tg();};});
+  el.querySelectorAll("th").forEach(th=>th.onclick=()=>{const kk=th.dataset.k;if(ts.k===kk)ts.d*=-1;else{ts.k=kk;ts.d=cols.find(x=>x.k===kk).num?-1:1;}render();});
+  return rows;
+}
+function baixarCSV(nome,cab,linhas){
+  const q=v=>typeof v==="number"?v.toFixed(2).replace(".",","):'"'+String(v).replace(/"/g,'""')+'"';
+  const blob=new Blob(["﻿"+[cab.join(";"),...linhas.map(l=>l.map(q).join(";"))].join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nome;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
+function mesesPeriodo(){const m=[];for(let i=st.de;i<=st.ate;i++)m.push(i);return m;}
+const kpiT=(lbl,val,sub,tip,cor,meter)=>`<div class="card kpi"><div class="lbl">${cor?`<i class="sw" style="background:${cor}"></i>`:""}${lbl}<span class="help" tabindex="0" data-tip="${esc(tip)}">?</span></div><div class="val">${val}</div><div class="sub">${sub}</div>${meter!=null?`<div class="meter"><i style="width:${Math.max(0,Math.min(100,meter))}%;background:${cor}"></i></div>`:""}</div>`;
+function notaFonte(sel,m){const o=[];if(m.atualizado_em){const d=new Date(m.atualizado_em);o.push("Atualizado em "+(isNaN(d)?esc(m.atualizado_em):d.toLocaleDateString("pt-BR")));}
+  if(m.observacoes)o.push(esc(m.observacoes));(Array.isArray(m.avisos)?m.avisos:[]).forEach(a=>o.push(esc(a)));if(m.fonte&&/^https?:\/\//.test(m.fonte))o.push(`Fonte: <a href="${esc(m.fonte)}" target="_blank" rel="noopener" style="color:inherit">${esc(m.fonte.replace(/^https?:\/\//,""))}</a>`);
+  $(sel).innerHTML=o.join(" · ");}
+
+/* ---------- aba Licitações ---------- */
+const lst={busca:"",lim:100,hist:"",aberto:null,ts:{k:"publicacao",d:-1},tsAb:{k:"abertura",d:1},tsTop:{k:"est",d:-1},tsSem:{k:"publicacao",d:-1},tsNao:{k:"ordem",d:1},tsHist:{k:"ordem",d:1}};let licLista=[];
+const SIT_COR={"Homologada":"var(--good)","Em andamento":"var(--cinza)","Suspensa":"var(--amber)","Sem sucesso":"var(--bad)"};
+const mi=v=>nf1.format(v/1e6);
+// nome curto de secretaria: a sigla, quando há; senão o nome sem "Secretaria Municipal de"
+const secCurta=n=>{const s=String(n).split(";").pop().trim(),a=s.match(/\(([A-Z/]+)\)/);return a?a[1]:s.replace(/^Secretaria (Municipal )?(de |da |do |dos |das )?/,"").replace(/^Gerência (de |da |do )?/,"Ger. ");};
+const secInfo=r=>/^prefeitura/i.test(r.entidade)&&!/^não informado/i.test(r.secretaria);
+// colunas verticais: series=[{nome,cor,vals}] ; opt={fmt,rot:[índices com rótulo],tip(i)}
+function colunas(el,labels,series,opt){
+  el=$(el);opt=opt||{};const fmt=opt.fmt||(v=>nf0.format(v));
+  if(!labels.length){el.innerHTML='<div class="empty">Sem dados para os filtros escolhidos.</div>';return;}
+  const W=Math.max(260,el.clientWidth||400),H=opt.H||(W<420?190:220),mt=18,mb=24,ml=4,mr=4;
+  const ymax=Math.max(1e-9,...series.flatMap(s=>s.vals))*1.08,y=v=>mt+(H-mt-mb)*(1-Math.max(0,v)/ymax);
+  const bw=(W-ml-mr)/labels.length,n=series.length,gw=bw*.78,w=Math.max(3,(gw-(n-1)*3)/n);
+  const rot=opt.rot||[];const cabe=w>=(opt.minRot||26);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opt.aria||series.map(x=>x.nome).join(" e "))}">`;
+  for(let i=0;i<=3;i++){const yy=mt+(H-mt-mb)*i/3;s+=`<line x1="${ml}" x2="${W-mr}" y1="${yy}" y2="${yy}" stroke="var(${i<3?"--grid":"--axis"})"/>`;}
+  labels.forEach((lb,i)=>{const gx=ml+i*bw;series.forEach((se,j)=>{const v=se.vals[i],x=gx+(bw-gw)/2+j*(w+3);
+      if(v>0){const h=y(0)-y(v),r=Math.min(3,h,w/2);s+=`<path d="M${x},${y(0)}V${y(v)+r}q0,-${r} ${r},-${r}h${w-2*r}q${r},0 ${r},${r}V${y(0)}Z" fill="${se.cor}"/>`;}
+      if(rot.includes(j)&&cabe)s+=`<text x="${x+w/2}" y="${y(v)-4}" text-anchor="middle" font-size="11" fill="var(--ink)">${fmt(v)}</text>`;});
+    s+=`<text x="${gx+bw/2}" y="${H-7}" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(lb)}</text><rect x="${gx}" y="0" width="${bw}" height="${H-mb}" fill="transparent" data-i="${i}" class="hb"/>`;});
+  s+=`</svg><div class="tt"></div>`;el.innerHTML=s;
+  if(!opt.tip)return;const tt=el.querySelector(".tt"),svg=el.querySelector("svg");
+  el.querySelectorAll(".hb").forEach(rc=>{rc.addEventListener("pointerenter",()=>{const i=+rc.dataset.i,r=svg.getBoundingClientRect();
+    tt.innerHTML=opt.tip(i);tt.style.opacity=1;const px=(ml+i*bw+bw/2)*r.width/W,tw=tt.offsetWidth;tt.style.left=Math.max(0,Math.min(r.width-tw,px-tw/2))+"px";tt.style.top="0px";});
+    rc.addEventListener("pointerleave",()=>tt.style.opacity=0);});
+}
+const ttH=(h,linhas)=>`<div class="h">${esc(h)}</div>`+linhas.map(([n,v,c])=>`<div class="r"><span>${c?`<i style="background:${c}"></i>`:""}${esc(n)}</span><span>${v}</span></div>`).join("");
+// barras horizontais com nome à esquerda e valor ao lado: items=[{nome,curto,v,txt,cor,tip}]
+function hbarras(sel,items,opt){
+  opt=opt||{};const el=$(sel);
+  if(!items.length){el.innerHTML='<div class="empty">Sem dados para os filtros escolhidos.</div>';return;}
+  const max=Math.max(1e-9,...items.map(i=>i.v));
+  el.innerHTML=items.map((i,k)=>`<button class="hbar${opt.sel===i.nome?" sel":""}" data-k="${k}" title="${esc(i.tip||i.nome)}" ${opt.onClick?"":'style="cursor:default"'}>
+    <span class="nm">${esc(i.curto||i.nome)}</span><span class="hbt"><i style="width:calc((100% - 64px) * ${Math.max(0,i.v)/max});background:${i.cor||"var(--liq)"}"></i><em>${i.txt}</em></span></button>`).join("");
+  if(opt.onClick)el.querySelectorAll(".hbar").forEach(b=>b.onclick=()=>opt.onClick(items[+b.dataset.k]));
+}
+const sitPill=r=>`<span class="pill" style="--c:${SIT_COR[r.sit]||"var(--cinza)"}">${esc(r.situacao)}</span>`;
+function renderLic(){
+  $("#licTopo").classList.toggle("hidden",carga.licitacoes!=="ok");
+  if(!estadoCarga("licitacoes","DADOS_LICITACOES",lerLic,"#sumL","#licCorpo","licitações"))return;
+  $("#licTopo").classList.remove("hidden");
+  document.querySelectorAll(".subtab").forEach(b=>b.setAttribute("aria-selected",b.dataset.la===st.la));
+  document.querySelectorAll("[data-lpart]").forEach(p=>p.classList.toggle("hidden",p.dataset.lpart!==st.la));
+  const q=semAcento(lst.busca.trim());
+  const busca=r=>!q||semAcento(r.objeto+" "+r.numero+" "+r.secretaria+" "+r.fornecedor).includes(q);
+  const base=(except)=>LIC.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r,except)&&busca(r));
+  const rows=base();
+  if(!rows.length){$("#licCorpo").classList.add("hidden");$("#sumL").textContent=`${periodoTxt()}: nenhuma licitação encontrada para os filtros escolhidos.`;return;}
+  $("#licCorpo").classList.remove("hidden");
+  const S=(a,f)=>a.reduce((t,r)=>t+f(r),0);
+  const g=k=>rows.filter(r=>r.sit===k);
+  const est=S(rows,r=>r.est),hom=g("Homologada"),cv=hom.filter(r=>r.est>0&&r.con>0),vc=S(cv,r=>r.con),ve=S(cv,r=>r.est);
+  const and=g("Em andamento"),sem=g("Sem sucesso"),sus=g("Suspensa"),dir=rows.filter(r=>ehDireta(r.modalidade));
+  // aberturas: em andamento com data a partir de hoje (todos os meses do ano, para não sumir quando o período termina antes de hoje)
+  const hoje=hojeISO(),dia=n=>{const d=new Date(hoje+"T12:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
+  const futuras=LIC.filter(r=>r.ano===st.ano&&matchF(r)&&busca(r)&&r.sit==="Em andamento"&&r.abertura>=hoje);
+  const em7=futuras.filter(r=>r.abertura<=dia(7)).length;
+  const prazos=rows.filter(r=>/^preg/i.test(r.modalidade)&&r.publicacao&&r.abertura>=r.publicacao).map(r=>(Date.parse(r.abertura)-Date.parse(r.publicacao))/864e5).sort((a,b)=>a-b);
+  const pz=prazos.length?prazos[Math.floor(prazos.length/2)]:null;
+  // resumo
+  const ativos=[st.f.secretaria,st.f.modalidade,lst.busca.trim()?`objeto com “${lst.busca.trim()}”`:""].filter(Boolean);
+  const um=rows.length===1,lic=um?"licitação":"licitações",estT=`<b>R$ ${mi(est)} milhões</b> estimados`;let t;
+  if(st.f.sit==="Homologada")t=`<b>${nf0.format(rows.length)}</b> ${lic} ${um?"homologada soma":"homologadas somam"} ${estT} e <b>R$ ${mi(vc)} milhões</b> contratados, ${pctS(ve-vc,ve)} abaixo do estimado.`;
+  else if(st.f.sit==="Em andamento")t=`<b>${nf0.format(rows.length)}</b> ${lic} em andamento ${um?"soma":"somam"} ${estT}; <b>${nf0.format(em7)}</b> ${em7===1?"abre":"abrem"} nos próximos 7 dias.`;
+  else if(st.f.sit==="Suspensa")t=`<b>${nf0.format(rows.length)}</b> ${lic} ${um?"suspensa soma":"suspensas somam"} ${estT} e aguardam decisão para seguir.`;
+  else if(st.f.sit==="Sem sucesso")t=`<b>${nf0.format(rows.length)}</b> ${lic} sem sucesso (revogadas, fracassadas ou desertas) ${um?"somava":"somavam"} ${estT}.`;
+  else t=`<b>${nf0.format(rows.length)}</b> ${lic} ${um?"soma":"somam"} ${estT}. <b>${nf0.format(Math.round(pct(hom.length,rows.length)))}%</b> já foram homologadas, <b>${nf0.format(sus.length)}</b> ${sus.length===1?"está suspensa":"estão suspensas"} e <b>${nf0.format(em7)}</b> ${em7===1?"abre":"abrem"} nos próximos 7 dias.`;
+  $("#sumL").innerHTML=`${periodoTxt()}${ativos.length?", com "+esc(ativos.join(", ")):""}: ${t}`;
+  // indicadores (mesmos 12 do painel original)
+  const k=(lbl,val,sub,tip,cls)=>`<div class="card kpi"><div class="lbl">${lbl}<span class="help" tabindex="0" data-tip="${esc(tip)}">?</span></div><div class="val${cls?" "+cls:""}">${val}</div><div class="sub">${sub}</div></div>`;
+  $("#kpisL").innerHTML=
+    k("Licitações",nf0.format(rows.length),"no período, com os filtros","Processos de compra publicados no período (pela data de publicação).")+
+    k("Valor estimado",`R$ ${mi(est)} mi`,"soma dos valores máximos","Soma do valor estimado (o máximo que se aceita pagar) de todos os processos.")+
+    k("Homologadas",nf0.format(hom.length),"concluídas com vencedor","Homologar é o ato final que confirma o vencedor. Depois disso vem o contrato.","ok")+
+    k("Não homologadas",nf0.format(rows.length-hom.length),"em andamento, suspensas ou sem sucesso","Processos que ainda não terminaram com um vencedor confirmado.")+
+    k("Valor contratado",`R$ ${mi(vc)} mi`,"nas homologadas com valor","Soma do valor contratado nas licitações homologadas que informam estimado e contratado.")+
+    k("Economia",`R$ ${mi(ve-vc)} mi`,`${pctS(ve-vc,ve)} abaixo do estimado`,"Diferença entre o estimado e o contratado nas mesmas licitações homologadas.","ok")+
+    k("Em andamento",nf0.format(and.length),"inclui prorrogadas e a abrir","Processos ainda em disputa, inclusive os prorrogados e os aguardando a data de abertura.")+
+    k("Sem sucesso",nf0.format(sem.length),"revogadas, fracassadas, desertas","Revogada: cancelada pela prefeitura. Fracassada: ninguém atendeu às exigências. Deserta: ninguém apareceu.","bad")+
+    k("Suspensas",nf0.format(sus.length),"aguardando decisão","Processos parados, por exemplo por um questionamento ou decisão do Tribunal de Contas.","warn")+
+    k("Contratação direta",pctS(dir.length,rows.length),"dispensas e inexigibilidades","Compras sem disputa entre fornecedores, permitidas pela lei em casos específicos.")+
+    k("Abrem em 7 dias",nf0.format(em7),"a partir de hoje","Licitações em andamento com abertura (sessão de disputa) marcada para os próximos 7 dias.")+
+    k("Prazo do pregão",pz==null?"–":`${nf0.format(pz)} dias`,"mediana da publicação à abertura","Tempo típico entre publicar o edital do pregão e abrir as propostas. Metade dos pregões leva menos que isso.");
+  // última atualização
+  const ats=[...new Set(LICM.map(m=>m.atualizacao))].sort();const ult=ats[ats.length-1];
+  if(ult){const m=LICM.filter(x=>x.atualizacao===ult),s=m.filter(x=>x.tipo!=="Nova"),n=v=>nf0.format(v);
+    $("#licSemana").innerHTML=`<h2>Última atualização <span style="font-weight:400;color:var(--ink-2);font-size:14px">· ${dataBR(ult)}</span></h2><div class="semana">
+      <div><b>${n(m.length-s.length)}</b><span>licitações novas</span></div><div><b>${n(s.length)}</b><span>mudaram de situação</span></div>
+      <div><b>${n(s.filter(x=>/^homolog/i.test(x.para)).length)}</b><span>foram homologadas</span></div><div><b>${n(s.filter(x=>/revog|fracass|desert/i.test(x.para)).length)}</b><span>ficaram sem sucesso</span></div>
+      <div><b>${n(s.filter(x=>/^suspens/i.test(x.para)).length)}</b><span>foram suspensas</span></div></div>
+      <p class="desc" style="margin:0">Contagem desde a busca anterior, em todas as entidades. O detalhe de cada mudança está em <a href="#" data-ir="hist" style="color:var(--accent)">Histórico</a>.</p>`;
+    $("#licSemana").querySelector("[data-ir]").onclick=e=>{e.preventDefault();st.la="hist";render();window.scrollTo({top:$("#secLic").offsetTop-10});};
+  }else $("#licSemana").innerHTML='<h2>Última atualização</h2><div class="empty">Nenhuma atualização registrada ainda.</div>';
+  // gráficos por mês
+  const ms=mesesPeriodo().filter(m=>rows.some(r=>r.mes===m)),ML=ms.map(m=>MESES[m-1][0].toUpperCase()+MESES[m-1].slice(1));
+  const pm=ms.map(m=>{const r=rows.filter(x=>x.mes===m),h=r.filter(x=>x.sit==="Homologada"&&x.est>0&&x.con>0);
+    return {n:r.length,est:S(r,x=>x.est),dir:r.filter(x=>ehDireta(x.modalidade)).length,he:S(h,x=>x.est),hc:S(h,x=>x.con)};});
+  colunas("#chLicValor",ML,[{nome:"Estimado",cor:"var(--cinza)",vals:pm.map(p=>p.he/1e6)},{nome:"Contratado",cor:"var(--good)",vals:pm.map(p=>p.hc/1e6)}],
+    {fmt:v=>nf1.format(v),rot:[1],H:250,tip:i=>ttH(`${MESES_L[ms[i]-1]} de ${st.ano}`,[["Estimado",`R$ ${nf1.format(pm[i].he/1e6)} mi`,"var(--cinza)"],["Contratado",`R$ ${nf1.format(pm[i].hc/1e6)} mi`,"var(--good)"],["Economia",`R$ ${nf1.format((pm[i].he-pm[i].hc)/1e6)} mi`]])});
+  colunas("#chLicQtd",ML,[{nome:"Licitações",cor:"var(--liq)",vals:pm.map(p=>p.n)}],{rot:[0],minRot:22,tip:i=>ttH(`${MESES_L[ms[i]-1]} de ${st.ano}`,[["Licitações",nf0.format(pm[i].n)],["Valor estimado",`R$ ${mi(pm[i].est)} mi`]])});
+  colunas("#chLicDireta",ML,[{nome:"Contratação direta",cor:"var(--liq)",vals:pm.map(p=>p.n?p.dir/p.n*100:0)}],{fmt:v=>nf0.format(v)+"%",rot:[0],minRot:22,tip:i=>ttH(`${MESES_L[ms[i]-1]} de ${st.ano}`,[["Contratação direta",pctS(pm[i].dir,pm[i].n)],["Processos diretos",`${nf0.format(pm[i].dir)} de ${nf0.format(pm[i].n)}`]])});
+  // agenda: 4 semanas a partir de hoje
+  const sem4=[0,1,2,3].map(w=>{const ini=dia(7*w),fim=dia(7*w+6),r=futuras.filter(x=>x.abertura>=ini&&x.abertura<=fim);return {ini,fim,n:r.length,est:S(r,x=>x.est)};});
+  colunas("#chLicAgenda",sem4.map(s=>dataBR(s.ini).slice(0,5)),[{nome:"Aberturas",cor:"var(--liq)",vals:sem4.map(s=>s.n)}],{rot:[0],minRot:1,aria:"Aberturas por semana",
+    tip:i=>ttH(`${dataBR(sem4[i].ini).slice(0,5)} a ${dataBR(sem4[i].fim).slice(0,5)}`,[["Aberturas",nf0.format(sem4[i].n)],["Valor estimado",`R$ ${mi(sem4[i].est)} mi`]])});
+  // barras horizontais
+  const filtra=dim=>i=>{if(st.f[dim]===i.nome)delete st.f[dim];else st.f[dim]=i.nome;render();};
+  const ag=(rs,ch)=>agrupa(rs,ch,(t,r)=>{t.est=(t.est||0)+r.est;});
+  const ents=ag(base("entidade"),r=>r.entidade).sort((a,b)=>b.est-a.est);
+  hbarras("#barsLicEnt",ents.map(t=>({nome:t.nome,curto:t.nome.replace(/ \(administração direta\)/,"").replace(/ - .*/,""),v:t.est,txt:mi(t.est),tip:`${t.nome}: ${nf0.format(t.n)} licitações, R$ ${mi(t.est)} mi`})),{onClick:filtra("entidade"),sel:st.f.entidade});
+  const mods=ag(base("modalidade"),r=>r.modalidade).sort((a,b)=>b.n-a.n);
+  hbarras("#barsLicMod",mods.map(t=>({nome:t.nome,v:t.n,txt:nf0.format(t.n),tip:`${t.nome}: ${nf0.format(t.n)} licitações, R$ ${mi(t.est)} mi`})),{onClick:filtra("modalidade"),sel:st.f.modalidade});
+  const bs=base("sit");
+  hbarras("#barsLicSit",["Homologada","Em andamento","Suspensa","Sem sucesso"].map(s=>{const r=bs.filter(x=>x.sit===s);return {nome:s,v:r.length,txt:nf0.format(r.length),cor:SIT_COR[s],tip:`${s}: ${nf0.format(r.length)} licitações, R$ ${mi(S(r,x=>x.est))} mi`};}),{onClick:filtra("sit"),sel:st.f.sit});
+  const secs=agrupa(base("secretaria").filter(secInfo),r=>r.secretaria.split(";").pop().trim(),(t,r)=>{t.est=(t.est||0)+r.est;}).sort((a,b)=>b.est-a.est).slice(0,10);
+  hbarras("#barsLicSec",secs.map(t=>({nome:t.nome,curto:secCurta(t.nome),v:t.est,txt:mi(t.est),tip:`${t.nome}: ${nf0.format(t.n)} licitações, R$ ${mi(t.est)} mi`})),{onClick:i=>{if(LIC.some(r=>r.secretaria===i.nome))filtra("secretaria")(i);else{lst.busca=secCurta(i.nome);$("#lBusca").value=lst.busca;render();}},sel:st.f.secretaria});
+  const ord=rows.slice().sort((a,b)=>b.est-a.est),fx=(nome,a,b)=>{const r=ord.slice(a,b);return {nome,n:r.length,est:S(r,x=>x.est)};};
+  const conc=[fx("10 maiores",0,10),fx("11ª à 50ª maior",10,50),fx("Todas as demais",50,ord.length)].filter(x=>x.n>0);
+  hbarras("#barsLicConc",conc.map(c=>({nome:c.nome,v:pct(c.est,est),txt:pctS(c.est,est),tip:`${c.nome}: ${nf0.format(c.n)} licitações, R$ ${mi(c.est)} mi (${pctS(c.est,est)} do total)`})));
+  const ds=agrupa(dir.filter(secInfo),r=>r.secretaria.split(";").pop().trim(),(t,r)=>{t.est=(t.est||0)+r.est;}).sort((a,b)=>b.n-a.n).slice(0,10);
+  hbarras("#barsLicDirSec",ds.map(t=>({nome:t.nome,curto:secCurta(t.nome),v:t.n,txt:nf0.format(t.n),tip:`${t.nome}: ${nf0.format(t.n)} contratações diretas, R$ ${mi(t.est)} mi`})));
+  // tabelas
+  const C={entidade:{k:"entidade",t:"Entidade",f:r=>esc(r.entidade.replace(/ \(administração direta\)/,""))},
+    secretaria:{k:"secretaria",t:"Secretaria",f:r=>secInfo(r)?`<span title="${esc(r.secretaria)}">${esc(secCurta(r.secretaria))}</span>`:""},
+    numero:{k:"numero",t:"Número",sort:r=>parseInt(r.numero,10)||0},modalidade:{k:"modalidade",t:"Modalidade"},
+    objeto:{k:"objeto",t:"Objeto",f:r=>esc(r.objeto)+(r.link?` <a href="${esc(r.link)}" target="_blank" rel="noopener" style="color:var(--accent)" onclick="event.stopPropagation()">↗</a>`:""),wrap:1},
+    est:{k:"est",t:"Estimado (R$)",f:r=>nf2.format(r.est),num:1},con:{k:"con",t:"Contratado (R$)",f:r=>r.con?nf2.format(r.con):"",num:1},
+    situacao:{k:"situacao",t:"Situação",f:sitPill},publicacao:{k:"publicacao",t:"Publicação",f:r=>dataBR(r.publicacao)},abertura:{k:"abertura",t:"Abertura",f:r=>dataBR(r.abertura)}};
+  const cols=ks=>ks.map(x=>C[x]);
+  const detalhe=r=>{const eco=r.sit==="Homologada"&&r.con&&r.est?` Economia de R$ ${nf2.format(r.est-r.con)} (${pctS(r.est-r.con,r.est)}).`:"";
+    const d=r.publicacao&&r.abertura?Math.round((Date.parse(r.abertura)-Date.parse(r.publicacao))/864e5):null;
+    return `${esc(r.modalidade)} ${esc(r.numero)}, ${esc(r.entidade)}${secInfo(r)?" ("+esc(r.secretaria)+")":""}. ${esc(r.objeto)}. Situação: ${esc(r.situacao)}. Publicada em ${dataBR(r.publicacao)}, abertura em ${dataBR(r.abertura)}${d!=null?" ("+d+" dias depois)":""}.${eco}${r.fornecedor?" Fornecedor: "+esc(r.fornecedor)+".":""}`;};
+  if(st.la==="lista"){
+    licLista=tabela("#tblLic",cols(["entidade","secretaria","numero","modalidade","objeto","est","con","situacao","publicacao","abertura"]),rows,lst.ts,{lim:lst.lim,det:detalhe});
+    $("#licCont").textContent=`${nf0.format(rows.length)} ${rows.length===1?"licitação":"licitações"} com os filtros.`;
+    $("#licMais").innerHTML=rows.length>lst.lim?`<span class="desc" style="margin-right:10px">Mostrando ${nf0.format(lst.lim)} de ${nf0.format(rows.length)}.</span><button class="btn" id="btnMaisL" type="button">Mostrar mais 100</button>`:"";
+    const bm=$("#btnMaisL");if(bm)bm.onclick=()=>{lst.lim+=100;render();};
+  }else licLista=rows;
+  if(st.la==="acomp"){
+    tabela("#tblLicAb",cols(["abertura","entidade","numero","modalidade","objeto","est","situacao"]),futuras.filter(r=>r.abertura<=dia(15)),lst.tsAb,{vazio:"Nenhuma abertura nos próximos 15 dias com estes filtros.",det:detalhe});
+    tabela("#tblLicTop",cols(["entidade","numero","modalidade","objeto","est","con","situacao"]),ord.slice(0,10),lst.tsTop,{det:detalhe});
+    tabela("#tblLicSem",cols(["publicacao","entidade","numero","modalidade","objeto","est","situacao"]),sem,lst.tsSem,{vazio:"Nenhuma licitação sem sucesso com estes filtros.",det:detalhe});
+    const ORD={"Suspensa":0,"Em andamento":1,"Sem sucesso":2};
+    tabela("#tblLicNao",[{...C.situacao,k:"ordem",sort:r=>(ORD[r.sit]??3)+r.situacao},...cols(["entidade","numero","modalidade","objeto","est","abertura"])],rows.filter(r=>r.sit!=="Homologada"),lst.tsNao,{vazio:"Todas as licitações com estes filtros estão homologadas.",det:detalhe});
+  }
+  if(st.la==="hist"){
+    const at=ats.includes(lst.hist)?lst.hist:ult;
+    $("#lHist").innerHTML=ats.slice().reverse().map(a=>`<option value="${a}">${dataBR(a)}</option>`).join("");$("#lHist").value=at||"";
+    const ok=new Set(rows.map(r=>r.id));
+    const mh=LICM.filter(m=>m.atualizacao===at&&(m.id?ok.has(m.id):matchF(m)));
+    $("#licHistCont").textContent=at?`${nf0.format(mh.length)} ${mh.length===1?"mudança":"mudanças"} nesta atualização.`:"";
+    tabela("#tblLicHist",[{k:"ordem",t:"O que mudou",f:r=>esc(r.tipo),sort:r=>(r.tipo==="Nova"?"0":"1")+String(1e12-r.est).padStart(14,"0")},C.entidade,C.numero,C.modalidade,C.objeto,{k:"de",t:"De"},{k:"para",t:"Para"},C.est],mh,lst.tsHist,{vazio:"Nenhuma mudança registrada nesta atualização com estes filtros."});
+  }
+  notaFonte("#licNota",LICMETA);
+}
+function csvLic(){baixarCSV(`licitacoes_maringa_${st.ano}.csv`,["Entidade","Secretaria","Modalidade","Número","Objeto","Valor estimado","Valor contratado","Situação","Publicação","Abertura"],
+  licLista.map(r=>[r.entidade,r.secretaria,r.modalidade,r.numero,r.objeto,r.est,r.con,r.situacao,r.publicacao,r.abertura]));}
+
+/* ---------- aba Diárias e Passagens ---------- */
+const vst={busca:"",lim:50,ts:{k:"saida",d:-1}};let diarLista=[];
+function renderDiar(){
+  if(!estadoCarga("diarias","DADOS_DIARIAS",lerDia,"#sumV","#diarCorpo","diárias e passagens"))return;
+  const rows=DIA.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r));
+  if(!rows.length){$("#diarCorpo").classList.add("hidden");$("#sumV").textContent=`${periodoTxt()}: nenhuma diária ou passagem encontrada para os filtros escolhidos.`;return;}
+  $("#diarCorpo").classList.remove("hidden");
+  const S=(a,f)=>a.reduce((t,r)=>t+f(r),0),isP=r=>/passag/i.test(r.tipo);
+  const tot=S(rows,r=>r.valor),pas=rows.filter(isP),dia=rows.filter(r=>!isP(r)),vP=S(pas,r=>r.valor),vD=S(dia,r=>r.valor),nD=S(dia,r=>r.qtd);
+  const pessoas=new Set(rows.map(r=>r.beneficiario)).size,viagens=new Set(rows.map(r=>r.beneficiario+"|"+r.saida+"|"+r.destino)).size;
+  $("#sumV").innerHTML=`${periodoTxt()}, ${sujeito()} gastou <b>${brl(tot)}</b> com viagens a serviço: <b>${brl(vD)}</b> em diárias e <b>${brl(vP)}</b> em passagens. Foram cerca de <b>${nf0.format(viagens)} viagens</b> de <b>${nf0.format(pessoas)} pessoas</b>.`;
+  $("#kpisV").innerHTML=kpiT("Total",brl(tot),"diárias e passagens","Soma de tudo o que foi pago em diárias e passagens no período.")+
+    kpiT("Diárias",brl(vD),`${nf0.format(nD)} diárias pagas`,"Valor para hospedagem e alimentação do servidor em viagem.","var(--emp)",pct(vD,tot))+
+    kpiT("Passagens",brl(vP),`${nf0.format(pas.length)} passagens`,"Passagens aéreas ou rodoviárias compradas para as viagens.","var(--pag)",pct(vP,tot))+
+    kpiT("Pessoas",nf0.format(pessoas),`${nf0.format(viagens)} viagens`,"Quantidade de pessoas diferentes que receberam diárias ou passagens.");
+  const ms=mesesPeriodo();
+  barrasMes("#chDiar",ms,[{nome:"Diárias",cor:"var(--emp)",vals:ms.map(m=>S(dia.filter(r=>r.mes===m),r=>r.valor))},{nome:"Passagens",cor:"var(--pag)",vals:ms.map(m=>S(pas.filter(r=>r.mes===m),r=>r.valor))}]);
+  const ag=(rs,ch)=>agrupa(rs,ch,(t,r)=>{t.v=(t.v||0)+r.valor;t.p=(t.p||0)+(isP(r)?r.valor:0);}).sort((a,b)=>b.v-a.v);
+  listaBarras("#barsDiarOrg",ag(DIA.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r,"orgao")),r=>r.orgao).map(t=>({nome:t.nome,v:t.v,v2:t.p,txt:`<b>${brl(t.v)}</b> · ${nf0.format(t.n)} registros`})),
+    {onClick:i=>{if(st.f.orgao===i.nome)delete st.f.orgao;else st.f.orgao=i.nome;render();},sel:st.f.orgao,limite:8});
+  listaBarras("#barsDiarBen",ag(rows,r=>r.beneficiario).map(t=>({nome:t.nome,v:t.v,v2:t.p,txt:`<b>${brl(t.v)}</b> · ${nf0.format(t.n)} registros`})),
+    {onClick:i=>{vst.busca=i.nome;$("#vBusca").value=i.nome;vst.lim=50;render();$("#tblDiar").scrollIntoView({behavior:"smooth",block:"start"});},limite:10});
+  const dest=agrupa(rows,r=>r.destino,(t,r)=>{t.v=(t.v||0)+r.valor;}).sort((a,b)=>b.n-a.n);
+  listaBarras("#barsDiarDest",dest.map(t=>({nome:t.nome,v:t.n,txt:`<b>${nf0.format(t.n)}</b> registros · ${brl(t.v)}`})),{limite:10});
+  const q=semAcento(vst.busca.trim());
+  const lista=q?rows.filter(r=>semAcento(r.beneficiario+" "+r.destino+" "+r.motivo+" "+r.cargo).includes(q)):rows;
+  diarLista=tabela("#tblDiar",[{k:"saida",t:"Saída",f:r=>dataBR(r.saida)},{k:"beneficiario",t:"Quem viajou",f:r=>`${esc(r.beneficiario)}<div style="font-size:12px;color:var(--muted)">${esc(r.cargo)}</div>`,wrap:1},
+    {k:"destino",t:"Destino",f:r=>esc(r.destino)},{k:"motivo",t:"Motivo",f:r=>esc(r.motivo),wrap:1},{k:"tipo",t:"Tipo",f:r=>esc(r.tipo)+(isP(r)?"":` (${nf1.format(r.qtd).replace(",0","")})`)},
+    {k:"valor",t:"Valor",f:r=>brl(r.valor),num:1},{k:"orgao",t:"Órgão",f:r=>esc(r.orgao),wrap:1}],lista,vst.ts,{lim:vst.lim});
+  $("#diarMais").innerHTML=lista.length>vst.lim?`<span class="desc" style="margin-right:10px">Mostrando ${nf0.format(vst.lim)} de ${nf0.format(lista.length)}.</span><button class="btn" id="btnMaisV" type="button">Mostrar mais 50</button>`:`<span class="desc">${nf0.format(lista.length)} registros.</span>`;
+  const bm=$("#btnMaisV");if(bm)bm.onclick=()=>{vst.lim+=50;render();};
+  notaFonte("#diarNota",DIAMETA);
+  if(DIAMETA.exemplo){$("#diarNota").innerHTML="<b>Atenção: dados de exemplo, com nomes fictícios.</b> "+$("#diarNota").innerHTML;}
+}
+function csvDiar(){baixarCSV(`diarias_passagens_maringa_${st.ano}.csv`,["Saída","Retorno","Quem viajou","Cargo","Órgão","Entidade","Destino","Motivo","Tipo","Quantidade","Valor"],
+  diarLista.map(r=>[r.saida,r.retorno,r.beneficiario,r.cargo,r.orgao,r.entidade,r.destino,r.motivo,r.tipo,r.qtd,r.valor]));}
 
 /* ---------- credores (carregados só quando a aba é aberta) ---------- */
 let CRED=null, credCarregando=false, credErro=false;
