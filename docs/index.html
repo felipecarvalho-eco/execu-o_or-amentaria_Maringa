@@ -132,7 +132,7 @@ tfoot td{font-weight:700;border-bottom:0;background:var(--surface-2)}
 .glossary dd{margin:2px 0 0;color:var(--ink-2);font-size:14px}
 footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
 .empty{padding:30px;text-align:center;color:var(--ink-2)}
-.hidden{display:none !important}
+.hidden,.sem-info{display:none !important}
 @media (max-width:900px){.kpis{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
 @media (max-width:520px){
   header.top h1{font-size:21px}
@@ -292,7 +292,7 @@ const pct=(a,b)=>b>0?a/b*100:0;
 const pctS=(a,b)=>b>0?nf1.format(a/b*100)+"%":"–";
 const num=v=>{const n=typeof v==="number"?v:parseFloat(String(v).replace(",","."));return isFinite(n)?n:0;};
 
-let D=null, DESP=[], REC=[];
+let D=null, DESP=[], REC=[], PARCIAL=null;
 const st={tab:"desp",ano:null,de:1,ate:12,f:{},tDim:"orgao",busca:"",sort:{k:"pago",d:-1}};
 
 function boot(data){
@@ -307,9 +307,14 @@ function boot(data){
   const m=D.meta||{};
   let ml=[];
   if(m.atualizado_em){const d=new Date(m.atualizado_em);ml.push("Dados atualizados em "+(isNaN(d)?esc(m.atualizado_em):d.toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"})));}
+  if(m.portal_atualizado_despesas){const v=String(m.portal_atualizado_despesas),q=v.match(/^(\d{4})-(\d{2})-(\d{2})$/),d=new Date(v);ml.push("Portal atualizado em "+(q?`${q[3]}/${q[2]}/${q[1]}`:isNaN(d)?esc(v):d.toLocaleDateString("pt-BR")));}
   if(m.fonte) ml.push('Fonte: <a href="'+esc(m.fonte)+'" target="_blank" rel="noopener">Portal da Transparência</a>');
   $("#metaLine").innerHTML=ml.join(" · ")||"&nbsp;";
-  if(m.exemplo||m.observacoes){const b=$("#banner");b.textContent=(m.exemplo?"Atenção: ":"")+(m.observacoes||"Estes são dados de exemplo.");b.classList.remove("hidden");}
+  const avisos=[];
+  if(m.exemplo) avisos.push("Atenção: "+(m.observacoes||"estes são dados de exemplo."));
+  if(m.mes_corrente_parcial){const [a,mm]=String(m.mes_corrente_parcial).split("-");if(a&&mm){PARCIAL={ano:+a,mes:+mm};avisos.push(`O mês de ${MESES_L[+mm-1]} de ${a} ainda está em andamento, então os valores dele são parciais.`);}}
+  (Array.isArray(m.avisos)?m.avisos:(m.avisos?[m.avisos]:[])).forEach(a=>avisos.push(String(a)));
+  if(avisos.length){const b=$("#banner");b.innerHTML=avisos.map(esc).join("<br>");b.classList.remove("hidden");}
   $("#foot").innerHTML="Painel de acompanhamento da execução orçamentária de "+esc(m.municipio||"Maringá - PR")+". Valores em reais (R$), sem correção pela inflação."+(m.fonte?' Fonte: <a style="color:inherit" href="'+esc(m.fonte)+'" target="_blank" rel="noopener">'+esc(m.fonte)+"</a>.":"");
   if(!DESP.length){$("#secDesp").innerHTML='<div class="card empty">Nenhum dado de despesa encontrado. Verifique o arquivo <code>dados/execucao.js</code>.</div>';}
   readHash(); initControls(); render();
@@ -355,8 +360,9 @@ function matchF(r,except){for(const k in st.f){if(k===except)continue;if(r[k]!==
 function refreshFilterOptions(){
   const um=ultimoMes(st.ano);
   $("#fAno").value=st.ano;
-  $("#fDe").innerHTML=MESES_L.slice(0,um).map((m,i)=>`<option value="${i+1}">${m}</option>`).join("");
-  $("#fAte").innerHTML=MESES_L.slice(0,um).map((m,i)=>`<option value="${i+1}">${m}</option>`).join("");
+  const mlab=(m,i)=>m+(PARCIAL&&PARCIAL.ano===st.ano&&PARCIAL.mes===i+1?" (parcial)":"");
+  $("#fDe").innerHTML=MESES_L.slice(0,um).map((m,i)=>`<option value="${i+1}">${mlab(m,i)}</option>`).join("");
+  $("#fAte").innerHTML=MESES_L.slice(0,um).map((m,i)=>`<option value="${i+1}">${mlab(m,i)}</option>`).join("");
   $("#fDe").value=st.de;$("#fAte").value=st.ate;
   const src=st.tab==="rec"?REC:DESP;
   document.querySelectorAll("select[data-dim]").forEach(s=>{
@@ -367,9 +373,10 @@ function refreshFilterOptions(){
     if(st.f[k]&&!tot.has(st.f[k])) opts.unshift(st.f[k]);
     s.innerHTML='<option value="">Todos</option>'+opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("");
     s.value=st.f[k]||"";s.classList.toggle("on",!!st.f[k]);
+    // esconde filtros sem informação útil (ex.: fonte de recurso nas receitas)
+    s.closest(".f").classList.toggle("sem-info",!st.f[k]&&opts.length<=1&&(opts[0]===undefined||opts[0]==="Não informado"));
   });
   document.querySelectorAll(".desp-only").forEach(e=>e.classList.toggle("hidden",st.tab==="rec"));
-  const fr=$("#f_fonte_recurso").closest(".f");
   // chips
   const per=st.de===1&&st.ate===um?null:`${MESES[st.de-1]}–${MESES[st.ate-1]}/${st.ano}`;
   let h=per?`<span class="chip">Período: ${per}<button aria-label="Remover filtro de período" data-x="per">×</button></span>`:"";
