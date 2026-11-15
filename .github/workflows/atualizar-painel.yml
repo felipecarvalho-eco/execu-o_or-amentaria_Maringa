@@ -88,7 +88,7 @@ jobs:
           secure: true
           username: ${{ secrets.EMAIL_USUARIO }}
           password: ${{ secrets.EMAIL_SENHA_APP }}
-          from: Painel Orçamento Maringá <${{ secrets.EMAIL_USUARIO }}>
+          from: Prefeitura de Maringá - Painel de Transparência <${{ secrets.EMAIL_USUARIO }}>
           to: ${{ secrets.EMAIL_DESTINO }}
           subject: ${{ steps.resumo.outputs.assunto }}
           html_body: file://resumo.html
@@ -103,9 +103,9 @@ jobs:
           secure: true
           username: ${{ secrets.EMAIL_USUARIO }}
           password: ${{ secrets.EMAIL_SENHA_APP }}
-          from: Painel Orçamento Maringá <${{ secrets.EMAIL_USUARIO }}>
+          from: Prefeitura de Maringá - Painel de Transparência <${{ secrets.EMAIL_USUARIO }}>
           to: ${{ secrets.EMAIL_DESTINO }}
-          subject: "Falha na atualização semanal do painel de Maringá"
+          subject: "Prefeitura de Maringá - Painel de Transparência: falha na atualização semanal"
           body: |
-            A atualização desta semana não foi concluída. O painel continua com os dados anteriores.
+            A atualização desta semana não foi concluída. O Painel de Transparência continua com os dados anteriores.
             Detalhes: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
