@@ -99,13 +99,17 @@ entra sozinha, com o nome oficial):
 
 ### `despesas` (em `execucao.js`), agregada para o painel
 
-`ano, mes, entidade, orgao, funcao, subfuncao, programa, categoria, grupo, elemento, fonte_recurso,
-dotacao_inicial, dotacao_atualizada, empenhado, liquidado, pago`
+`ano, mes, entidade, orgao, funcao, subfuncao, programa, categoria, grupo, modalidade_aplicacao, elemento,
+fonte_recurso, dotacao_inicial, dotacao_atualizada, empenhado, liquidado, pago`
 
 - `categoria`: Despesas Correntes / Despesas de Capital. `grupo`: ex. Pessoal e Encargos Sociais.
 - `elemento`: elemento de despesa (ex. Vencimentos e Vantagens Fixas - Pessoal Civil).
 - `fonte_recurso`: fonte/destinação (ex. Recursos Ordinários (Livres)).
-- Unidade orçamentária, ação e modalidade ficam só no CSV, para o arquivo do painel não ficar pesado.
+- `modalidade_aplicacao`: código de 2 dígitos + nome (ex. "90 - Aplicações Diretas"). **91** = aplicação direta
+  decorrente de operação entre órgãos, fundos e entidades do orçamento (**intraorçamentária**): pagamento a
+  outra entidade do próprio município (ex. contribuição patronal à Maringá Previdência). Somar entidades sem
+  tirar a 91 conta o mesmo dinheiro duas vezes.
+- Unidade orçamentária e ação ficam só no CSV, para o arquivo do painel não ficar pesado.
 
 ### `despesas.csv` (detalhado)
 
@@ -116,7 +120,11 @@ acima. `elemento_codigo` é a natureza da despesa (ex. `3.1.90.11`).
 
 ### `receitas` (em `execucao.js`), agregada para o painel
 
-`ano, mes, entidade, categoria, origem, fonte_recurso, previsto_inicial, previsto, arrecadado_bruto, deducoes, arrecadado`
+`ano, mes, entidade, categoria, origem, fonte_recurso, intra_orcamentaria, previsto_inicial, previsto, arrecadado_bruto,
+deducoes, arrecadado`
+
+- `intra_orcamentaria` = `true` quando a natureza começa com 7 ou 8 (receitas correntes/de capital
+  intraorçamentárias, vindas de outra entidade do município). É o outro lado da modalidade 91 da despesa.
 
 - `categoria`: Receitas Correntes / Receitas de Capital. `origem`: ex. Impostos, Taxas e Contribuições de Melhoria.
 - `arrecadado` = **líquido de deduções** (ex. retenção para o FUNDEB), comparável a `previsto`.
