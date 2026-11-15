@@ -918,7 +918,7 @@ function lerLic(d){d=d||{};LICMETA=d.meta||{};
     est:num(r.valor_estimado),con:num(r.valor_contratado),tipo:String(r.tipo||""),de:String(r.de||""),para:String(r.para||"")}));}
 function lerDia(d){d=d||{};DIAMETA=d.meta||{};
   DIA=(d.diarias||[]).map(r=>({ano:+r.ano||+String(r.data_saida||"").slice(0,4)||0,mes:mesNum(r.mes,r.data_saida),entidade:txtv(r.entidade),orgao:txtv(r.orgao),tipo:txtv(r.tipo),
-    beneficiario:txtv(r.beneficiario),cargo:txtv(r.cargo),destino:txtv(r.destino),motivo:String(r.motivo||""),saida:String(r.data_saida||""),retorno:String(r.data_retorno||""),
+    beneficiario:txtv(r.beneficiario),cargo:txtv(r.cargo),forma:r.forma?String(r.forma):(/passag/i.test(r.tipo||"")?"Adiantamento ao servidor":"Diária"),destino:txtv(r.destino),motivo:String(r.motivo||""),saida:String(r.data_saida||""),retorno:String(r.data_retorno||""),
     qtd:num(r.quantidade),valor:num(r.valor)}));}
 const ehDireta=m=>/dispensa|inexig/i.test(m);
 const dataBR=d=>/^\d{4}-\d{2}-\d{2}/.test(d)?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(0,4)}`:(d||"–");
@@ -1157,25 +1157,27 @@ function renderDiar(){
   $("#diarCorpo").classList.remove("hidden");
   const S=(a,f)=>a.reduce((t,r)=>t+f(r),0),isP=r=>/passag/i.test(r.tipo);
   const tot=S(rows,r=>r.valor),pas=rows.filter(isP),dia=rows.filter(r=>!isP(r)),vP=S(pas,r=>r.valor),vD=S(dia,r=>r.valor),nD=S(dia,r=>r.qtd);
-  const pessoas=new Set(rows.map(r=>r.beneficiario)).size,viagens=new Set(rows.map(r=>r.beneficiario+"|"+r.saida+"|"+r.destino)).size;
-  $("#sumV").innerHTML=`${periodoTxt()}, ${sujeito()} gastou <b>${brl(tot)}</b> com viagens a serviço: <b>${brl(vD)}</b> em diárias e <b>${brl(vP)}</b> em passagens. Foram cerca de <b>${nf0.format(viagens)} viagens</b> de <b>${nf0.format(pessoas)} pessoas</b>.`;
+  // compras de passagem feitas por agência/empresa contratada não têm uma pessoa identificada: ficam fora da contagem e do ranking de pessoas
+  const isEmp=r=>/empresa/i.test(r.forma),pesRows=rows.filter(r=>!isEmp(r)),emp=pas.filter(isEmp),vEmp=S(emp,r=>r.valor);
+  const pessoas=new Set(pesRows.map(r=>r.beneficiario)).size,viagens=new Set(pesRows.map(r=>r.beneficiario+"|"+r.saida+"|"+r.destino)).size;
+  $("#sumV").innerHTML=`${periodoTxt()}, ${sujeito()} gastou <b>${brl(tot)}</b> com viagens a serviço: <b>${brl(vD)}</b> em diárias e <b>${brl(vP)}</b> em passagens${emp.length?`, das quais ${brl(vEmp)} compradas por empresa contratada (agência de viagens ou transportadora)`:""}. Sem contar essas compras, foram cerca de <b>${nf0.format(viagens)} viagens</b> de <b>${nf0.format(pessoas)} pessoas</b>.`;
   $("#kpisV").innerHTML=kpiT("Total",brl(tot),"diárias e passagens","Soma de tudo o que foi pago em diárias e passagens no período.")+
     kpiT("Diárias",brl(vD),`${nf0.format(nD)} diárias pagas`,"Valor para hospedagem e alimentação do servidor em viagem.","var(--emp)",pct(vD,tot))+
-    kpiT("Passagens",brl(vP),`${nf0.format(pas.length)} passagens`,"Passagens aéreas ou rodoviárias compradas para as viagens.","var(--pag)",pct(vP,tot))+
+    kpiT("Passagens",brl(vP),emp.length?`${brl(vP-vEmp)} por adiantamento ao servidor · ${brl(vEmp)} compradas por empresa contratada`:`${nf0.format(pas.length)} passagens`,"Passagens aéreas ou rodoviárias. Podem ser pagas de duas formas: adiantamento ao próprio servidor, que compra a passagem, ou compra feita por uma agência de viagens ou transportadora contratada pela prefeitura.","var(--pag)",pct(vP,tot))+
     kpiT("Pessoas",nf0.format(pessoas),`${nf0.format(viagens)} viagens`,"Quantidade de pessoas diferentes que receberam diárias ou passagens.");
   const ms=mesesPeriodo();
   barrasMes("#chDiar",ms,[{nome:"Diárias",cor:"var(--emp)",vals:ms.map(m=>S(dia.filter(r=>r.mes===m),r=>r.valor))},{nome:"Passagens",cor:"var(--pag)",vals:ms.map(m=>S(pas.filter(r=>r.mes===m),r=>r.valor))}]);
   const ag=(rs,ch)=>agrupa(rs,ch,(t,r)=>{t.v=(t.v||0)+r.valor;t.p=(t.p||0)+(isP(r)?r.valor:0);}).sort((a,b)=>b.v-a.v);
   listaBarras("#barsDiarOrg",ag(DIA.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r,"orgao")),r=>r.orgao).map(t=>({nome:t.nome,v:t.v,v2:t.p,txt:`<b>${brl(t.v)}</b> · ${nf0.format(t.n)} registros`})),
     {onClick:i=>{if(st.f.orgao===i.nome)delete st.f.orgao;else st.f.orgao=i.nome;render();},sel:st.f.orgao,limite:8});
-  listaBarras("#barsDiarBen",ag(rows,r=>r.beneficiario).map(t=>({nome:t.nome,v:t.v,v2:t.p,txt:`<b>${brl(t.v)}</b> · ${nf0.format(t.n)} registros`})),
+  listaBarras("#barsDiarBen",ag(pesRows,r=>r.beneficiario).map(t=>({nome:t.nome,v:t.v,v2:t.p,txt:`<b>${brl(t.v)}</b> · ${nf0.format(t.n)} registros`})),
     {onClick:i=>{vst.busca=i.nome;$("#vBusca").value=i.nome;vst.lim=50;render();$("#tblDiar").scrollIntoView({behavior:"smooth",block:"start"});},limite:10});
-  const dest=agrupa(rows,r=>r.destino,(t,r)=>{t.v=(t.v||0)+r.valor;}).sort((a,b)=>b.n-a.n);
+  const dest=agrupa(pesRows.filter(r=>!/^não informado/i.test(r.destino)),r=>r.destino,(t,r)=>{t.v=(t.v||0)+r.valor;}).sort((a,b)=>b.n-a.n);
   listaBarras("#barsDiarDest",dest.map(t=>({nome:t.nome,v:t.n,txt:`<b>${nf0.format(t.n)}</b> registros · ${brl(t.v)}`})),{limite:10});
   const q=semAcento(vst.busca.trim());
   const lista=q?rows.filter(r=>semAcento(r.beneficiario+" "+r.destino+" "+r.motivo+" "+r.cargo).includes(q)):rows;
   diarLista=tabela("#tblDiar",[{k:"saida",t:"Saída",f:r=>dataBR(r.saida)},{k:"beneficiario",t:"Quem viajou",f:r=>`${esc(r.beneficiario)}<div style="font-size:12px;color:var(--muted)">${esc(r.cargo)}</div>`,wrap:1},
-    {k:"destino",t:"Destino",f:r=>esc(r.destino)},{k:"motivo",t:"Motivo",f:r=>esc(r.motivo),wrap:1},{k:"tipo",t:"Tipo",f:r=>esc(r.tipo)+(isP(r)?"":` (${nf1.format(r.qtd).replace(",0","")})`)},
+    {k:"destino",t:"Destino",f:r=>esc(r.destino)},{k:"motivo",t:"Motivo",f:r=>esc(r.motivo),wrap:1},{k:"tipo",t:"Tipo",f:r=>esc(r.tipo)+(isP(r)?(isEmp(r)?'<div style="font-size:12px;color:var(--muted)">empresa contratada</div>':""):` (${nf1.format(r.qtd).replace(",0","")})`)},
     {k:"valor",t:"Valor",f:r=>brl(r.valor),num:1},{k:"orgao",t:"Órgão",f:r=>esc(r.orgao),wrap:1}],lista,vst.ts,{lim:vst.lim});
   $("#diarMais").innerHTML=lista.length>vst.lim?`<span class="desc" style="margin-right:10px">Mostrando ${nf0.format(vst.lim)} de ${nf0.format(lista.length)}.</span><button class="btn" id="btnMaisV" type="button">Mostrar mais 50</button>`:`<span class="desc">${nf0.format(lista.length)} registros.</span>`;
   const bm=$("#btnMaisV");if(bm)bm.onclick=()=>{vst.lim+=50;render();};
