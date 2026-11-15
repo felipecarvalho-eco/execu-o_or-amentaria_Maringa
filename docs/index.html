@@ -69,8 +69,8 @@ header.top p{margin:0;color:var(--ink-2)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chip{font-size:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:2px 6px 2px 10px;display:inline-flex;align-items:center;gap:4px}
 .chip button{border:0;background:none;color:var(--ink-2);cursor:pointer;font-size:15px;line-height:1;padding:0 4px}
-.tabs{display:flex;gap:4px;margin:16px 0 4px;border-bottom:1px solid var(--border)}
-.tab{font:inherit;font-weight:600;background:none;border:0;border-bottom:2px solid transparent;padding:8px 14px;color:var(--ink-2);cursor:pointer;margin-bottom:-1px}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;margin:16px 0 4px;border-bottom:1px solid var(--border)}
+.tab{white-space:nowrap;flex:none;font:inherit;font-weight:600;background:none;border:0;border-bottom:2px solid transparent;padding:8px 14px;color:var(--ink-2);cursor:pointer;margin-bottom:-1px}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 .summary{font-size:17px;margin:16px 0;max-width:900px}
 .summary b{font-weight:700}
@@ -155,7 +155,7 @@ footer,.desc,.banner{overflow-wrap:anywhere}
 <div class="wrap">
   <header class="top">
     <h1>Prefeitura de Maringá - Execução Orçamentária</h1>
-    <p>Acompanhamento da execução orçamentária da Prefeitura: quanto foi previsto, quanto já foi comprometido e quanto já foi pago.</p>
+    <p>Acompanhamento do dinheiro público do Município: orçamento, receitas, credores, licitações e diárias e passagens, com dados do Portal da Transparência.</p>
     <div class="meta-line" id="metaLine">Carregando dados…</div>
   </header>
 </div>
@@ -166,12 +166,16 @@ footer,.desc,.banner{overflow-wrap:anywhere}
       <div class="f"><label for="fAno">Ano</label><select id="fAno"></select></div>
       <div class="f"><label for="fDe">De</label><select id="fDe"></select></div>
       <div class="f"><label for="fAte">Até</label><select id="fAte"></select></div>
-      <div class="f"><label for="f_entidade">Entidade</label><select id="f_entidade" data-dim="entidade"></select></div>
-      <div class="f desp-only"><label for="f_orgao">Órgão</label><select id="f_orgao" data-dim="orgao"></select></div>
-      <div class="f desp-only"><label for="f_funcao">Área (função)</label><select id="f_funcao" data-dim="funcao"></select></div>
-      <div class="f desp-only"><label for="f_grupo">Tipo de gasto</label><select id="f_grupo" data-dim="grupo"></select></div>
-      <div class="f desp-only"><label for="f_programa">Programa</label><select id="f_programa" data-dim="programa"></select></div>
-      <div class="f"><label for="f_fonte_recurso">Origem do recurso</label><select id="f_fonte_recurso" data-dim="fonte_recurso"></select></div>
+      <div class="f" data-tabs="desp rec cred lic diar"><label for="f_entidade">Entidade</label><select id="f_entidade" data-dim="entidade"></select></div>
+      <div class="f" data-tabs="desp diar"><label for="f_orgao">Órgão</label><select id="f_orgao" data-dim="orgao"></select></div>
+      <div class="f" data-tabs="desp"><label for="f_funcao">Área (função)</label><select id="f_funcao" data-dim="funcao"></select></div>
+      <div class="f" data-tabs="desp"><label for="f_grupo">Tipo de gasto</label><select id="f_grupo" data-dim="grupo"></select></div>
+      <div class="f" data-tabs="desp"><label for="f_programa">Programa</label><select id="f_programa" data-dim="programa"></select></div>
+      <div class="f" data-tabs="desp rec"><label for="f_fonte_recurso">Origem do recurso</label><select id="f_fonte_recurso" data-dim="fonte_recurso"></select></div>
+      <div class="f" data-tabs="lic"><label for="f_modalidade">Modalidade</label><select id="f_modalidade" data-dim="modalidade"></select></div>
+      <div class="f" data-tabs="lic"><label for="f_sit">Situação</label><select id="f_sit" data-dim="sit"></select></div>
+      <div class="f" data-tabs="lic"><label for="f_secretaria">Secretaria</label><select id="f_secretaria" data-dim="secretaria"></select></div>
+      <div class="f" data-tabs="diar"><label for="f_tipo">Tipo</label><select id="f_tipo" data-dim="tipo"></select></div>
       <button class="btn" id="btnLimpar" type="button">Limpar filtros</button>
     </div>
     <div class="chips" id="chips"></div>
@@ -183,6 +187,8 @@ footer,.desc,.banner{overflow-wrap:anywhere}
     <button class="tab" role="tab" id="tabD" aria-selected="true" data-tab="desp">Despesas</button>
     <button class="tab" role="tab" id="tabR" aria-selected="false" data-tab="rec">Receitas</button>
     <button class="tab" role="tab" id="tabC" aria-selected="false" data-tab="cred">Credores</button>
+    <button class="tab" role="tab" id="tabL" aria-selected="false" data-tab="lic">Licitações</button>
+    <button class="tab" role="tab" id="tabV" aria-selected="false" data-tab="diar">Diárias e Passagens</button>
   </div>
 
   <!-- DESPESAS -->
@@ -301,6 +307,69 @@ footer,.desc,.banner{overflow-wrap:anywhere}
     </div>
   </section>
 
+  <!-- LICITAÇÕES -->
+  <section id="secLic" class="hidden">
+    <p class="summary" id="sumL"></p>
+    <div id="licCorpo">
+      <div class="kpis" id="kpisL"></div>
+      <div class="card full">
+        <h2>Estimado x contratado por mês</h2>
+        <p class="desc">Valor que a prefeitura estimou gastar e valor efetivamente contratado, pelo mês em que a licitação foi publicada.</p>
+        <div class="legend"><span><i style="background:var(--emp)"></i>Estimado</span><span><i style="background:var(--pag)"></i>Contratado</span></div>
+        <div class="chart" id="chLicValor"></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h2>Licitações por mês de publicação</h2><p class="desc">Quantidade de processos publicados em cada mês.</p><div class="chart" id="chLicQtd"></div></div>
+        <div class="card"><h2>Contratação direta por mês</h2><p class="desc">Dispensas e inexigibilidades: compras feitas sem disputa entre fornecedores.</p><div class="legend"><span><i style="background:var(--emp)"></i>Quantidade</span></div><div class="chart" id="chLicDireta"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h2>Valor estimado por entidade</h2><p class="desc">Clique para filtrar.</p><div class="legend"><span><i style="background:var(--emp)"></i>Estimado</span><span><i style="background:var(--pag)"></i>Contratado</span></div><div class="bars" id="barsLicEnt"></div></div>
+        <div class="card"><h2>Licitações por modalidade</h2><p class="desc">Pregão e concorrência têm disputa; dispensa e inexigibilidade são contratação direta. Clique para filtrar.</p><div class="legend"><span><i style="background:var(--emp)"></i>Estimado</span><span><i style="background:var(--pag)"></i>Contratado</span></div><div class="bars" id="barsLicMod"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h2>Situação</h2><p class="desc">Em que pé estão os processos. Clique para filtrar.</p><div class="bars" id="barsLicSit"></div></div>
+        <div class="card"><h2>Concentração do valor</h2><p class="desc">Quanto do valor estimado está nas maiores licitações.</p><div id="licConc"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h2>Secretarias que mais demandam</h2><p class="desc">Por valor estimado. Clique para filtrar.</p><div class="legend"><span><i style="background:var(--emp)"></i>Estimado</span><span><i style="background:var(--pag)"></i>Contratado</span></div><div class="bars" id="barsLicSec"></div></div>
+        <div class="card"><h2>Contratação direta por secretaria</h2><p class="desc">Valor estimado em dispensas e inexigibilidades.</p><div class="bars" id="barsLicDirSec"></div></div>
+      </div>
+      <div class="card full"><h2>Agenda das próximas aberturas</h2><p class="desc">Licitações com abertura marcada a partir de hoje (não depende do período escolhido).</p><div id="licAgenda"></div></div>
+      <div class="card full"><h2>10 maiores licitações do ano</h2><p class="desc">Por valor estimado, no período e filtros escolhidos.</p><div class="tablewrap"><table id="tblLicTop"></table></div></div>
+      <div class="card full"><h2>Todas as licitações</h2><p class="desc">Pesquise por objeto, número ou secretaria, ordene pelas colunas e baixe em planilha.</p>
+        <div class="tblbar"><div class="f"><label for="lBusca">Pesquisar</label><input id="lBusca" type="search" placeholder="Objeto, número ou secretaria…"></div><button class="btn" id="btnCsvL" type="button">Baixar CSV</button></div>
+        <div class="tablewrap"><table id="tblLic"></table></div><div id="licMais" style="margin-top:10px"></div></div>
+      <div class="grid2">
+        <div class="card"><h2>Licitações sem sucesso</h2><p class="desc">Desertas (ninguém apareceu), fracassadas (ninguém atendeu às exigências) ou revogadas.</p><div class="tablewrap"><table id="tblLicSem"></table></div></div>
+        <div class="card"><h2>Licitações não homologadas</h2><p class="desc">Processos que ainda não terminaram com contrato: em andamento, suspensos ou sem sucesso.</p><div class="tablewrap"><table id="tblLicNao"></table></div></div>
+      </div>
+      <div class="card full"><h2>O que mudou a cada atualização</h2><p class="desc">Licitações novas e mudanças de situação ou de valor desde a coleta anterior.</p><div id="licMud"></div></div>
+      <p class="desc" id="licNota" style="margin-top:10px"></p>
+    </div>
+  </section>
+
+  <!-- DIÁRIAS E PASSAGENS -->
+  <section id="secDiar" class="hidden">
+    <p class="summary" id="sumV"></p>
+    <div id="diarCorpo">
+      <div class="kpis" id="kpisV"></div>
+      <div class="card full">
+        <h2>Gasto por mês</h2><p class="desc">Diárias (hospedagem e alimentação em viagem a serviço) e passagens, pelo mês da viagem.</p>
+        <div class="legend"><span><i style="background:var(--emp)"></i>Diárias</span><span><i style="background:var(--pag)"></i>Passagens</span></div>
+        <div class="chart" id="chDiar"></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h2>Por órgão</h2><p class="desc">Clique para filtrar.</p><div class="legend"><span><i style="background:var(--emp)"></i>Total</span><span><i style="background:var(--pag)"></i>Passagens</span></div><div class="bars" id="barsDiarOrg"></div></div>
+        <div class="card"><h2>Quem mais viajou</h2><p class="desc">Por valor recebido em diárias e passagens. Clique para ver as viagens.</p><div class="legend"><span><i style="background:var(--emp)"></i>Total</span><span><i style="background:var(--pag)"></i>Passagens</span></div><div class="bars" id="barsDiarBen"></div></div>
+      </div>
+      <div class="card full"><h2>Destinos mais frequentes</h2><p class="desc">Por número de viagens.</p><div class="bars" id="barsDiarDest"></div></div>
+      <div class="card full"><h2>Todas as viagens</h2><p class="desc">Pesquise por nome, destino ou motivo, ordene pelas colunas e baixe em planilha.</p>
+        <div class="tblbar"><div class="f"><label for="vBusca">Pesquisar</label><input id="vBusca" type="search" placeholder="Nome, destino ou motivo…"></div><button class="btn" id="btnCsvV" type="button">Baixar CSV</button></div>
+        <div class="tablewrap"><table id="tblDiar"></table></div><div id="diarMais" style="margin-top:10px"></div></div>
+      <p class="desc" id="diarNota" style="margin-top:10px"></p>
+    </div>
+  </section>
+
   <div class="card full">
     <h2>Entenda os termos</h2>
     <dl class="glossary" style="margin:10px 0 0">
@@ -308,6 +377,10 @@ footer,.desc,.banner{overflow-wrap:anywhere}
       <div><dt><i style="width:10px;height:10px;border-radius:3px;background:var(--emp)"></i>Empenhado</dt><dd>Dinheiro reservado para uma compra ou contrato. A prefeitura assumiu o compromisso, mas o serviço ainda pode não ter sido entregue.</dd></div>
       <div><dt><i style="width:10px;height:10px;border-radius:3px;background:var(--liq)"></i>Liquidado</dt><dd>O fornecedor entregou o produto ou serviço e a prefeitura conferiu. Falta apenas pagar.</dd></div>
       <div><dt>Credor</dt><dd>Quem tem algo a receber da prefeitura: uma empresa fornecedora, uma entidade conveniada ou uma pessoa.</dd></div>
+      <div><dt>Dispensa e inexigibilidade</dt><dd>Contratação direta, sem disputa entre fornecedores. A lei permite em compras pequenas, emergências ou quando só existe um fornecedor possível.</dd></div>
+      <div><dt>Pregão e concorrência</dt><dd>Licitações com disputa: vários fornecedores apresentam propostas e ganha a melhor.</dd></div>
+      <div><dt>Homologada</dt><dd>Licitação concluída: o resultado foi aprovado e o contrato pode ser assinado.</dd></div>
+      <div><dt>Diária</dt><dd>Valor pago ao servidor para cobrir hospedagem e alimentação quando viaja a serviço.</dd></div>
       <div><dt>Anulado</dt><dd>Parte de um empenho que foi cancelada, por exemplo porque o serviço saiu mais barato ou não foi feito.</dd></div>
       <div><dt><i style="width:10px;height:10px;border-radius:3px;background:var(--pag)"></i>Pago</dt><dd>O dinheiro efetivamente saiu do caixa da prefeitura para o fornecedor ou servidor.</dd></div>
     </dl>
@@ -327,9 +400,9 @@ document.write('<script src="dados/execucao.js?v=' + VERSAO_DADOS + '"><\/script
 const MESES=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
 const MESES_L=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
 const DIMS=["entidade","orgao","funcao","subfuncao","programa","categoria","grupo","elemento","fonte_recurso"];
-const FDIMS=["entidade","orgao","funcao","grupo","programa","fonte_recurso"];
+const FDIMS=["entidade","orgao","funcao","grupo","programa","fonte_recurso","modalidade","sit","secretaria","tipo"];
 const RDIMS=["entidade","categoria","origem","fonte_recurso"];
-const DIM_NOME={entidade:"Entidade",orgao:"Órgão",funcao:"Área",subfuncao:"Subfunção",programa:"Programa",categoria:"Categoria",grupo:"Tipo de gasto",elemento:"Elemento",fonte_recurso:"Origem do recurso",mes:"Mês"};
+const DIM_NOME={modalidade:"Modalidade",sit:"Situação",secretaria:"Secretaria",tipo:"Tipo",entidade:"Entidade",orgao:"Órgão",funcao:"Área",subfuncao:"Subfunção",programa:"Programa",categoria:"Categoria",grupo:"Tipo de gasto",elemento:"Elemento",fonte_recurso:"Origem do recurso",mes:"Mês"};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const nf0=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:0});
@@ -393,7 +466,7 @@ function readHash(){
   st.de=p.has("de")?Math.max(1,Math.min(12,+p.get("de"))):1;
   st.ate=p.has("ate")?Math.max(1,Math.min(um,+p.get("ate"))):um;
   if(st.de>st.ate) st.de=1;
-  const aba=p.get("aba");st.tab=aba==="rec"&&REC.length?"rec":aba==="cred"?"cred":"desp";
+  const aba=p.get("aba");st.tab=aba==="rec"&&REC.length?"rec":["cred","lic","diar"].includes(aba)?aba:"desp";
   FDIMS.forEach(k=>{if(p.get(k)) st.f[k]=p.get(k);});
   // Entidade: por padrão mostra só a Prefeitura, porque somar todas conta duas vezes os repasses entre entidades
   if(st.f.entidade==="todas") delete st.f.entidade; else if(!st.f.entidade&&entPadrao()) st.f.entidade=entPadrao();
@@ -425,6 +498,10 @@ function initControls(){
   $("#btnCsv").onclick=csv;
   $("#cBusca").oninput=e=>{cst.busca=e.target.value;cst.lim=50;if(CRED)renderCred();};
   $("#btnCsvC").onclick=csvCred;
+  $("#lBusca").oninput=e=>{lst.busca=e.target.value;lst.lim=50;render();};
+  $("#btnCsvL").onclick=csvLic;
+  $("#vBusca").oninput=e=>{vst.busca=e.target.value;vst.lim=50;render();};
+  $("#btnCsvV").onclick=csvDiar;
 }
 function matchF(r,except){for(const k in st.f){if(k===except)continue;if(r[k]!==undefined&&r[k]!==st.f[k])return false;}return true;}
 function refreshFilterOptions(){
@@ -434,12 +511,13 @@ function refreshFilterOptions(){
   $("#fDe").innerHTML=MESES_L.slice(0,um).map((m,i)=>`<option value="${i+1}">${mlab(m,i)}</option>`).join("");
   $("#fAte").innerHTML=MESES_L.slice(0,um).map((m,i)=>`<option value="${i+1}">${mlab(m,i)}</option>`).join("");
   $("#fDe").value=st.de;$("#fAte").value=st.ate;
-  const src=st.tab==="rec"?REC:st.tab==="cred"?(CRED||[]):DESP;
+  const src={rec:REC,cred:CRED||[],lic:LIC||[],diar:DIA||[]}[st.tab]||DESP;
+  const peso=r=>st.tab==="rec"?r.arrecadado:st.tab==="cred"?r.qtd:st.tab==="lic"?1:st.tab==="diar"?r.valor:r.empenhado+r.dotacao_atualizada*1e-9;
   document.querySelectorAll("select[data-dim]").forEach(s=>{
     const k=s.dataset.dim;
     const tot=new Map();
-    src.forEach(r=>{if(r.ano!==st.ano||r[k]===undefined)return;if(!matchF(r,k))return;tot.set(r[k],(tot.get(r[k])||0)+(st.tab==="rec"?r.arrecadado:st.tab==="cred"?r.qtd:r.empenhado+r.dotacao_atualizada*1e-9));});
-    if(k==="entidade"&&st.tab!=="cred") EMP.forEach(r=>{if(r.ano===st.ano&&!tot.has(r.entidade))tot.set(r.entidade,0);});
+    src.forEach(r=>{if(r.ano!==st.ano||r[k]===undefined)return;if(!matchF(r,k))return;tot.set(r[k],(tot.get(r[k])||0)+peso(r));});
+    if(k==="entidade"&&(st.tab==="desp"||st.tab==="rec")) EMP.forEach(r=>{if(r.ano===st.ano&&!tot.has(r.entidade))tot.set(r.entidade,0);});
     const opts=[...tot.keys()].sort((a,b)=>a.localeCompare(b,"pt-BR"));
     if(st.f[k]&&!tot.has(st.f[k])) opts.unshift(st.f[k]);
     s.innerHTML=`<option value="">${k==="entidade"?"Todas (consolidado)":"Todos"}</option>`+opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("");
@@ -447,14 +525,14 @@ function refreshFilterOptions(){
     // esconde filtros sem informação útil (ex.: fonte de recurso nas receitas)
     s.closest(".f").classList.toggle("sem-info",!st.f[k]&&opts.length<=1&&(opts[0]===undefined||opts[0]==="Não informado"||k==="entidade"));
   });
-  document.querySelectorAll(".desp-only").forEach(e=>e.classList.toggle("hidden",st.tab!=="desp"));
-  $("#f_fonte_recurso").closest(".f").classList.toggle("hidden",st.tab==="cred");
+  const dimsAba=[];
+  document.querySelectorAll(".f[data-tabs]").forEach(e=>{const on=e.dataset.tabs.split(" ").includes(st.tab);e.classList.toggle("hidden",!on);if(on)dimsAba.push(e.querySelector("select").dataset.dim);});
   // chips
   const per=st.de===1&&st.ate===um?null:`${MESES[st.de-1]}–${MESES[st.ate-1]}/${st.ano}`;
   let h=per?`<span class="chip">Período: ${per}<button aria-label="Remover filtro de período" data-x="per">×</button></span>`:"";
-  for(const k in st.f){ if((st.tab==="cred"&&k!=="entidade")||(st.tab==="rec"&&!RDIMS.includes(k)))continue;
+  for(const k in st.f){ if(!dimsAba.includes(k))continue;
     h+=`<span class="chip">${DIM_NOME[k]}: ${esc(st.f[k])}<button aria-label="Remover filtro ${DIM_NOME[k]}" data-x="${k}">×</button></span>`;}
-  if(!st.f.entidade&&entPadrao()) h+=`<span class="chip" style="padding-right:10px">Somando todas as entidades, os repasses entre elas (como a contribuição da Prefeitura à previdência) aparecem duas vezes.</span>`;
+  if(!st.f.entidade&&entPadrao()&&(st.tab==="desp"||st.tab==="rec")) h+=`<span class="chip" style="padding-right:10px">Somando todas as entidades, os repasses entre elas (como a contribuição da Prefeitura à previdência) aparecem duas vezes.</span>`;
   else if(entPadrao()&&st.f.entidade===entPadrao()&&st.tab!=="cred") h+=`<span class="chip" style="padding-right:10px;background:none">Mostrando só a Prefeitura. Autarquias e demais entidades estão no filtro “Entidade”.</span>`;
   $("#chips").innerHTML=h;
   $("#chips").querySelectorAll("button").forEach(b=>b.onclick=()=>{const k=b.dataset.x;if(k==="per"){st.de=1;st.ate=um;}else delete st.f[k];render();});
@@ -484,9 +562,9 @@ function grouped(rows,dim){
 /* ---------- render ---------- */
 function render(){
   writeHash();
-  [["#tabD","#secDesp","desp"],["#tabR","#secRec","rec"],["#tabC","#secCred","cred"]].forEach(([t,sec,k])=>{$(t).setAttribute("aria-selected",st.tab===k);$(sec).classList.toggle("hidden",st.tab!==k);});
+  [["#tabD","#secDesp","desp"],["#tabR","#secRec","rec"],["#tabC","#secCred","cred"],["#tabL","#secLic","lic"],["#tabV","#secDiar","diar"]].forEach(([t,sec,k])=>{$(t).setAttribute("aria-selected",st.tab===k);$(sec).classList.toggle("hidden",st.tab!==k);});
   refreshFilterOptions();
-  if(st.tab==="desp"&&DESP.length) renderDesp(); else if(st.tab==="rec") renderRec(); else if(st.tab==="cred") renderCred();
+  if(st.tab==="desp"&&DESP.length) renderDesp(); else if(st.tab==="rec") renderRec(); else if(st.tab==="cred") renderCred(); else if(st.tab==="lic") renderLic(); else if(st.tab==="diar") renderDiar();
 }
 function sujeito(){if(st.f.entidade&&/^prefeitura/i.test(st.f.entidade))return "a Prefeitura";
   if(st.f.entidade&&st.f.entidade!=="Não informado")return "a entidade <b>"+esc(st.f.entidade)+"</b>";
@@ -749,6 +827,196 @@ function renderEmpresa(nome){
       ${notaEmpresas()}
     </div>`;
 }
+
+/* ---------- carregamento sob demanda (licitações, diárias) ---------- */
+let LIC=null, LICM=[], LICMETA={}, DIA=null, DIAMETA={};
+const carga={};
+function carregar(arq,global,ok){
+  if(carga[arq])return; carga[arq]="carregando";
+  const fim=d=>{carga[arq]=d?"ok":"erro";ok(d);render();};
+  if(window[global]){fim(window[global]);return;}
+  const sc=document.createElement("script");sc.src="dados/"+arq+".js?v="+(typeof VERSAO_DADOS!=="undefined"?VERSAO_DADOS:Date.now());
+  sc.onload=()=>fim(window[global]||null);
+  sc.onerror=()=>fetch("dados/"+arq+".json").then(r=>{if(!r.ok)throw 0;return r.json();}).then(fim).catch(()=>fim(null));
+  document.head.appendChild(sc);
+}
+function estadoCarga(arq,global,ok,sum,corpo,nome){
+  if(carga[arq]==="ok")return true;
+  $(corpo).classList.add("hidden");
+  if(carga[arq]==="erro"){$(sum).innerHTML=`<span class="card empty" style="display:block">Os dados de ${nome} ainda não estão disponíveis. Eles aparecem aqui depois que a coleta automática rodar.</span>`;return false;}
+  $(sum).textContent=`Carregando ${nome}…`;carregar(arq,global,ok);return false;
+}
+const MES_NUM={janeiro:1,fevereiro:2,"março":3,marco:3,abril:4,maio:5,junho:6,julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
+function mesNum(v,data){if(+v>=1&&+v<=12)return +v;const t=MES_NUM[String(v||"").toLowerCase()];if(t)return t;return data?+String(data).slice(5,7)||0:0;}
+const txtv=v=>(v==null||v==="")?"Não informado":legivel(v);
+function lerLic(d){d=d||{};LICMETA=d.meta||{};
+  LIC=(d.licitacoes||[]).map(r=>({id:String(r.id||""),ano:+r.ano||+String(r.publicacao||"").slice(0,4)||0,mes:mesNum(r.mes,r.publicacao),entidade:txtv(r.entidade),secretaria:txtv(r.secretaria),
+    numero:String(r.numero||""),modalidade:txtv(r.modalidade),objeto:String(r.objeto||""),est:num(r.valor_estimado),con:num(r.valor_contratado),situacao:txtv(r.situacao),
+    sit:txtv(r.grupo||r.situacao),publicacao:String(r.publicacao||""),abertura:String(r.abertura||""),fornecedor:r.fornecedor?String(r.fornecedor):"",link:/^https?:\/\//.test(r.link||"")?r.link:""}));
+  LICM=(d.mudancas||[]).map(r=>({atualizacao:String(r.atualizacao||""),entidade:txtv(r.entidade),numero:String(r.numero||""),modalidade:txtv(r.modalidade),objeto:String(r.objeto||""),
+    est:num(r.valor_estimado),con:num(r.valor_contratado),tipo:String(r.tipo||""),de:String(r.de||""),para:String(r.para||"")}));}
+function lerDia(d){d=d||{};DIAMETA=d.meta||{};
+  DIA=(d.diarias||[]).map(r=>({ano:+r.ano||+String(r.data_saida||"").slice(0,4)||0,mes:mesNum(r.mes,r.data_saida),entidade:txtv(r.entidade),orgao:txtv(r.orgao),tipo:txtv(r.tipo),
+    beneficiario:txtv(r.beneficiario),cargo:txtv(r.cargo),destino:txtv(r.destino),motivo:String(r.motivo||""),saida:String(r.data_saida||""),retorno:String(r.data_retorno||""),
+    qtd:num(r.quantidade),valor:num(r.valor)}));}
+const ehDireta=m=>/dispensa|inexig/i.test(m);
+const dataBR=d=>/^\d{4}-\d{2}-\d{2}/.test(d)?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(0,4)}`:(d||"–");
+function hojeISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+
+/* ---------- componentes reutilizáveis ---------- */
+// barras por mês: series=[{nome,cor,vals}] ; fmt para eixo e dica
+function barrasMes(el,months,series,fmt){
+  el=typeof el==="string"?$(el):el;fmt=fmt||brl;
+  const W=Math.max(300,el.clientWidth||800),H=W<560?200:240,ml=W<560?48:60,mr=12,mt=12,mb=28;
+  const ymax=niceMax(Math.max(1,...series.flatMap(s=>s.vals)));const bw=(W-ml-mr)/Math.max(1,months.length),y=v=>mt+(H-mt-mb)*(1-Math.max(0,v)/ymax);
+  const ax=v=>fmt===brl?axisFmt(v):nf0.format(v);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.map(x=>x.nome).join(" e "))} por mês">`;
+  for(let i=0;i<=4;i++){const v=ymax*i/4;s+=`<line x1="${ml}" x2="${W-mr}" y1="${y(v)}" y2="${y(v)}" stroke="var(${i?"--grid":"--axis"})"/><text x="${ml-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${ax(v)}</text>`;}
+  const n=series.length,gw=bw*.7,w=Math.max(3,(gw-(n-1)*2)/n);
+  const bar=(x,w,v,cor)=>{if(v<=0)return "";const h=y(0)-y(v),r=Math.min(4,h,w/2);return `<path d="M${x},${y(0)}V${y(v)+r}q0,-${r} ${r},-${r}h${w-2*r}q${r},0 ${r},${r}V${y(0)}Z" fill="${cor}"/>`;};
+  months.forEach((m,i)=>{const gx=ml+i*bw;series.forEach((se,j)=>{s+=bar(gx+bw*.15+j*(w+2),w,se.vals[i],se.cor);});
+    s+=`<rect x="${gx}" y="${mt}" width="${bw}" height="${H-mt-mb}" fill="transparent" data-i="${i}" class="hb"/><text x="${gx+bw/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${MESES[m-1]}</text>`;});
+  s+=`</svg><div class="tt"></div>`;el.innerHTML=s;
+  const tt=el.querySelector(".tt"),svg=el.querySelector("svg");
+  el.querySelectorAll(".hb").forEach(rc=>{rc.addEventListener("pointerenter",()=>{const i=+rc.dataset.i,r=svg.getBoundingClientRect();
+    tt.innerHTML=`<div class="h">${MESES_L[months[i]-1]} de ${st.ano}</div>`+series.map(se=>`<div class="r"><span><i style="background:${se.cor}"></i>${esc(se.nome)}</span><span>${fmt(se.vals[i])}</span></div>`).join("");
+    tt.style.opacity=1;const px=(ml+i*bw+bw/2)*r.width/W,tw=tt.offsetWidth;tt.style.left=Math.max(0,Math.min(r.width-tw,px-tw/2))+"px";tt.style.top="0px";});
+    rc.addEventListener("pointerleave",()=>tt.style.opacity=0);});
+}
+// lista de barras: items=[{nome,v,v2,txt}] ; v = barra clara, v2 = barra escura
+function listaBarras(sel,items,opt){
+  opt=opt||{};const el=$(sel),lim=opt.limite||10;
+  if(!items.length){el.innerHTML='<div class="empty">Sem dados para os filtros escolhidos.</div>';return;}
+  const max=Math.max(1,...items.map(i=>i.v));const show=expanded[sel]?items:items.slice(0,lim);
+  el.innerHTML=show.map((i,k)=>`<button class="bar${opt.sel===i.nome?" sel":""}" data-k="${k}" ${opt.onClick?"":'style="cursor:default"'}>
+    <div class="top"><span class="nm">${esc(i.nome)}</span><span class="vv">${i.txt}</span></div>
+    <div class="track"><i class="e" style="width:${Math.max(0,i.v)/max*100}%"></i>${i.v2!=null?`<i class="p" style="width:${Math.max(0,i.v2)/max*100}%"></i>`:""}</div></button>`).join("")+
+    (items.length>lim?`<button class="btn more" data-more>${expanded[sel]?"Mostrar menos":"Mostrar todos ("+items.length+")"}</button>`:"");
+  if(opt.onClick)el.querySelectorAll(".bar").forEach(b=>b.onclick=()=>opt.onClick(show[+b.dataset.k]));
+  const mb=el.querySelector("[data-more]");if(mb)mb.onclick=()=>{expanded[sel]=!expanded[sel];render();};
+}
+function agrupa(rows,chave,f){const g=new Map();rows.forEach(r=>{const k=chave(r);let t=g.get(k);if(!t){t={nome:k,n:0};g.set(k,t);}t.n++;f(t,r);});return [...g.values()];}
+// tabela: cols=[{k,t,f(r),num,sort(r)}]
+function tabela(el,cols,rows,ts,opt){
+  opt=opt||{};el=$(el);const k=ts.k,d=ts.d,c=cols.find(x=>x.k===k)||cols[0];
+  const val=r=>c.sort?c.sort(r):r[c.k];
+  rows=rows.slice().sort((a,b)=>{const va=val(a),vb=val(b);return (typeof va==="number"&&typeof vb==="number"?va-vb:String(va).localeCompare(String(vb),"pt-BR"))*d;});
+  const vis=opt.lim?rows.slice(0,opt.lim):rows;
+  el.innerHTML=`<thead><tr>${cols.map(x=>`<th data-k="${x.k}"${x.num?"":' style="text-align:left"'} ${k===x.k?`aria-sort="${d<0?"descending":"ascending"}"`:""}>${x.t}</th>`).join("")}</tr></thead>
+    <tbody>${vis.length?vis.map(r=>`<tr>${cols.map(x=>`<td style="${x.num?"":"text-align:left;"}${x.wrap?"white-space:normal;min-width:220px":""}">${x.f?x.f(r):esc(r[x.k])}</td>`).join("")}</tr>`).join(""):`<tr><td colspan="${cols.length}" class="empty">${opt.vazio||"Nada encontrado."}</td></tr>`}</tbody>`;
+  el.querySelectorAll("th").forEach(th=>th.onclick=()=>{const kk=th.dataset.k;if(ts.k===kk)ts.d*=-1;else{ts.k=kk;ts.d=cols.find(x=>x.k===kk).num?-1:1;}render();});
+  return rows;
+}
+function baixarCSV(nome,cab,linhas){
+  const q=v=>typeof v==="number"?v.toFixed(2).replace(".",","):'"'+String(v).replace(/"/g,'""')+'"';
+  const blob=new Blob(["﻿"+[cab.join(";"),...linhas.map(l=>l.map(q).join(";"))].join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nome;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
+function mesesPeriodo(){const m=[];for(let i=st.de;i<=st.ate;i++)m.push(i);return m;}
+const kpiT=(lbl,val,sub,tip,cor,meter)=>`<div class="card kpi"><div class="lbl">${cor?`<i class="sw" style="background:${cor}"></i>`:""}${lbl}<span class="help" tabindex="0" data-tip="${esc(tip)}">?</span></div><div class="val">${val}</div><div class="sub">${sub}</div>${meter!=null?`<div class="meter"><i style="width:${Math.max(0,Math.min(100,meter))}%;background:${cor}"></i></div>`:""}</div>`;
+function notaFonte(sel,m){const o=[];if(m.atualizado_em){const d=new Date(m.atualizado_em);o.push("Atualizado em "+(isNaN(d)?esc(m.atualizado_em):d.toLocaleDateString("pt-BR")));}
+  if(m.observacoes)o.push(esc(m.observacoes));(Array.isArray(m.avisos)?m.avisos:[]).forEach(a=>o.push(esc(a)));if(m.fonte&&/^https?:\/\//.test(m.fonte))o.push(`Fonte: <a href="${esc(m.fonte)}" target="_blank" rel="noopener" style="color:inherit">${esc(m.fonte.replace(/^https?:\/\//,""))}</a>`);
+  $(sel).innerHTML=o.join(" · ");}
+
+/* ---------- aba Licitações ---------- */
+const lst={busca:"",lim:50,ts:{k:"est",d:-1},tsTop:{k:"est",d:-1},tsSem:{k:"est",d:-1},tsNao:{k:"est",d:-1}};let licLista=[];
+function renderLic(){
+  if(!estadoCarga("licitacoes","DADOS_LICITACOES",lerLic,"#sumL","#licCorpo","licitações"))return;
+  const rows=LIC.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r));
+  if(!rows.length){$("#licCorpo").classList.add("hidden");$("#sumL").textContent=`${periodoTxt()}: nenhuma licitação encontrada para os filtros escolhidos.`;return;}
+  $("#licCorpo").classList.remove("hidden");
+  const S=(a,f)=>a.reduce((t,r)=>t+f(r),0);
+  const est=S(rows,r=>r.est),hom=rows.filter(r=>/homolog/i.test(r.sit)),con=S(hom,r=>r.con),estHom=S(hom.filter(r=>r.con>0),r=>r.est),conHom=S(hom.filter(r=>r.con>0),r=>r.con);
+  const dir=rows.filter(r=>ehDireta(r.modalidade)),estDir=S(dir,r=>r.est);
+  $("#sumL").innerHTML=`${periodoTxt()}, foram publicadas <b>${nf0.format(rows.length)} licitações</b>, com valor estimado de <b>${brl(est)}</b>. ${nf0.format(hom.length)} já foram homologadas, somando <b>${brl(con)}</b> contratados${estHom>0?`, ${conHom<=estHom?"<b>"+pctS(estHom-conHom,estHom)+" abaixo</b>":"<b>"+pctS(conHom-estHom,estHom)+" acima</b>"} do estimado`:""}. <b>${pctS(dir.length,rows.length)}</b> dos processos foram contratação direta (sem disputa).`;
+  $("#kpisL").innerHTML=kpiT("Licitações",nf0.format(rows.length),`${nf0.format(hom.length)} homologadas`,"Processos de compra publicados no período (pela data de publicação).")+
+    kpiT("Valor estimado",brl(est),"quanto se previa gastar","Soma do valor estimado de todos os processos do período.","var(--emp)")+
+    kpiT("Valor contratado",brl(con),estHom>0?`economia de ${pctS(estHom-conHom,estHom)} sobre o estimado`:"nas licitações homologadas","Soma do valor contratado nas licitações homologadas. A economia compara com o estimado dessas mesmas licitações.","var(--pag)")+
+    kpiT("Contratação direta",pctS(dir.length,rows.length),`dos processos · ${brl(estDir)} estimados`,"Dispensas e inexigibilidades: compras sem disputa entre fornecedores, permitidas em casos previstos em lei.","var(--emp)",pct(dir.length,rows.length));
+  const ms=mesesPeriodo(),porMes=f=>ms.map(m=>S(rows.filter(r=>r.mes===m),f));
+  barrasMes("#chLicValor",ms,[{nome:"Estimado",cor:"var(--emp)",vals:porMes(r=>r.est)},{nome:"Contratado",cor:"var(--pag)",vals:porMes(r=>/homolog/i.test(r.sit)?r.con:0)}]);
+  barrasMes("#chLicQtd",ms,[{nome:"Licitações",cor:"var(--liq)",vals:porMes(()=>1)}],v=>nf0.format(v));
+  barrasMes("#chLicDireta",ms,[{nome:"Contratações diretas",cor:"var(--emp)",vals:ms.map(m=>dir.filter(r=>r.mes===m).length)}],v=>nf0.format(v));
+  const ev=(rs,dim)=>{const tg=agrupa(rs,r=>r[dim],(t,r)=>{t.est=(t.est||0)+r.est;t.con=(t.con||0)+(/homolog/i.test(r.sit)?r.con:0);});
+    return tg.sort((a,b)=>b.est-a.est).map(t=>({nome:t.nome,v:t.est,v2:t.con,txt:`<b>${brl(t.est)}</b> estimados · ${nf0.format(t.n)} ${t.n===1?"processo":"processos"}`}));};
+  const filtra=dim=>i=>{if(st.f[dim]===i.nome)delete st.f[dim];else st.f[dim]=i.nome;render();};
+  listaBarras("#barsLicEnt",ev(LIC.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r,"entidade")),"entidade"),{onClick:filtra("entidade"),sel:st.f.entidade});
+  listaBarras("#barsLicMod",ev(rows,"modalidade"),{onClick:filtra("modalidade"),sel:st.f.modalidade});
+  listaBarras("#barsLicSec",ev(rows,"secretaria"),{onClick:filtra("secretaria"),sel:st.f.secretaria,limite:10});
+  listaBarras("#barsLicDirSec",ev(dir,"secretaria").map(i=>({...i,v2:null})),{limite:10});
+  const sits=agrupa(LIC.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r,"sit")),r=>r.sit,(t,r)=>{t.est=(t.est||0)+r.est;}).sort((a,b)=>b.n-a.n);
+  listaBarras("#barsLicSit",sits.map(t=>({nome:t.nome,v:t.n,txt:`<b>${nf0.format(t.n)}</b> ${t.n===1?"processo":"processos"} · ${brl(t.est)}`})),{onClick:filtra("sit"),sel:st.f.sit});
+  // concentração
+  const ord=rows.slice().sort((a,b)=>b.est-a.est),top10=S(ord.slice(0,10),r=>r.est);let acc=0,n50=0,n80=0;
+  for(const r of ord){acc+=r.est;if(!n50&&acc>=est*.5)n50=ord.indexOf(r)+1;if(!n80&&acc>=est*.8){n80=ord.indexOf(r)+1;break;}}
+  $("#licConc").innerHTML=est>0?`<div class="kpi"><div class="val">${pctS(top10,est)}</div><div class="sub">do valor estimado está nas 10 maiores licitações (${brl(top10)} de ${brl(est)}).</div><div class="meter"><i style="width:${pct(top10,est)}%;background:var(--pag)"></i></div></div>
+    <p style="margin:14px 0 0">Metade de todo o valor está em <b>${nf0.format(n50)}</b> ${n50===1?"licitação":"licitações"}, e 80% em <b>${nf0.format(n80)}</b>, de um total de ${nf0.format(rows.length)}.</p>`:'<div class="empty">Sem valores estimados.</div>';
+  // agenda
+  const hoje=hojeISO(),prox=LIC.filter(r=>r.abertura>=hoje&&matchF(r)).sort((a,b)=>a.abertura.localeCompare(b.abertura));
+  const dias=agrupa(prox,r=>r.abertura,(t,r)=>{(t.l=t.l||[]).push(r);});
+  $("#licAgenda").innerHTML=dias.length?dias.slice(0,15).map(d=>`<div style="display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;padding:8px 0;border-top:1px solid var(--grid)">
+      <div><b>${dataBR(d.nome)}</b><div class="desc" style="margin:0">${["domingo","segunda","terça","quarta","quinta","sexta","sábado"][new Date(d.nome+"T12:00").getDay()]}</div></div>
+      <div>${d.l.map(r=>`<div style="margin-bottom:4px">${esc(r.modalidade)} ${esc(r.numero)} · <span style="color:var(--ink-2)">${esc(r.entidade)}</span><br>${esc(r.objeto)} <span style="color:var(--ink-2);white-space:nowrap">· ${brl(r.est)}</span></div>`).join("")}</div></div>`).join("")+
+      (dias.length>15?`<p class="desc">E mais ${nf0.format(dias.length-15)} datas.</p>`:""):'<div class="empty">Nenhuma abertura marcada a partir de hoje para os filtros escolhidos.</div>';
+  // tabelas
+  const sitTag=r=>esc(r.situacao)+(r.situacao!==r.sit?` <span style="color:var(--muted)">(${esc(r.sit)})</span>`:"");
+  const obj=r=>`${esc(r.objeto)}${r.link?` <a href="${esc(r.link)}" target="_blank" rel="noopener" style="color:var(--accent)">↗</a>`:""}<div style="font-size:12px;color:var(--muted)">${esc(r.secretaria)}</div>`;
+  const colsBase=[{k:"numero",t:"Número",f:r=>`${esc(r.modalidade)}<br>${esc(r.numero)}`},{k:"objeto",t:"Objeto",f:obj,wrap:1},{k:"entidade",t:"Entidade"},
+    {k:"est",t:"Estimado",f:r=>brl(r.est),num:1},{k:"con",t:"Contratado",f:r=>r.con?brl(r.con):"–",num:1},{k:"situacao",t:"Situação",f:sitTag},{k:"publicacao",t:"Publicação",f:r=>dataBR(r.publicacao)}];
+  tabela("#tblLicTop",colsBase,ord.slice(0,10),lst.tsTop);
+  tabela("#tblLicSem",colsBase.filter(c=>c.k!=="con"&&c.k!=="entidade"),rows.filter(r=>/sem sucesso|desert|fracass|revog/i.test(r.sit+" "+r.situacao)),lst.tsSem,{vazio:"Nenhuma licitação sem sucesso no período."});
+  tabela("#tblLicNao",colsBase.filter(c=>c.k!=="con"&&c.k!=="entidade"),rows.filter(r=>!/homolog/i.test(r.sit)),lst.tsNao,{vazio:"Todas as licitações do período foram homologadas."});
+  const q=semAcento(lst.busca.trim());
+  const lista=q?rows.filter(r=>semAcento(r.objeto+" "+r.numero+" "+r.secretaria+" "+r.fornecedor).includes(q)):rows;
+  licLista=tabela("#tblLic",colsBase,lista,lst.ts,{lim:lst.lim});
+  $("#licMais").innerHTML=lista.length>lst.lim?`<span class="desc" style="margin-right:10px">Mostrando ${nf0.format(lst.lim)} de ${nf0.format(lista.length)}.</span><button class="btn" id="btnMaisL" type="button">Mostrar mais 50</button>`:`<span class="desc">${nf0.format(lista.length)} licitações.</span>`;
+  const bm=$("#btnMaisL");if(bm)bm.onclick=()=>{lst.lim+=50;render();};
+  // mudanças
+  const mud=LICM.filter(r=>matchF(r)).sort((a,b)=>b.atualizacao.localeCompare(a.atualizacao));
+  const porAt=agrupa(mud,r=>r.atualizacao,(t,r)=>{(t.l=t.l||[]).push(r);});
+  $("#licMud").innerHTML=porAt.length?porAt.slice(0,6).map(a=>`<details ${a===porAt[0]?"open":""} style="border-top:1px solid var(--grid);padding:8px 0"><summary style="cursor:pointer"><b>${dataBR(a.nome)}</b> · ${nf0.format(a.n)} ${a.n===1?"mudança":"mudanças"}</summary>
+      <div class="tablewrap" style="margin-top:8px"><table><thead><tr><th style="cursor:default">O que mudou</th><th style="cursor:default">Licitação</th><th style="cursor:default">Objeto</th><th style="cursor:default">Estimado</th></tr></thead><tbody>${a.l.map(r=>`<tr><td>${esc(r.tipo)}${r.de||r.para?`<div style="font-size:12px;color:var(--ink-2)">${r.de?esc(r.de)+" → ":""}${esc(r.para)}</div>`:""}</td><td>${esc(r.modalidade)} ${esc(r.numero)}<div style="font-size:12px;color:var(--muted)">${esc(r.entidade)}</div></td><td style="white-space:normal;min-width:220px">${esc(r.objeto)}</td><td>${brl(r.est)}</td></tr>`).join("")}</tbody></table></div></details>`).join(""):'<div class="empty">Nenhuma mudança registrada ainda.</div>';
+  notaFonte("#licNota",LICMETA);
+}
+function csvLic(){baixarCSV(`licitacoes_maringa_${st.ano}.csv`,["Entidade","Secretaria","Modalidade","Número","Objeto","Valor estimado","Valor contratado","Situação","Publicação","Abertura"],
+  licLista.map(r=>[r.entidade,r.secretaria,r.modalidade,r.numero,r.objeto,r.est,r.con,r.situacao,r.publicacao,r.abertura]));}
+
+/* ---------- aba Diárias e Passagens ---------- */
+const vst={busca:"",lim:50,ts:{k:"saida",d:-1}};let diarLista=[];
+function renderDiar(){
+  if(!estadoCarga("diarias","DADOS_DIARIAS",lerDia,"#sumV","#diarCorpo","diárias e passagens"))return;
+  const rows=DIA.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r));
+  if(!rows.length){$("#diarCorpo").classList.add("hidden");$("#sumV").textContent=`${periodoTxt()}: nenhuma diária ou passagem encontrada para os filtros escolhidos.`;return;}
+  $("#diarCorpo").classList.remove("hidden");
+  const S=(a,f)=>a.reduce((t,r)=>t+f(r),0),isP=r=>/passag/i.test(r.tipo);
+  const tot=S(rows,r=>r.valor),pas=rows.filter(isP),dia=rows.filter(r=>!isP(r)),vP=S(pas,r=>r.valor),vD=S(dia,r=>r.valor),nD=S(dia,r=>r.qtd);
+  const pessoas=new Set(rows.map(r=>r.beneficiario)).size,viagens=new Set(rows.map(r=>r.beneficiario+"|"+r.saida+"|"+r.destino)).size;
+  $("#sumV").innerHTML=`${periodoTxt()}, ${sujeito()} gastou <b>${brl(tot)}</b> com viagens a serviço: <b>${brl(vD)}</b> em diárias e <b>${brl(vP)}</b> em passagens. Foram cerca de <b>${nf0.format(viagens)} viagens</b> de <b>${nf0.format(pessoas)} pessoas</b>.`;
+  $("#kpisV").innerHTML=kpiT("Total",brl(tot),"diárias e passagens","Soma de tudo o que foi pago em diárias e passagens no período.")+
+    kpiT("Diárias",brl(vD),`${nf0.format(nD)} diárias pagas`,"Valor para hospedagem e alimentação do servidor em viagem.","var(--emp)",pct(vD,tot))+
+    kpiT("Passagens",brl(vP),`${nf0.format(pas.length)} passagens`,"Passagens aéreas ou rodoviárias compradas para as viagens.","var(--pag)",pct(vP,tot))+
+    kpiT("Pessoas",nf0.format(pessoas),`${nf0.format(viagens)} viagens`,"Quantidade de pessoas diferentes que receberam diárias ou passagens.");
+  const ms=mesesPeriodo();
+  barrasMes("#chDiar",ms,[{nome:"Diárias",cor:"var(--emp)",vals:ms.map(m=>S(dia.filter(r=>r.mes===m),r=>r.valor))},{nome:"Passagens",cor:"var(--pag)",vals:ms.map(m=>S(pas.filter(r=>r.mes===m),r=>r.valor))}]);
+  const ag=(rs,ch)=>agrupa(rs,ch,(t,r)=>{t.v=(t.v||0)+r.valor;t.p=(t.p||0)+(isP(r)?r.valor:0);}).sort((a,b)=>b.v-a.v);
+  listaBarras("#barsDiarOrg",ag(DIA.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r,"orgao")),r=>r.orgao).map(t=>({nome:t.nome,v:t.v,v2:t.p,txt:`<b>${brl(t.v)}</b> · ${nf0.format(t.n)} registros`})),
+    {onClick:i=>{if(st.f.orgao===i.nome)delete st.f.orgao;else st.f.orgao=i.nome;render();},sel:st.f.orgao,limite:8});
+  listaBarras("#barsDiarBen",ag(rows,r=>r.beneficiario).map(t=>({nome:t.nome,v:t.v,v2:t.p,txt:`<b>${brl(t.v)}</b> · ${nf0.format(t.n)} registros`})),
+    {onClick:i=>{vst.busca=i.nome;$("#vBusca").value=i.nome;vst.lim=50;render();$("#tblDiar").scrollIntoView({behavior:"smooth",block:"start"});},limite:10});
+  const dest=agrupa(rows,r=>r.destino,(t,r)=>{t.v=(t.v||0)+r.valor;}).sort((a,b)=>b.n-a.n);
+  listaBarras("#barsDiarDest",dest.map(t=>({nome:t.nome,v:t.n,txt:`<b>${nf0.format(t.n)}</b> registros · ${brl(t.v)}`})),{limite:10});
+  const q=semAcento(vst.busca.trim());
+  const lista=q?rows.filter(r=>semAcento(r.beneficiario+" "+r.destino+" "+r.motivo+" "+r.cargo).includes(q)):rows;
+  diarLista=tabela("#tblDiar",[{k:"saida",t:"Saída",f:r=>dataBR(r.saida)},{k:"beneficiario",t:"Quem viajou",f:r=>`${esc(r.beneficiario)}<div style="font-size:12px;color:var(--muted)">${esc(r.cargo)}</div>`,wrap:1},
+    {k:"destino",t:"Destino",f:r=>esc(r.destino)},{k:"motivo",t:"Motivo",f:r=>esc(r.motivo),wrap:1},{k:"tipo",t:"Tipo",f:r=>esc(r.tipo)+(isP(r)?"":` (${nf1.format(r.qtd).replace(",0","")})`)},
+    {k:"valor",t:"Valor",f:r=>brl(r.valor),num:1},{k:"orgao",t:"Órgão",f:r=>esc(r.orgao),wrap:1}],lista,vst.ts,{lim:vst.lim});
+  $("#diarMais").innerHTML=lista.length>vst.lim?`<span class="desc" style="margin-right:10px">Mostrando ${nf0.format(vst.lim)} de ${nf0.format(lista.length)}.</span><button class="btn" id="btnMaisV" type="button">Mostrar mais 50</button>`:`<span class="desc">${nf0.format(lista.length)} registros.</span>`;
+  const bm=$("#btnMaisV");if(bm)bm.onclick=()=>{vst.lim+=50;render();};
+  notaFonte("#diarNota",DIAMETA);
+  if(DIAMETA.exemplo){$("#diarNota").innerHTML="<b>Atenção: dados de exemplo, com nomes fictícios.</b> "+$("#diarNota").innerHTML;}
+}
+function csvDiar(){baixarCSV(`diarias_passagens_maringa_${st.ano}.csv`,["Saída","Retorno","Quem viajou","Cargo","Órgão","Entidade","Destino","Motivo","Tipo","Quantidade","Valor"],
+  diarLista.map(r=>[r.saida,r.retorno,r.beneficiario,r.cargo,r.orgao,r.entidade,r.destino,r.motivo,r.tipo,r.qtd,r.valor]));}
 
 /* ---------- credores (carregados só quando a aba é aberta) ---------- */
 let CRED=null, credCarregando=false, credErro=false;
