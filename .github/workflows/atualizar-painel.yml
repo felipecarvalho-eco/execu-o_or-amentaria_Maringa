@@ -1,0 +1,97 @@
+name: Atualizar painel semanalmente
+
+on:
+  schedule:
+    # Toda segunda-feira às 06:00 (Brasília, UTC-3) = 09:00 UTC
+    - cron: "0 9 * * 1"
+  workflow_dispatch: {}   # botão "Run workflow" para rodar manualmente
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atualizar-painel
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      EMAIL_USUARIO: ${{ secrets.EMAIL_USUARIO }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: |
+          if [ -f coleta/requirements.txt ]; then pip install -r coleta/requirements.txt; else pip install requests; fi
+
+      - name: Guardar dados da semana anterior (para comparar no e-mail)
+        run: cp docs/dados/execucao.js /tmp/anterior.js 2>/dev/null || true
+
+      # O script só sobrescreve os arquivos se a coleta e a validação derem certo.
+      - name: Baixar dados do Portal da Transparência
+        run: python coleta/coletar.py --saida docs/dados
+
+      - name: Validar dados gerados
+        run: |
+          test -s docs/dados/execucao.js
+          grep -q "window.DADOS_EXECUCAO" docs/dados/execucao.js
+          if grep -Eq '"exemplo"[[:space:]]*:[[:space:]]*true' docs/dados/execucao.js; then
+            echo "::error::execucao.js ainda contém meta.exemplo=true"; exit 1
+          fi
+
+      # Com o GitHub Pages servindo a pasta docs/ da main, o commit já publica o painel.
+      - name: Salvar dados atualizados (publica o painel)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/dados
+          if git diff --cached --quiet; then
+            echo "Sem mudanças nos dados nesta semana."
+          else
+            git commit -m "Atualiza dados de execução orçamentária ($(date -u +%Y-%m-%d))"
+            git push
+          fi
+
+      - name: Montar resumo para o e-mail
+        id: resumo
+        run: |
+          python scripts/resumo_email.py docs/dados/execucao.js /tmp/anterior.js \
+            --link "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" \
+            --saida resumo.html
+
+      - name: Enviar resumo semanal por e-mail
+        if: env.EMAIL_USUARIO != ''
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.EMAIL_USUARIO }}
+          password: ${{ secrets.EMAIL_SENHA_APP }}
+          from: Painel Orçamento Maringá <${{ secrets.EMAIL_USUARIO }}>
+          to: ${{ secrets.EMAIL_DESTINO }}
+          subject: ${{ steps.resumo.outputs.assunto }}
+          html_body: file://resumo.html
+          convert_markdown: false
+
+      - name: Avisar falha por e-mail
+        if: failure() && env.EMAIL_USUARIO != ''
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.EMAIL_USUARIO }}
+          password: ${{ secrets.EMAIL_SENHA_APP }}
+          from: Painel Orçamento Maringá <${{ secrets.EMAIL_USUARIO }}>
+          to: ${{ secrets.EMAIL_DESTINO }}
+          subject: "Falha na atualização semanal do painel de Maringá"
+          body: |
+            A atualização desta semana não foi concluída. O painel continua com os dados anteriores.
+            Detalhes: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
