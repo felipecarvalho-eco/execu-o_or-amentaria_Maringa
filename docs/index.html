@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache">
-<title>Orçamento de Maringá</title>
+<title>Execução Orçamentária de Maringá</title>
 <style>
 :root{
   color-scheme: light;
@@ -135,6 +135,7 @@ tfoot td{font-weight:700;border-bottom:0;background:var(--surface-2)}
 footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
 .empty{padding:30px;text-align:center;color:var(--ink-2)}
 .hidden,.sem-info{display:none !important}
+footer,.desc,.banner{overflow-wrap:anywhere}
 @media (max-width:900px){.kpis{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
 @media (max-width:520px){
   header.top h1{font-size:21px}
@@ -153,10 +154,9 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
 <body>
 <div class="wrap">
   <header class="top">
-    <h1>Para onde vai o dinheiro de Maringá</h1>
+    <h1>Prefeitura de Maringá - Execução Orçamentária</h1>
     <p>Acompanhamento da execução orçamentária da Prefeitura: quanto foi previsto, quanto já foi comprometido e quanto já foi pago.</p>
     <div class="meta-line" id="metaLine">Carregando dados…</div>
-    <div class="banner hidden" id="banner"></div>
   </header>
 </div>
 
@@ -217,17 +217,13 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
       </div>
     </div>
 
-    <div class="card full hidden" id="cardFora">
-      <h2>Entidades fora do Portal da Transparência</h2>
-      <p class="desc">Estas entidades não publicam sua execução no portal da Prefeitura. Aqui aparecem os repasses que a Prefeitura fez a elas; o detalhe de como gastam está no site de transparência de cada uma.</p>
-      <div id="listaFora"></div>
-    </div>
 
     <div class="card full hidden" id="cardEntidade">
       <h2>Por entidade</h2>
       <p class="desc">Prefeitura (administração direta) e entidades da administração indireta, como autarquias e empresas públicas. Clique para filtrar.</p>
       <div class="legend"><span><i style="background:var(--track)"></i>Orçado</span><span><i style="background:var(--emp)"></i>Empenhado</span><span><i style="background:var(--pag)"></i>Pago</span></div>
       <div class="bars" id="barsEntidade"></div>
+      <div id="notaEntidade" class="desc" style="margin:10px 0 0;font-size:12.5px"></div>
     </div>
 
     <div class="card full">
@@ -309,6 +305,7 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
       <div><dt><i style="width:10px;height:10px;border-radius:3px;background:var(--pag)"></i>Pago</dt><dd>O dinheiro efetivamente saiu do caixa da prefeitura para o fornecedor ou servidor.</dd></div>
     </dl>
   </div>
+  <div class="banner hidden" id="banner" style="margin-top:12px"></div>
 </main>
 <div class="wrap"><footer id="foot"></footer></div>
 
@@ -514,10 +511,10 @@ function renderDesp(){
   barList("#barsGrupo",grouped(rows,"grupo"),"grupo",8);
   barList("#barsOrgao",grouped(rows,"orgao"),"orgao",10);
   const ge=grouped(despRows(st.ano,st.ate,"entidade"),"entidade").filter(i=>i.orc>0||i.emp>0);
-  const mostraEnt=ge.length>1;
+  const fora=foraDoAno();
+  const mostraEnt=ge.length>1||fora.length>0;
   $("#cardEntidade").classList.toggle("hidden",!mostraEnt);
-  if(mostraEnt) barList("#barsEntidade",ge,"entidade",10);
-  renderFora();
+  if(mostraEnt){barList("#barsEntidade",ge,"entidade",10);renderFora(ge,fora);}
   renderTable();
 }
 
@@ -669,22 +666,28 @@ function renderRec(){
 
 
 /* ---------- entidades fora do portal (meta.fora_do_portal) ---------- */
-function renderFora(){
+function foraDoAno(){
   const lista=Array.isArray((D.meta||{}).fora_do_portal)?D.meta.fora_do_portal:[];
-  $("#cardFora").classList.toggle("hidden",!lista.length);if(!lista.length)return;
-  $("#listaFora").innerHTML=lista.map((e,i)=>{
-    const r=(e.repasses_por_ano||[]).find(x=>+x.ano===st.ano)||{};
-    const emp=num(r.empenhado)-num(r.anulado),pag=num(r.pago),url=/^https?:\/\//.test(e.transparencia||"")?e.transparencia:"";
-    return `<div class="bar" style="cursor:default;border-top:${i?"1px solid var(--grid)":"0"};border-radius:0;padding:10px 8px">
-      <div class="top"><span class="nm" style="white-space:normal"><b>${esc(e.nome||"")}</b>${e.tipo?` <span style="color:var(--ink-2)">· ${esc(e.tipo)}</span>`:""}${e.cnpj?`<br><span style="font-size:12px;color:var(--muted)">CNPJ ${esc(e.cnpj)}</span>`:""}</span>
-        <span class="vv">${r.ano?`Em ${st.ano}: <b>${brl(emp)}</b> empenhados · ${brl(pag)} pagos${r.qtd_empenhos?` · ${nf0.format(+r.qtd_empenhos)} empenhos`:""}`:`Sem repasses registrados em ${st.ano}`}</span></div>
-      ${e.observacao?`<div style="font-size:13px;color:var(--ink-2)">${esc(e.observacao)}</div>`:""}
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
-        ${url?`<a class="btn" href="${esc(url)}" target="_blank" rel="noopener" style="text-decoration:none">Abrir transparência da entidade ↗</a>`:""}
-        ${e.cnpj?`<button class="btn" type="button" data-cnpj="${esc(e.cnpj)}">Ver os empenhos na aba Credores</button>`:""}
-      </div></div>`;}).join("");
-  $("#listaFora").querySelectorAll("[data-cnpj]").forEach(b=>b.onclick=()=>{cst.busca=b.dataset.cnpj;cst.lim=50;$("#cBusca").value=cst.busca;
-    if(st.f.entidade&&entPadrao()&&st.f.entidade!==entPadrao())st.f.entidade=entPadrao();st.tab="cred";render();window.scrollTo({top:0});});
+  return lista.map(e=>({e,r:(e.repasses_por_ano||[]).find(x=>+x.ano===st.ano)})).filter(x=>x.r);
+}
+// Entidades sem execução no portal (ex.: INPACTA) entram no cartão "Por entidade", no mesmo modelo, com nota de rodapé.
+function renderFora(ge,fora){
+  const nota=$("#notaEntidade");
+  if(!fora.length){nota.innerHTML="";return;}
+  const max=Math.max(1,...ge.map(i=>Math.max(i.orc,i.emp)),...fora.map(x=>num(x.r.empenhado)-num(x.r.anulado)));
+  // redesenha as barras das entidades do portal na mesma escala das de fora
+  $("#barsEntidade").querySelectorAll(".bar").forEach(b=>{const it=ge.find(g=>g.nome===b.dataset.v);if(!it)return;
+    const t=b.querySelectorAll(".track i");t[0].style.width=it.orc/max*100+"%";t[1].style.width=it.emp/max*100+"%";t[2].style.width=it.pag/max*100+"%";});
+  const html=fora.map(({e,r})=>{const emp=num(r.empenhado)-num(r.anulado),pag=num(r.pago);
+    return `<button class="bar" data-cnpj="${esc(e.cnpj||"")}" title="${esc(e.nome)} — repasses da Prefeitura: empenhado ${brlFull(emp)} · pago ${brlFull(pag)}">
+      <div class="top"><span class="nm">${esc(e.nome)}<sup>1</sup></span><span class="vv"><b>${brl(pag)}</b> pagos de ${brl(emp)} empenhados · ${pctS(pag,emp)}</span></div>
+      <div class="track"><i class="e" style="width:${emp/max*100}%"></i><i class="p" style="width:${pag/max*100}%"></i></div></button>`;}).join("");
+  const more=$("#barsEntidade").querySelector("[data-more]");
+  if(more) more.insertAdjacentHTML("beforebegin",html); else $("#barsEntidade").insertAdjacentHTML("beforeend",html);
+  $("#barsEntidade").querySelectorAll("[data-cnpj]").forEach(b=>b.onclick=()=>{if(!b.dataset.cnpj)return;cst.busca=b.dataset.cnpj;cst.lim=50;$("#cBusca").value=cst.busca;
+    if(entPadrao())st.f.entidade=entPadrao();st.tab="cred";render();window.scrollTo({top:0});});
+  nota.innerHTML=fora.map(({e})=>{const url=/^https?:\/\//.test(e.transparencia||"")?e.transparencia:"";
+    return `<sup>1</sup> ${esc(e.nome)}${e.tipo?" ("+esc(e.tipo.toLowerCase())+")":""} não publica sua execução no Portal da Transparência. Os números são o que a Prefeitura empenhou e pagou a ele${e.cnpj?" (CNPJ "+esc(e.cnpj)+")":""}, e já estão dentro dos valores da Prefeitura. Clique na linha para ver esses empenhos na aba Credores.${url?` Documentos da própria entidade: <a href="${esc(url)}" target="_blank" rel="noopener" style="color:inherit">${esc(url.replace(/^https?:\/\//,""))}</a>.`:""}`;}).join("<br>");
 }
 
 /* ---------- credores (carregados só quando a aba é aberta) ---------- */
