@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache">
-<title>Execução Orçamentária de Maringá</title>
+<title>Prefeitura de Maringá - Painel de Transparência</title>
 <style>
 :root{
   color-scheme: light;
@@ -186,7 +186,7 @@ footer,.desc,.banner{overflow-wrap:anywhere}
 <body>
 <div class="wrap">
   <header class="top">
-    <h1>Prefeitura de Maringá - Execução Orçamentária</h1>
+    <h1>Prefeitura de Maringá - Painel de Transparência</h1>
     <p>Acompanhamento do dinheiro público do Município: orçamento, receitas, credores, licitações e diárias e passagens, com dados do Portal da Transparência.</p>
     <div class="meta-line" id="metaLine">Carregando dados…</div>
   </header>
@@ -509,7 +509,7 @@ function boot(data){
   if(m.exemplo) avisos.push("Atenção: "+(m.observacoes||"estes são dados de exemplo."));
   if(m.mes_corrente_parcial){const [a,mm]=String(m.mes_corrente_parcial).split("-");if(a&&mm){PARCIAL={ano:+a,mes:+mm};avisos.push(`O mês de ${MESES_L[+mm-1]} de ${a} ainda está em andamento, então os valores dele são parciais.`);}}
   notasTec(m.avisos);
-  $("#foot").innerHTML="Painel de acompanhamento da execução orçamentária de "+esc(m.municipio||"Maringá - PR")+". Valores em reais (R$), sem correção pela inflação."+(m.fonte?' Fonte: <a style="color:inherit" href="'+esc(m.fonte)+'" target="_blank" rel="noopener">'+esc(m.fonte)+"</a>.":"");
+  $("#foot").innerHTML="Painel de Transparência de "+esc(m.municipio||"Maringá - PR")+": orçamento, receitas, credores, licitações e diárias e passagens. Valores em reais (R$), sem correção pela inflação."+(m.fonte?' Fonte: <a style="color:inherit" href="'+esc(m.fonte)+'" target="_blank" rel="noopener">'+esc(m.fonte)+"</a>.":"");
   if(!DESP.length){$("#secDesp").innerHTML='<div class="card empty">Nenhum dado de despesa encontrado. Verifique o arquivo <code>dados/execucao.js</code>.</div>';}
   readHash(); initControls(); render();
 }

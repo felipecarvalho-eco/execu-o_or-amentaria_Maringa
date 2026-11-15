@@ -1,6 +1,6 @@
-# Execução Orçamentária de Maringá
+# Prefeitura de Maringá - Painel de Transparência
 
-Acompanhamento da execução orçamentária do Município de Maringá (PR), com dados do Portal da Transparência.
+Acompanhamento do Município de Maringá (PR): execução orçamentária, receitas, credores, licitações e diárias e passagens, com dados do Portal da Transparência.
 
 ## Painel
 
