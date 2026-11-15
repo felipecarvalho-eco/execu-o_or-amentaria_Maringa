@@ -44,6 +44,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import sbmg  # noqa: E402  (balancetes do aeroporto)
+import compras_viagens as cv  # noqa: E402  (licitações, diárias e passagens)
 
 # A mesma API é servida em dois endereços oficiais: o domínio da Prefeitura e o do fornecedor (Elotech).
 # A coleta usa o primeiro que responder. PORTAL_API (variável de ambiente) força um endereço.
@@ -436,6 +437,9 @@ def main() -> int:
                     help="exercícios a coletar (padrão: ano anterior e ano atual)")
     ap.add_argument("--entidades", type=int, nargs="+",
                     help="ids das entidades (padrão: todas as do portal; 1 = Prefeitura)")
+    ap.add_argument("--desde", type=int, default=2026,
+                    help="primeiro ano de licitações, diárias e passagens (padrão: 2026)")
+    ap.add_argument("--sem-compras", action="store_true", help="não coleta licitações, diárias e passagens")
     ap.add_argument("--sem-sbmg", action="store_true", help="não lê os balancetes do aeroporto (SBMG)")
     ap.add_argument("--sem-credores", action="store_true", help="não baixa empenhos/credores")
     ap.add_argument("--com-empenhos", action="store_true",
@@ -490,6 +494,31 @@ def main() -> int:
             return get(path, hoje.year, {"entidade": ENTIDADE, "exercicio": hoje.year})
         except Exception:
             return None
+
+    # ---- licitações, diárias e passagens (a partir de --desde, padrão 2026)
+    licitacoes, viagens = [], []
+    anos_cv = [a for a in anos if a >= args.desde]
+    if not args.sem_compras:
+        for ent in entidades:
+            ENTIDADE = ent["id"]
+            nome = NOMES_CURTOS.get(ENTIDADE, ent["nome"].title())
+            orgaos = {d["orgao_codigo"]: d["orgao"] for d in despesas if d["entidade_id"] == ENTIDADE}
+            for ano in anos_cv:
+                log(f"Licitações e viagens {ENTIDADE}/{ano}")
+                licitacoes += cv.coletar_licitacoes(get, ano, ENTIDADE, nome)
+                mapa = cv.mapa_orgao_empenhos(get, ano, ENTIDADE, orgaos, AVISOS, nome) if orgaos else {}
+                viagens += cv.coletar_diarias(get, ano, ENTIDADE, nome,
+                                              lambda ex, num, m=mapa, a=ano: m.get(num) if ex == a else None)
+                viagens += cv.coletar_passagens(get, ano, ENTIDADE, nome)
+        ENTIDADE = ENTIDADE_PRINCIPAL
+        unicos = {}
+        for v in viagens:
+            if v["ano"] >= args.desde:
+                unicos[v["id"]] = v
+        viagens = sorted(unicos.values(), key=lambda v: (v["data_saida"] or "", v["id"]))
+        licitacoes.sort(key=lambda l: (l["publicacao"] or "", l["id"]), reverse=True)
+        if not licitacoes:
+            raise RuntimeError("Nenhuma licitação coletada")
 
     credores = agregar_credores(empenhos)
     empresas = [] if args.sem_sbmg else sbmg.coletar(
@@ -548,6 +577,38 @@ def main() -> int:
             escrever_atomico(saida / "empenhos.csv", csv_texto(empenhos))
         escrever_atomico(saida / "credores.json", js_cred)
         escrever_atomico(saida / "credores.js", "window.DADOS_CREDORES = " + js_cred + ";\n")
+    if not args.sem_compras:
+        anteriores, historico = None, []
+        try:
+            prev = json.loads((saida / "licitacoes.json").read_text(encoding="utf-8"))
+            historico = prev.get("mudancas") or []
+            # só compara com uma coleta real (não com dados de exemplo ou de outro formato)
+            if not prev.get("meta", {}).get("exemplo") and prev.get("meta", {}).get("api"):
+                anteriores = prev.get("licitacoes")
+        except (OSError, ValueError):
+            pass
+        mudancas = cv.calcular_mudancas(licitacoes, anteriores, historico, hoje.isoformat())
+        meta_cv = {k: meta[k] for k in ("municipio", "fonte", "api", "atualizado_em", "avisos")}
+        lic = {"meta": {**meta_cv, "anos": anos_cv,
+                        "observacoes": ("Licitações e contratações diretas (dispensa e inexigibilidade) por ano de "
+                                        "abertura do processo. valor_estimado = valor máximo; valor_contratado = "
+                                        "total vencido/homologado. secretaria é lida do texto do objeto quando ele "
+                                        "cita a secretaria. mudancas compara cada coleta com a anterior."),
+                        "resumo_situacao": cv.resumo(licitacoes, "grupo")},
+               "licitacoes": licitacoes, "mudancas": mudancas}
+        via = {"meta": {**meta_cv, "anos": anos_cv,
+                        "observacoes": ("Diárias: valor líquido (empenhado menos anulações), por data de saída; "
+                                        "o órgão vem do empenho que pagou a diária. Passagens: valor do "
+                                        "adiantamento para compra da passagem; o portal não informa o órgão.")},
+               "diarias": viagens}
+        js_lic = json.dumps(lic, ensure_ascii=False, separators=(",", ":"))
+        js_via = json.dumps(via, ensure_ascii=False, separators=(",", ":"))
+        escrever_atomico(saida / "licitacoes.json", js_lic)
+        escrever_atomico(saida / "licitacoes.js", "window.DADOS_LICITACOES = " + js_lic + ";\n")
+        escrever_atomico(saida / "licitacoes.csv", csv_texto(licitacoes))
+        escrever_atomico(saida / "diarias.json", js_via)
+        escrever_atomico(saida / "diarias.js", "window.DADOS_DIARIAS = " + js_via + ";\n")
+        escrever_atomico(saida / "diarias.csv", csv_texto(viagens))
     escrever_atomico(saida / "execucao.json", js)
     escrever_atomico(saida / "execucao.js", "window.DADOS_EXECUCAO = " + js + ";\n")
     log(f"OK: {len(despesas)} linhas de despesa, {len(receitas)} de receita, {len(credores)} de credores -> {saida}")
