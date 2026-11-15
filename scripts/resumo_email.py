@@ -5,7 +5,7 @@ Uso: python scripts/resumo_email.py painel/dados/execucao.json [anterior.json] \
 Lê o formato combinado (meta, despesas, receitas). Se o arquivo anterior for dado,
 mostra quanto foi empenhado/pago a mais desde a última atualização.
 """
-import argparse, html, json, os, sys
+import argparse, datetime as dt, html, json, os, sys
 from collections import defaultdict
 
 
@@ -53,57 +53,163 @@ def totais(dados):
 
 def brl(v):
     s = f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    return f"R$ {s}"
+    return f"R$&nbsp;{s}"
+
+
+def pct_num(a, b):
+    return 100 * a / b if b else 0.0
 
 
 def pct(a, b):
-    return f"{100 * a / b:.1f}%".replace(".", ",") if b else "—"
+    return f"{pct_num(a, b):.1f}%".replace(".", ",") if b else "—"
 
 
 MESES = "jan fev mar abr mai jun jul ago set out nov dez".split()
+MESES_LONGOS = ("janeiro fevereiro março abril maio junho julho agosto setembro "
+                "outubro novembro dezembro").split()
+
+# O portal publica nomes em CAIXA ALTA e sem acento; corrigimos as palavras mais comuns.
+ACENTOS = {
+    "saude": "Saúde", "educacao": "Educação", "previdencia": "Previdência", "publicos": "Públicos",
+    "publicas": "Públicas", "maringa": "Maringá", "agencia": "Agência", "inovacao": "Inovação",
+    "regulacao": "Regulação", "camara": "Câmara", "municipio": "Município", "seguranca": "Segurança",
+    "crianca": "Criança", "deficiencia": "Deficiência", "aceleracao": "Aceleração", "economica": "Econômica",
+    "assistencia": "Assistência", "politica": "Política", "politicas": "Políticas", "comunicacao": "Comunicação",
+    "gestao": "Gestão", "logistica": "Logística", "protecao": "Proteção", "habitacao": "Habitação",
+    "administracao": "Administração", "servicos": "Serviços", "tecnologia": "Tecnologia",
+}
+MINUSCULAS = {"de", "da", "do", "das", "dos", "e", "a", "o", "com", "para", "sobre", "em"}
+
+
+def nome_bonito(texto):
+    palavras = " ".join(str(texto).split()).split(" ")
+    saida = []
+    for i, p in enumerate(palavras):
+        base = p.strip(",").lower()
+        sufixo = "," if p.endswith(",") else ""
+        if base in ACENTOS:
+            w = ACENTOS[base]
+        elif i > 0 and base in MINUSCULAS:
+            w = base
+        elif p.isupper() and len(base) <= 6 and base.isalpha() and base not in MINUSCULAS and i > 0 and palavras[i - 1] == "-":
+            w = base.upper()  # siglas depois de " - ", ex.: AMR, IPPLAM
+        else:
+            w = "-".join(x.capitalize() for x in base.split("-"))
+        saida.append(w + sufixo)
+    return " ".join(saida)
+
+
+def data_br(iso):
+    try:
+        d = dt.datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+        d = d.astimezone(dt.timezone(dt.timedelta(hours=-3)))
+        return f"{d.day} de {MESES_LONGOS[d.month - 1]} de {d.year}, às {d:%H:%M}"
+    except Exception:
+        return str(iso or "")
+
+
+AZUL = "#1f4e79"
+AZUL_CLARO = "#eaf1f8"
+ZEBRA = "#f7f9fb"
+BORDA = "#dfe5ec"
+FONTE = "font-family:Arial,Helvetica,sans-serif;"
+
+
+def barra(p, cor):
+    largura = max(0, min(100, round(p)))
+    return (f"<table role='presentation' cellpadding='0' cellspacing='0' width='100' style='width:100px;border-collapse:collapse'>"
+            f"<tr><td style='background:{cor};height:8px;width:{largura}px;font-size:0;line-height:0'>&nbsp;</td>"
+            f"<td style='background:#e6e9ee;height:8px;font-size:0;line-height:0'>&nbsp;</td></tr></table>")
+
+
+def tabela(titulo_cols, linhas_html):
+    cab = "".join(
+        f"<th style='{FONTE}background:{AZUL};color:#ffffff;font-size:12px;font-weight:bold;text-align:{al};"
+        f"padding:9px 10px;white-space:nowrap'>{t}</th>" for t, al in titulo_cols)
+    return (f"<table role='presentation' cellpadding='0' cellspacing='0' width='100%' "
+            f"style='border-collapse:collapse;border:1px solid {BORDA};width:100%'><tr>{cab}</tr>{linhas_html}</table>")
+
+
+def celula(conteudo, i, al="left", extra=""):
+    fundo = ZEBRA if i % 2 else "#ffffff"
+    return (f"<td style='{FONTE}font-size:13px;color:#222;background:{fundo};border-top:1px solid {BORDA};"
+            f"padding:8px 10px;text-align:{al};vertical-align:middle;{extra}'>{conteudo}</td>")
 
 
 def montar(dados, anterior, link):
     t = totais(dados)
     meta = dados.get("meta", {})
     if t is None:
-        return "Execução orçamentária de Maringá: sem dados de despesa", "<p>A coleta não trouxe despesas nesta semana.</p>"
+        return ("Prefeitura de Maringá - Execução Orçamentária: sem dados de despesa",
+                "<p>A coleta não trouxe despesas nesta semana.</p>")
     ta = totais(anterior) if anterior else None
-    linhas = []
+    ref = f"{MESES[t['mes'] - 1]}/{t['ano']}"
+    nr = "white-space:nowrap;"
 
-    def linha(nome, v, base=None, campo=None):
-        extra = ""
+    # Tabela 1: resumo
+    itens = [("Dotação atualizada", t["dotacao"], None, None, None),
+             ("Empenhado", t["empenhado"], t["dotacao"], "empenhado", "#2e75b6"),
+             ("Liquidado", t["liquidado"], t["dotacao"], "liquidado", "#5b9bd5"),
+             ("Pago", t["pago"], t["dotacao"], "pago", "#2e7d32")]
+    if "arrecadado" in t:
+        itens.append(("Receita arrecadada", t["arrecadado"], t["previsto"], None, "#c55a11"))
+    linhas = []
+    for i, (nome, v, base, campo, cor) in enumerate(itens):
+        semana = ""
         if ta and campo and ta.get("ano") == t["ano"]:
             dif = v - ta.get(campo, 0)
-            extra = f" <span style='color:#2e7d32'>(+{brl(dif)} na semana)</span>" if dif > 0 else ""
-        p = f" &middot; {pct(v, base)} da dotação" if base else ""
-        linhas.append(f"<tr><td style='padding:4px 12px 4px 0'>{nome}</td><td style='text-align:right'><b>{brl(v)}</b>{p}{extra}</td></tr>")
+            if dif > 0.005:
+                semana = f"<span style='color:#2e7d32'>+{brl(dif)}</span>"
+        if base:
+            rot = "do previsto" if nome.startswith("Receita") else "da dotação"
+            p = pct_num(v, base)
+            perc = (f"<table role='presentation' cellpadding='0' cellspacing='0'><tr>"
+                    f"<td style='{FONTE}font-size:13px;{nr}padding-right:8px;width:48px;text-align:right'><b>{pct(v, base)}</b></td>"
+                    f"<td>{barra(p, cor)}</td></tr></table>"
+                    f"<div style='{FONTE}font-size:11px;color:#777'>{rot}</div>")
+        else:
+            perc = "<span style='color:#999'>—</span>"
+        linhas.append("<tr>" + celula(f"<b>{nome}</b>", i, extra=nr) + celula(brl(v), i, "right", nr + "font-weight:bold;")
+                      + celula(perc, i) + celula(semana or "<span style='color:#bbb'>—</span>", i, "right", nr) + "</tr>")
+    t1 = tabela([("Indicador", "left"), ("Valor acumulado", "right"), ("Execução", "left"), ("Na semana", "right")],
+                "".join(linhas))
 
-    linha("Dotação atualizada", t["dotacao"])
-    linha("Empenhado", t["empenhado"], t["dotacao"], "empenhado")
-    linha("Liquidado", t["liquidado"], t["dotacao"], "liquidado")
-    linha("Pago", t["pago"], t["dotacao"], "pago")
-    if "arrecadado" in t:
-        linhas.append(f"<tr><td style='padding:4px 12px 4px 0'>Receita arrecadada</td><td style='text-align:right'><b>{brl(t['arrecadado'])}</b> &middot; {pct(t['arrecadado'], t['previsto'])} do previsto</td></tr>")
+    # Tabela 2: órgãos
+    lin_o = []
+    for i, (o, (dot, e)) in enumerate(t["orgaos"]):
+        p = pct_num(e, dot)
+        exec_ = (f"<table role='presentation' cellpadding='0' cellspacing='0'><tr>"
+                 f"<td style='{FONTE}font-size:13px;{nr}padding-right:8px;width:48px;text-align:right'>{pct(e, dot)}</td>"
+                 f"<td>{barra(p, '#2e75b6')}</td></tr></table>")
+        lin_o.append("<tr>" + celula(f"<span style='color:#999'>{i + 1}.</span>&nbsp;{html.escape(nome_bonito(o))}", i)
+                     + celula(brl(e), i, "right", nr) + celula(exec_, i, extra=nr) + "</tr>")
+    t2 = tabela([("Órgão", "left"), ("Empenhado", "right"), ("% da dotação", "left")], "".join(lin_o))
 
-    orgaos = "".join(
-        f"<tr><td style='padding:3px 12px 3px 0'>{html.escape(o)}</td><td style='text-align:right'>{brl(e)}</td><td style='text-align:right;padding-left:12px'>{pct(e, dot)}</td></tr>"
-        for o, (dot, e) in t["orgaos"])
     aviso = ""
     if meta.get("exemplo"):
-        aviso = "<p style='background:#fff3cd;padding:8px'>Atenção: dados de exemplo, não reais.</p>"
-    ref = f"{MESES[t['mes'] - 1]}/{t['ano']}"
-    corpo = f"""<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;max-width:640px">
-<h2 style="margin:0 0 4px">Execução orçamentária de Maringá</h2>
-<p style="margin:0 0 16px;color:#666">Acumulado de {t['ano']} até {ref} &middot; atualizado em {html.escape(str(meta.get('atualizado_em', '')))}</p>
-{aviso}
-<table style="border-collapse:collapse">{''.join(linhas)}</table>
-<h3 style="margin:20px 0 6px">Órgãos com maior valor empenhado</h3>
-<table style="border-collapse:collapse"><tr style="color:#666"><td>Órgão</td><td style="text-align:right">Empenhado</td><td style="text-align:right;padding-left:12px">% dotação</td></tr>{orgaos}</table>
-<p style="margin-top:20px"><a href="{html.escape(link)}" style="background:#1565c0;color:#fff;padding:10px 16px;border-radius:4px;text-decoration:none">Abrir o painel completo</a></p>
-<p style="color:#888;font-size:12px">Fonte: {html.escape(str(meta.get('fonte', 'Portal da Transparência de Maringá')))}</p>
-</div>"""
-    assunto = f"Execução orçamentária de Maringá: {pct(t['empenhado'], t['dotacao'])} empenhado até {ref}"
+        aviso = "<p style='background:#fff3cd;padding:8px;border-radius:4px'>Atenção: dados de exemplo, não reais.</p>"
+    titulo = lambda x: f"<h3 style='{FONTE}color:{AZUL};font-size:15px;margin:26px 0 8px'>{x}</h3>"
+    fonte = html.escape(str(meta.get("fonte", "Portal da Transparência de Maringá")))
+    corpo = f"""<div style="background:#f0f3f7;padding:20px 0">
+<table role="presentation" align="center" cellpadding="0" cellspacing="0" width="680" style="width:680px;max-width:100%;background:#ffffff;border-collapse:collapse;border:1px solid {BORDA}">
+<tr><td style="background:{AZUL};padding:18px 24px">
+  <div style="{FONTE}color:#ffffff;font-size:20px;font-weight:bold">Prefeitura de Maringá</div>
+  <div style="{FONTE}color:#cfe0f1;font-size:14px;margin-top:2px">Execução Orçamentária até {ref}</div>
+</td></tr>
+<tr><td style="padding:18px 24px 24px">
+  <p style="{FONTE}font-size:13px;color:#555;margin:0 0 4px">Valores acumulados de 1º de janeiro até {MESES_LONGOS[t['mes'] - 1]} de {t['ano']}.</p>
+  <p style="{FONTE}font-size:12px;color:#888;margin:0 0 6px">Dados atualizados em {data_br(meta.get('atualizado_em'))}.</p>
+  {aviso}
+  {titulo("Resumo do ano")}
+  {t1}
+  {titulo("Órgãos com maior valor empenhado")}
+  {t2}
+  <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:24px"><tr>
+    <td style="background:#1565c0;border-radius:4px"><a href="{html.escape(link)}" style="{FONTE}display:inline-block;color:#ffffff;font-size:14px;font-weight:bold;padding:11px 20px;text-decoration:none">Abrir o painel completo</a></td>
+  </tr></table>
+  <p style="{FONTE}color:#999;font-size:11px;margin-top:20px">Fonte: {fonte}<br>E-mail automático enviado toda segunda-feira pelo painel de execução orçamentária.</p>
+</td></tr></table></div>"""
+    assunto = f"Prefeitura de Maringá - Execução Orçamentária até {ref}"
     return assunto, corpo
 
 
