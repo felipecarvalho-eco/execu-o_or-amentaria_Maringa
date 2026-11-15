@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache">
 <title>Orçamento de Maringá</title>
 <style>
 :root{
@@ -311,7 +312,11 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
 </main>
 <div class="wrap"><footer id="foot"></footer></div>
 
-<script src="dados/execucao.js"></script>
+<script>
+// Os dados mudam toda semana: o "?v=" evita que o navegador (ou o cache do GitHub Pages) mostre a versão antiga.
+var VERSAO_DADOS = Date.now();
+document.write('<script src="dados/execucao.js?v=' + VERSAO_DADOS + '"><\/script>');
+</script>
 <script>
 (function(){
 "use strict";
@@ -693,9 +698,9 @@ function carregarCredores(){
     credCarregando=false;if(st.tab==="cred")render();};
   const falha=()=>{credCarregando=false;credErro=true;if(st.tab==="cred")renderCred();};
   if(window.DADOS_CREDORES){ok(window.DADOS_CREDORES);return;}
-  const sc=document.createElement("script");sc.src="dados/credores.js";
+  const sc=document.createElement("script");sc.src="dados/credores.js?v="+VERSAO_DADOS;
   sc.onload=()=>window.DADOS_CREDORES?ok(window.DADOS_CREDORES):falha();
-  sc.onerror=()=>fetch("dados/credores.json").then(r=>{if(!r.ok)throw 0;return r.json();}).then(ok).catch(falha);
+  sc.onerror=()=>fetch("dados/credores.json?v="+VERSAO_DADOS).then(r=>{if(!r.ok)throw 0;return r.json();}).then(ok).catch(falha);
   document.head.appendChild(sc);
 }
 const semAcento=t=>String(t).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
@@ -794,7 +799,7 @@ function csvCred(){
 let rt;window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(render,150);});
 window.addEventListener("hashchange",()=>{});
 if(window.DADOS_EXECUCAO) boot(window.DADOS_EXECUCAO);
-else fetch("dados/execucao.json").then(r=>{if(!r.ok)throw 0;return r.json();}).then(boot)
+else fetch("dados/execucao.json?v="+VERSAO_DADOS).then(r=>{if(!r.ok)throw 0;return r.json();}).then(boot)
   .catch(()=>{document.getElementById("metaLine").textContent="Não foi possível carregar os dados (dados/execucao.js).";boot({meta:{},despesas:[],receitas:[]});});
 })();
 </script>
