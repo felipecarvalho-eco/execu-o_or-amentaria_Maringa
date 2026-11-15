@@ -29,7 +29,7 @@ receitas: {ano, mes, entidade, categoria, origem, fonte_recurso, previsto, arrec
 
 ## Coleta de dados
 
-Os dados em `docs/dados/` são baixados do Portal da Transparência por `coleta/coletar.py`
+Os dados em `docs/dados/` são baixados do Portal da Transparência (Prefeitura, Câmara, Maringá Previdência e autarquias) por `coleta/coletar.py`
 (esquema completo e endpoints em [`coleta/ESQUEMA.md`](coleta/ESQUEMA.md)):
 
 ```bash

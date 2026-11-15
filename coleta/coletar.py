@@ -42,9 +42,35 @@ from pathlib import Path
 
 import requests
 
-API = "https://maringa.oxy.elotech.com.br/portaltransparencia-api"
+# A mesma API é servida em dois endereços oficiais: o domínio da Prefeitura e o do fornecedor (Elotech).
+# A coleta usa o primeiro que responder. PORTAL_API (variável de ambiente) força um endereço.
+ENDERECOS_API = [u for u in [os.environ.get("PORTAL_API", "").rstrip("/")] if u] or [
+    "https://transparencia.maringa.pr.gov.br/portaltransparencia-api",
+    "https://maringa.oxy.elotech.com.br/portaltransparencia-api",
+]
+API = ENDERECOS_API[0]
 PORTAL = "https://transparencia.maringa.pr.gov.br/portaltransparencia/1/"
-ENTIDADE = 1  # PREFEITURA DO MUNICIPIO DE MARINGA
+ENTIDADE_PRINCIPAL = 1  # PREFEITURA DO MUNICIPIO DE MARINGA
+ENTIDADE = ENTIDADE_PRINCIPAL  # entidade sendo coletada no momento (alterada no laço de main)
+# Nomes curtos para o painel; entidades novas no portal usam o nome oficial.
+NOMES_CURTOS = {
+    1: "Prefeitura (administração direta)",
+    3: "Maringá Previdência",
+    4: "IAM - Instituto Ambiental",
+    6: "Câmara Municipal",
+    9: "AMR - Agência de Regulação",
+    10: "SBMG - Terminais Aéreos",
+    15: "IPPLAM - Instituto de Planejamento",
+}
+# Entidades municipais que não estão no portal Elotech. Os repasses da Prefeitura a elas aparecem
+# como credor nos empenhos; o script resume esses valores em meta.fora_do_portal.
+FORA_DO_PORTAL = [
+    {"nome": "INPACTA - Instituto de Projetos Avançados", "tipo": "Serviço social autônomo",
+     "cnpj": "63.783.232/0001-83", "transparencia": "https://inpacta.org.br/transparencia",
+     "observacao": "Publica só documentos em PDF (contratos de gestão, atas, prestações de contas), sem "
+                   "dados de execução. Os valores abaixo são o que a Prefeitura empenhou/pagou ao INPACTA."},
+]
+TIPOS = {"E": "Executivo", "L": "Legislativo", "R": "Previdência (RPPS)", "A": "Administração indireta"}
 NAO_INF = "Não informado"
 TOL = 0.05  # diferença em reais aceita sem aviso nas validações
 TOL_REL = 1e-4  # diferença relativa máxima (0,01%) aceita com aviso; acima disso a coleta falha
@@ -89,6 +115,24 @@ def get(path: str, exercicio: int, params: dict, tentativas: int = 5, timeout: i
     raise RuntimeError(f"Falha definitiva em {path} {params}: {erro}")
 
 
+def escolher_api() -> None:
+    """Testa os endereços da API e fica com o primeiro que responde."""
+    global API
+    falhas = []
+    for url in ENDERECOS_API:
+        try:
+            r = SESSION.get(url + "/api/entidades/lista", params={"fields": "id,nome"},
+                            headers={"entidade": "1", "exercicio": str(dt.date.today().year)}, timeout=60)
+            if r.status_code == 200 and isinstance(r.json(), list):
+                API = url
+                log(f"API: {url}")
+                return
+            falhas.append(f"{url}: HTTP {r.status_code}")
+        except (requests.RequestException, ValueError) as e:
+            falhas.append(f"{url}: {e!r}")
+    raise RuntimeError("Nenhum endereço da API respondeu: " + " | ".join(falhas))
+
+
 def fim_do_mes(ano: int, mes: int) -> dt.date:
     prox = dt.date(ano + (mes == 12), mes % 12 + 1, 1)
     return prox - dt.timedelta(days=1)
@@ -123,7 +167,9 @@ def despesa_acumulada(ano: int, mes: int) -> dict:
     dados = get("/despesapornivel/detalhada", ano, {
         "entidade": ENTIDADE, "exercicio": ano, "execucao": "true",
         "dataInicial": f"{ano}-01-01", "dataFinal": fim_do_mes(ano, mes).isoformat()})
-    if not isinstance(dados, list) or not dados:
+    if not isinstance(dados, list):
+        raise RuntimeError(f"Despesa {ano}-{mes:02d}: resposta inesperada")
+    if not dados and ENTIDADE == ENTIDADE_PRINCIPAL:
         raise RuntimeError(f"Despesa {ano}-{mes:02d}: resposta vazia")
     desc = {x["programatica"]: (x.get("descricao") or "").strip() for x in dados}
     folhas = {}
@@ -154,7 +200,7 @@ def coletar_despesas(ano: int, meses: list[int]) -> list[dict]:
     anterior = {}
     descricoes = {}
     for mes in meses:
-        log(f"Despesas {ano}-{mes:02d}")
+        log(f"Despesas {ENTIDADE}/{ano}-{mes:02d}")
         acum = despesa_acumulada(ano, mes)
         descricoes.update(acum["desc"])
         for cod, f in acum["folhas"].items():
@@ -201,7 +247,9 @@ def receita_acumulada(ano: int, mes: int) -> dict:
     dados = get("/api/receitas/detalhada", ano, {
         "entidade": ENTIDADE, "exercicio": ano,
         "dataInicial": f"{ano}-01-01", "dataFinal": fim_do_mes(ano, mes).isoformat()})
-    if not isinstance(dados, list) or not dados:
+    if not isinstance(dados, list):
+        raise RuntimeError(f"Receita {ano}-{mes:02d}: resposta inesperada")
+    if not dados and ENTIDADE == ENTIDADE_PRINCIPAL:
         raise RuntimeError(f"Receita {ano}-{mes:02d}: resposta vazia")
     codigos = [x["receita"] for x in dados]
     desc = {x["receita"]: (x.get("descricao") or "").strip() for x in dados}
@@ -229,7 +277,7 @@ def coletar_receitas(ano: int, meses: list[int]) -> list[dict]:
     linhas, anterior, desc, nivel = [], {}, {}, {}
     fluxos = ("arrecadado_bruto", "deducoes", "arrecadado")
     for mes in meses:
-        log(f"Receitas {ano}-{mes:02d}")
+        log(f"Receitas {ENTIDADE}/{ano}-{mes:02d}")
         acum = receita_acumulada(ano, mes)
         desc.update(acum["desc"]); nivel.update(acum["nivel"])
         for c, f in acum["folhas"].items():
@@ -271,7 +319,7 @@ def coletar_empenhos(ano: int, ate: dt.date) -> list[dict]:
         d = get("/empenhos/lista", ano, {"search": busca, "entidade": ENTIDADE, "page": pagina, "size": 2000})
         total_paginas = d["totalPages"]
         if pagina == 0:
-            log(f"Empenhos {ano}: {d['totalElements']} registros")
+            log(f"Empenhos {ENTIDADE}/{ano}: {d['totalElements']} registros")
             esperado = d["totalElements"]
         for e in d["content"]:
             nome = (e.get("nome") or "").strip()
@@ -290,19 +338,20 @@ def coletar_empenhos(ano: int, ate: dt.date) -> list[dict]:
             })
         pagina += 1
     if len(saida) != esperado:
-        raise RuntimeError(f"Empenhos {ano}: recebidos {len(saida)} de {esperado}")
+        raise RuntimeError(f"Empenhos {ENTIDADE}/{ano}: recebidos {len(saida)} de {esperado}")
     return saida
 
 
 def agregar_credores(empenhos: list[dict]) -> list[dict]:
     ag = defaultdict(lambda: {"qtd_empenhos": 0, "empenhado": 0.0, "anulado": 0.0, "liquidado": 0.0, "pago": 0.0})
     for e in empenhos:
-        k = (e["ano"], e["mes"], e["credor_documento"], e["credor"])
+        k = (e["entidade"], e["ano"], e["mes"], e["credor_documento"], e["credor"])
         a = ag[k]
         a["qtd_empenhos"] += 1
         for c in ("empenhado", "anulado", "liquidado", "pago"):
             a[c] += e[c]
-    return [{"ano": k[0], "mes": k[1], "credor_documento": k[2], "credor": k[3], "qtd_empenhos": v["qtd_empenhos"],
+    return [{"entidade": k[0], "ano": k[1], "mes": k[2], "credor_documento": k[3], "credor": k[4],
+             "qtd_empenhos": v["qtd_empenhos"],
              **{c: r2(v[c]) for c in ("empenhado", "anulado", "liquidado", "pago")}}
             for k, v in sorted(ag.items())]
 
@@ -342,17 +391,17 @@ def agregar_painel(linhas_folha: list[dict], id_folha: str, dims: list[str],
     return saida
 
 
-DIM_DESPESA_PAINEL = ["orgao", "funcao", "subfuncao", "programa", "categoria", "grupo", "elemento", "fonte_recurso"]
-DIM_RECEITA_PAINEL = ["categoria", "origem", "fonte_recurso"]
+DIM_DESPESA_PAINEL = ["entidade", "orgao", "funcao", "subfuncao", "programa", "categoria", "grupo", "elemento", "fonte_recurso"]
+DIM_RECEITA_PAINEL = ["entidade", "categoria", "origem", "fonte_recurso"]
 
 
 def despesas_painel(despesas: list[dict]) -> list[dict]:
-    return agregar_painel(despesas, "programatica", DIM_DESPESA_PAINEL,
+    return agregar_painel(despesas, "id_folha", DIM_DESPESA_PAINEL,
                           ["dotacao_inicial", "dotacao_atualizada"], ["empenhado", "liquidado", "pago"])
 
 
 def receitas_painel(receitas: list[dict]) -> list[dict]:
-    return agregar_painel(receitas, "natureza_codigo", DIM_RECEITA_PAINEL,
+    return agregar_painel(receitas, "id_folha", DIM_RECEITA_PAINEL,
                           ["previsto_inicial", "previsto"], ["arrecadado_bruto", "deducoes", "arrecadado"])
 
 
@@ -381,6 +430,8 @@ def main() -> int:
     ap.add_argument("--saida", default="painel/dados", help="pasta de saída (padrão: painel/dados)")
     ap.add_argument("--anos", type=int, nargs="+", default=[hoje.year - 1, hoje.year],
                     help="exercícios a coletar (padrão: ano anterior e ano atual)")
+    ap.add_argument("--entidades", type=int, nargs="+",
+                    help="ids das entidades (padrão: todas as do portal; 1 = Prefeitura)")
     ap.add_argument("--sem-credores", action="store_true", help="não baixa empenhos/credores")
     ap.add_argument("--com-empenhos", action="store_true",
                     help="grava também empenhos.csv (um empenho por linha, ~20 MB por ano)")
@@ -388,20 +439,43 @@ def main() -> int:
 
     saida = Path(args.saida)
     anos = sorted(set(args.anos))
-    disponiveis = {x["id"]["exercicio"] for x in get(f"/api/exercicios/entidade/{ENTIDADE}", hoje.year, {})}
-    for a in anos:
-        if a not in disponiveis:
-            raise RuntimeError(f"Exercício {a} não existe no portal (disponíveis: {sorted(disponiveis)})")
+    global ENTIDADE
+    escolher_api()
+    lista = get("/api/entidades/lista", hoje.year, {"fields": "id,nome,cnpj,tipo"})
+    entidades = [e for e in lista if not args.entidades or e["id"] in args.entidades]
+    if not any(e["id"] == ENTIDADE_PRINCIPAL for e in entidades) and not args.entidades:
+        raise RuntimeError("A Prefeitura não aparece na lista de entidades do portal")
+    log("Entidades: " + "; ".join(f"{e['id']} {e['nome']}" for e in entidades))
 
-    despesas, receitas, empenhos = [], [], []
-    for ano in anos:
-        meses = meses_do_ano(ano, hoje)
-        if not meses:
-            continue
-        despesas += coletar_despesas(ano, meses)
-        receitas += coletar_receitas(ano, meses)
-        if not args.sem_credores:
-            empenhos += coletar_empenhos(ano, min(hoje, dt.date(ano, 12, 31)))
+    despesas, receitas, empenhos, info_ent = [], [], [], []
+    for ent in entidades:
+        ENTIDADE = ent["id"]
+        nome = NOMES_CURTOS.get(ENTIDADE, ent["nome"].title())
+        disponiveis = {x["id"]["exercicio"] for x in get(f"/api/exercicios/entidade/{ENTIDADE}", hoje.year, {})}
+        cont = [len(despesas), len(receitas), len(empenhos)]
+        for ano in anos:
+            meses = meses_do_ano(ano, hoje)
+            if not meses or ano not in disponiveis:
+                if ano not in disponiveis:
+                    AVISOS.append(f"{nome}: exercício {ano} não existe no portal")
+                continue
+            d = coletar_despesas(ano, meses)
+            r = coletar_receitas(ano, meses)
+            e = [] if args.sem_credores else coletar_empenhos(ano, min(hoje, dt.date(ano, 12, 31)))
+            for lst, idf in ((d, "programatica"), (r, "natureza_codigo"), (e, None)):
+                for x in lst:
+                    if idf:
+                        x["id_folha"] = f"{ENTIDADE}:{x[idf]}"
+            despesas += [{"entidade": nome, "entidade_id": ENTIDADE, **x} for x in d]
+            receitas += [{"entidade": nome, "entidade_id": ENTIDADE, **x} for x in r]
+            empenhos += [{"entidade": nome, "entidade_id": ENTIDADE, **x} for x in e]
+        n = [len(despesas) - cont[0], len(receitas) - cont[1], len(empenhos) - cont[2]]
+        if n[0] == 0:
+            AVISOS.append(f"{nome}: o portal não publica execução orçamentária desta entidade")
+        info_ent.append({"id": ENTIDADE, "nome": nome, "nome_oficial": ent["nome"], "cnpj": ent.get("cnpj"),
+                         "tipo": TIPOS.get(ent.get("tipo"), ent.get("tipo")),
+                         "linhas_despesa": n[0], "linhas_receita": n[1], "empenhos": n[2]})
+    ENTIDADE = ENTIDADE_PRINCIPAL
 
     if not despesas or not receitas:
         raise RuntimeError("Coleta vazia: nada será gravado")
@@ -413,9 +487,20 @@ def main() -> int:
             return None
 
     credores = agregar_credores(empenhos)
+    fora = []
+    for f in FORA_DO_PORTAL:
+        por_ano = defaultdict(lambda: defaultdict(float))
+        for e in empenhos:
+            if e["credor_documento"] == f["cnpj"]:
+                for c in ("empenhado", "anulado", "liquidado", "pago"):
+                    por_ano[e["ano"]][c] += e[c]
+                por_ano[e["ano"]]["qtd_empenhos"] += 1
+        fora.append({**f, "repasses_por_ano": [{"ano": a, **{c: (int(v) if c == "qtd_empenhos" else r2(v)) for c, v in sorted(d.items())}}
+                                              for a, d in sorted(por_ano.items())]})
     meta = {
         "municipio": "Maringá-PR",
-        "entidade": "PREFEITURA DO MUNICIPIO DE MARINGA",
+        "entidades": info_ent,
+        "fora_do_portal": fora,
         "fonte": PORTAL,
         "api": API,
         "atualizado_em": dt.datetime.now(dt.timezone.utc).astimezone().isoformat(timespec="seconds"),
@@ -427,6 +512,8 @@ def main() -> int:
             "Valores em reais. empenhado/liquidado/pago/arrecadado são o movimento do mês (podem ser "
             "negativos por anulações/estornos). dotacao_* e previsto são a posição acumulada no fim do mês. "
             "Receita: arrecadado = líquido de deduções (FUNDEB etc.), comparável a previsto. "
+            "Entidades: somar todas pode contar duas vezes operações entre elas (ex.: a contribuição patronal "
+            "que a Prefeitura paga à Maringá Previdência é despesa de uma e receita da outra). "
             "Credores: agrupados pelo mês de emissão do empenho; liquidado/pago dos credores são a posição "
             "atual de cada empenho (não do mês). Não inclui restos a pagar de exercícios anteriores."),
         "avisos": AVISOS,
@@ -437,8 +524,9 @@ def main() -> int:
     js = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
     js_cred = json.dumps({"meta": meta, "credores": credores}, ensure_ascii=False, separators=(",", ":"))
 
-    escrever_atomico(saida / "despesas.csv", csv_texto(despesas))
-    escrever_atomico(saida / "receitas.csv", csv_texto(receitas))
+    sem_id = lambda L: [{k: v for k, v in x.items() if k != "id_folha"} for x in L]
+    escrever_atomico(saida / "despesas.csv", csv_texto(sem_id(despesas)))
+    escrever_atomico(saida / "receitas.csv", csv_texto(sem_id(receitas)))
     if not args.sem_credores:
         escrever_atomico(saida / "credores.csv", csv_texto(credores))
         if args.com_empenhos:
