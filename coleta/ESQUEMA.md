@@ -180,15 +180,23 @@ valor_contratado, situacao, grupo, publicacao, abertura, processo, link`
 
 ### `diarias` (diárias e passagens, de 2026 em diante)
 
-`id, ano, mes, entidade, orgao, tipo, beneficiario, cargo, destino, motivo, objetivo, data_saida, data_retorno,
+`id, ano, mes, entidade, orgao, tipo, forma, beneficiario, cargo, destino, motivo, objetivo, data_saida, data_retorno,
 quantidade, valor, valor_empenhado, situacao, meio_transporte, documento, empresa`
 
 - `tipo` = "Diária" ou "Passagem". `ano`/`mes` = data de saída da viagem.
 - **Diárias:** `valor` = valor líquido (empenhado menos anulações; diária cancelada fica com 0).
   `valor_empenhado` = valor original. `orgao` vem do empenho que pagou a diária (a API de diárias não traz a
   secretaria). `quantidade` = número de diárias. `documento` = número do empenho.
-- **Passagens:** `valor` = adiantamento para comprar a passagem; `empresa` = companhia; o portal não informa
-  o órgão (`orgao` = "Não informado"); `quantidade` = 1.
+- `forma` = "Diária", "Adiantamento ao servidor" ou "Empresa contratada".
+- **Passagens, forma "Adiantamento ao servidor"** (`/api/passagens`): `valor` = adiantamento para o servidor
+  comprar a passagem; `empresa` = companhia; o portal não informa o órgão (`orgao` = "Não informado");
+  `quantidade` = 1.
+- **Passagens, forma "Empresa contratada"** (empenhos do elemento 3.3.90.33, "Passagens e despesas com
+  locomoção"): compras feitas por contrato com agência de viagem ou transportadora (ex.: a Câmara compra todas
+  as passagens por agência; a Prefeitura freta ônibus para equipes e eventos). Não há nome do viajante
+  (`beneficiario` = "Compra por empresa contratada"), destino nem datas; `ano`/`mes` = data do empenho;
+  `valor` = empenhado menos anulado (empenhos por estimativa costumam ter anulações); `empresa` = credor;
+  `orgao` vem do empenho; `documento` = número do empenho. A soma confere com o elemento 3.3.90.33 da despesa.
 
 ### `empenhos.csv`
 
@@ -212,6 +220,7 @@ Todos exigem os cabeçalhos HTTP `entidade: <id>` e `exercicio: <ano>` (nos exem
 | licitações | `/api/licitacoes?entidade=E&exercicio=A&page=0&size=2000` |
 | diárias | `/api/diarias?entidade=E&exercicio=A&dataInicial=A-01-01&dataFinal=A-12-31&page=0&size=2000` |
 | passagens | `/api/passagens?entidade=E&exercicio=A&page=0&size=2000` |
+| passagens por empresa | `/empenhos/lista?...&programatica.elemento=339033` |
 | órgão do empenho | `/empenhos/lista?...&programatica.orgao=<código do órgão>` |
 
 A API devolve valores do intervalo de datas pedido (inclusive créditos adicionais). Por isso o script pede

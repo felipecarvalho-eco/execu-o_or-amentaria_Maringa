@@ -9,6 +9,9 @@ Endpoints:
 - passagens:   /api/passagens?entidade=E&exercicio=A&page=..&size=..
 - órgão das diárias: /empenhos/lista filtrado por `programatica.orgao=<código>` (a API de diárias não
   traz a secretaria; o órgão vem do empenho que pagou a diária).
+- passagens compradas de empresas (agências de viagem, ônibus fretado): /empenhos/lista filtrado por
+  `programatica.elemento=339033` (elemento "Passagens e despesas com locomoção"). /api/passagens só traz os
+  adiantamentos pagos ao próprio servidor; a Câmara, por exemplo, compra tudo por agência e lá fica vazia.
 """
 from __future__ import annotations
 
@@ -145,6 +148,7 @@ def coletar_diarias(get, ano: int, entidade: int, nome_entidade: str, orgao_de_e
             "entidade": nome_entidade,
             "orgao": orgao,
             "tipo": "Diária",
+            "forma": "Diária",
             "beneficiario": (x.get("nome") or NAO_INF).strip(),
             "cargo": (x.get("cargo") or x.get("cargoDiaria") or NAO_INF).strip() or NAO_INF,
             "destino": ", ".join(p for p in [(x.get("destino") or "").strip(), (x.get("uf") or "").strip()] if p) or NAO_INF,
@@ -177,6 +181,7 @@ def coletar_passagens(get, ano: int, entidade: int, nome_entidade: str) -> list[
             "entidade": nome_entidade,
             "orgao": NAO_INF,
             "tipo": "Passagem",
+            "forma": "Adiantamento ao servidor",
             "beneficiario": (x.get("nomeServidor") or NAO_INF).strip(),
             "cargo": (x.get("cargoServidor") or NAO_INF).strip() or NAO_INF,
             "destino": ", ".join(p for p in [(x.get("destinoViagem") or "").strip().title(), (x.get("uf") or "").strip()] if p) or NAO_INF,
@@ -191,6 +196,48 @@ def coletar_passagens(get, ano: int, entidade: int, nome_entidade: str) -> list[
             "meio_transporte": x.get("tipoPassagem") or NAO_INF,
             "documento": f"Solicitação {x.get('numeroSolicitacao')}" if x.get("numeroSolicitacao") else NAO_INF,
             "empresa": (x.get("nomeEmpresaFornecedora") or "").strip() or NAO_INF,
+        })
+    return saida
+
+
+ELEMENTO_PASSAGENS = "339033"
+
+
+def coletar_passagens_empenhos(get, ano: int, entidade: int, nome_entidade: str, orgao_de_empenho) -> list[dict]:
+    """Empenhos do elemento 3.3.90.33 (passagens e locomoção pagas a empresas). Não há nome do viajante:
+    o contrato é com a agência ou a transportadora. valor = empenhado menos anulado."""
+    busca = (f"id.exercicio=='{ano}' and id.entidade=='{entidade}' and "
+             f"data>='{ano}-01-01' and data<='{ano}-12-31'")
+    brutos = _pagina_tudo(get, "/empenhos/lista", ano, entidade,
+                          {"search": busca, "entidade": entidade, "programatica.elemento": ELEMENTO_PASSAGENS})
+    saida = []
+    for e in brutos:
+        data = e.get("data") or ""
+        credor = (e.get("nome") or "").strip()
+        empresa = credor.split(" - ", 1)[1].strip() if " - " in credor else credor
+        empenhado = float(e.get("valorEmpenhado") or 0)
+        saida.append({
+            "id": f"{entidade}|E|{e.get('empenhoExercicio') or e.get('id')}",
+            "ano": int(data[:4]) if data else ano,
+            "mes": int(data[5:7]) if data else None,
+            "entidade": nome_entidade,
+            "orgao": orgao_de_empenho(e.get("exercicio"), e.get("empenho")) or NAO_INF,
+            "tipo": "Passagem",
+            "forma": "Empresa contratada",
+            "beneficiario": "Compra por empresa contratada",
+            "cargo": NAO_INF,
+            "destino": NAO_INF,
+            "motivo": " ".join((e.get("historico") or "").split()) or NAO_INF,
+            "objetivo": NAO_INF,
+            "data_saida": None,
+            "data_retorno": None,
+            "quantidade": 1.0,
+            "valor": round(empenhado - float(e.get("valorAnulado") or 0), 2),
+            "valor_empenhado": round(empenhado, 2),
+            "situacao": NAO_INF,
+            "meio_transporte": NAO_INF,
+            "documento": f"Empenho {e.get('empenhoExercicio')}" if e.get("empenhoExercicio") else NAO_INF,
+            "empresa": empresa or NAO_INF,
         })
     return saida
 
