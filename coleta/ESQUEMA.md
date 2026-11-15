@@ -1,6 +1,7 @@
 # Coleta: esquema dos dados
 
-O script `coleta/coletar.py` baixa a execução orçamentária da **Prefeitura do Município de Maringá-PR**
+O script `coleta/coletar.py` baixa a execução orçamentária do **Município de Maringá-PR** (todas as
+entidades publicadas no portal: Prefeitura, Câmara, Maringá Previdência e administração indireta)
 do [Portal da Transparência](https://transparencia.maringa.pr.gov.br/portaltransparencia/1/), usando a
 API pública que o próprio portal usa (`https://maringa.oxy.elotech.com.br/portaltransparencia-api`).
 Não precisa de login nem de chave.
@@ -13,7 +14,33 @@ python coleta/coletar.py --saida docs/dados                 # ano anterior + ano
 python coleta/coletar.py --saida docs/dados --anos 2023 2024 2025 2026
 python coleta/coletar.py --saida docs/dados --com-empenhos  # grava também empenhos.csv (~20 MB/ano)
 python coleta/coletar.py --saida docs/dados --sem-credores  # pula empenhos/credores (mais rápido)
+python coleta/coletar.py --saida docs/dados --entidades 1     # só a Prefeitura
 ```
+
+## Entidades
+
+O portal publica estas entidades (lista lida a cada execução em `/api/entidades/lista`; uma entidade nova
+entra sozinha, com o nome oficial):
+
+| id | `entidade` (nome no painel) | Tipo |
+|---|---|---|
+| 1 | Prefeitura (administração direta) | Executivo |
+| 3 | Maringá Previdência | Previdência (RPPS), autarquia |
+| 4 | IAM - Instituto Ambiental | Autarquia |
+| 6 | Câmara Municipal | Legislativo |
+| 9 | AMR - Agência de Regulação | Autarquia |
+| 10 | SBMG - Terminais Aéreos | Empresa pública (S/A) |
+| 15 | IPPLAM - Instituto de Planejamento | Autarquia |
+
+- A **SBMG** aparece na lista, mas o portal não publica execução orçamentária dela (empresa estatal com
+  contabilidade própria). Fica registrada em `meta.entidades` com zero linhas e um aviso em `meta.avisos`.
+- O **INPACTA** (Instituto de Projetos Avançados, serviço social autônomo criado pela LC 1.503/2025) não está
+  neste portal. O [site de transparência dele](https://inpacta.org.br/transparencia) só publica PDFs
+  (contratos de gestão, atas, prestações de contas), sem dados de execução para baixar. O que dá para medir
+  é o que a Prefeitura empenhou e pagou a ele: aparece em `credores` (CNPJ 63.783.232/0001-83) e resumido
+  por ano em `meta.fora_do_portal`.
+- Somar todas as entidades pode contar duas vezes operações entre elas (ex.: a contribuição patronal que a
+  Prefeitura paga à Maringá Previdência é despesa de uma e receita da outra).
 
 - Leva cerca de 7 minutos para dois anos.
 - **Idempotente:** cada execução baixa tudo de novo e regrava os mesmos arquivos. Rodar duas vezes no mesmo
@@ -52,7 +79,9 @@ python coleta/coletar.py --saida docs/dados --sem-credores  # pula empenhos/cred
 
 | Campo | Descrição |
 |---|---|
-| `municipio`, `entidade`, `fonte`, `api` | identificação e links |
+| `municipio`, `fonte`, `api` | identificação e links |
+| `entidades` | lista `{id, nome, nome_oficial, cnpj, tipo, linhas_despesa, linhas_receita, empenhos}` |
+| `fora_do_portal` | entidades sem dados no portal (INPACTA): `{nome, tipo, cnpj, transparencia, observacao, repasses_por_ano: [{ano, empenhado, anulado, liquidado, pago, qtd_empenhos}]}` |
 | `atualizado_em` | quando a coleta rodou (ISO 8601) |
 | `portal_atualizado_despesas`, `portal_atualizado_receitas` | última atualização informada pelo portal |
 | `anos` | exercícios coletados |
@@ -63,7 +92,7 @@ python coleta/coletar.py --saida docs/dados --sem-credores  # pula empenhos/cred
 
 ### `despesas` (em `execucao.js`), agregada para o painel
 
-`ano, mes, orgao, funcao, subfuncao, programa, categoria, grupo, elemento, fonte_recurso,
+`ano, mes, entidade, orgao, funcao, subfuncao, programa, categoria, grupo, elemento, fonte_recurso,
 dotacao_inicial, dotacao_atualizada, empenhado, liquidado, pago`
 
 - `categoria`: Despesas Correntes / Despesas de Capital. `grupo`: ex. Pessoal e Encargos Sociais.
@@ -73,14 +102,14 @@ dotacao_inicial, dotacao_atualizada, empenhado, liquidado, pago`
 
 ### `despesas.csv` (detalhado)
 
-Para cada nível há o nome e o código (`<nivel>_codigo`):
+Começa com `entidade` e `entidade_id`. Para cada nível há o nome e o código (`<nivel>_codigo`):
 `orgao, unidade, funcao, subfuncao, programa, acao, categoria, grupo, modalidade, elemento, fonte_recurso`,
 mais `programatica` (código completo, ex. `02.010.04.122.0002.2001.3.1.90.11.1000`), e os mesmos valores
 acima. `elemento_codigo` é a natureza da despesa (ex. `3.1.90.11`).
 
 ### `receitas` (em `execucao.js`), agregada para o painel
 
-`ano, mes, categoria, origem, fonte_recurso, previsto_inicial, previsto, arrecadado_bruto, deducoes, arrecadado`
+`ano, mes, entidade, categoria, origem, fonte_recurso, previsto_inicial, previsto, arrecadado_bruto, deducoes, arrecadado`
 
 - `categoria`: Receitas Correntes / Receitas de Capital. `origem`: ex. Impostos, Taxas e Contribuições de Melhoria.
 - `arrecadado` = **líquido de deduções** (ex. retenção para o FUNDEB), comparável a `previsto`.
@@ -89,11 +118,11 @@ acima. `elemento_codigo` é a natureza da despesa (ex. `3.1.90.11`).
 
 ### `receitas.csv` (detalhado)
 
-Mais `especie`, `rubrica` (nome da natureza no menor nível) e `natureza_codigo` (ex. `11125001`).
+Mais `entidade_id`, `especie`, `rubrica` (nome da natureza no menor nível) e `natureza_codigo` (ex. `11125001`).
 
 ### `credores`
 
-`ano, mes, credor_documento, credor, qtd_empenhos, empenhado, anulado, liquidado, pago`
+`entidade, ano, mes, credor_documento, credor, qtd_empenhos, empenhado, anulado, liquidado, pago`
 
 - Empenhos agrupados por credor e **mês de emissão** do empenho.
 - `credor_documento` = CNPJ/CPF como aparece no portal (CPFs vêm mascarados pelo próprio portal).
@@ -102,15 +131,16 @@ Mais `especie`, `rubrica` (nome da natureza no menor nível) e `natureza_codigo`
 
 ### `empenhos.csv`
 
-`ano, empenho (nº/ano), data, mes, credor_documento, credor, fonte_recurso, historico, empenhado, anulado,
+`entidade, entidade_id, ano, empenho (nº/ano), data, mes, credor_documento, credor, fonte_recurso, historico, empenhado, anulado,
 liquidado, pago, a_pagar`
 
 ## Endpoints usados
 
-Todos exigem os cabeçalhos HTTP `entidade: 1` e `exercicio: <ano>`.
+Todos exigem os cabeçalhos HTTP `entidade: <id>` e `exercicio: <ano>` (nos exemplos, `1` = Prefeitura).
 
 | Dado | Endpoint |
 |---|---|
+| entidades | `/api/entidades/lista?fields=id,nome,cnpj,tipo` |
 | exercícios | `/api/exercicios/entidade/1` |
 | despesa | `/despesapornivel/detalhada?entidade=1&exercicio=A&execucao=true&dataInicial=A-01-01&dataFinal=A-MM-DD` |
 | receita | `/api/receitas/detalhada?entidade=1&exercicio=A&dataInicial=...&dataFinal=...` |
