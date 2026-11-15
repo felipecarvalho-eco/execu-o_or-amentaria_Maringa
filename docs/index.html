@@ -216,6 +216,12 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
       </div>
     </div>
 
+    <div class="card full hidden" id="cardFora">
+      <h2>Entidades fora do Portal da Transparência</h2>
+      <p class="desc">Estas entidades não publicam sua execução no portal da Prefeitura. Aqui aparecem os repasses que a Prefeitura fez a elas; o detalhe de como gastam está no site de transparência de cada uma.</p>
+      <div id="listaFora"></div>
+    </div>
+
     <div class="card full hidden" id="cardEntidade">
       <h2>Por entidade</h2>
       <p class="desc">Prefeitura (administração direta) e entidades da administração indireta, como autarquias e empresas públicas. Clique para filtrar.</p>
@@ -506,6 +512,7 @@ function renderDesp(){
   const mostraEnt=ge.length>1;
   $("#cardEntidade").classList.toggle("hidden",!mostraEnt);
   if(mostraEnt) barList("#barsEntidade",ge,"entidade",10);
+  renderFora();
   renderTable();
 }
 
@@ -655,6 +662,25 @@ function renderRec(){
     <div class="track"><i class="o" style="width:${i.p/max*100}%"></i><i class="a" style="width:${i.a/max*100}%;top:3px;bottom:3px"></i></div></div>`).join(""):'<div class="empty">Sem dados.</div>';
 }
 
+
+/* ---------- entidades fora do portal (meta.fora_do_portal) ---------- */
+function renderFora(){
+  const lista=Array.isArray((D.meta||{}).fora_do_portal)?D.meta.fora_do_portal:[];
+  $("#cardFora").classList.toggle("hidden",!lista.length);if(!lista.length)return;
+  $("#listaFora").innerHTML=lista.map((e,i)=>{
+    const r=(e.repasses_por_ano||[]).find(x=>+x.ano===st.ano)||{};
+    const emp=num(r.empenhado)-num(r.anulado),pag=num(r.pago),url=/^https?:\/\//.test(e.transparencia||"")?e.transparencia:"";
+    return `<div class="bar" style="cursor:default;border-top:${i?"1px solid var(--grid)":"0"};border-radius:0;padding:10px 8px">
+      <div class="top"><span class="nm" style="white-space:normal"><b>${esc(e.nome||"")}</b>${e.tipo?` <span style="color:var(--ink-2)">· ${esc(e.tipo)}</span>`:""}${e.cnpj?`<br><span style="font-size:12px;color:var(--muted)">CNPJ ${esc(e.cnpj)}</span>`:""}</span>
+        <span class="vv">${r.ano?`Em ${st.ano}: <b>${brl(emp)}</b> empenhados · ${brl(pag)} pagos${r.qtd_empenhos?` · ${nf0.format(+r.qtd_empenhos)} empenhos`:""}`:`Sem repasses registrados em ${st.ano}`}</span></div>
+      ${e.observacao?`<div style="font-size:13px;color:var(--ink-2)">${esc(e.observacao)}</div>`:""}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        ${url?`<a class="btn" href="${esc(url)}" target="_blank" rel="noopener" style="text-decoration:none">Abrir transparência da entidade ↗</a>`:""}
+        ${e.cnpj?`<button class="btn" type="button" data-cnpj="${esc(e.cnpj)}">Ver os empenhos na aba Credores</button>`:""}
+      </div></div>`;}).join("");
+  $("#listaFora").querySelectorAll("[data-cnpj]").forEach(b=>b.onclick=()=>{cst.busca=b.dataset.cnpj;cst.lim=50;$("#cBusca").value=cst.busca;
+    if(st.f.entidade&&entPadrao()&&st.f.entidade!==entPadrao())st.f.entidade=entPadrao();st.tab="cred";render();window.scrollTo({top:0});});
+}
 
 /* ---------- credores (carregados só quando a aba é aberta) ---------- */
 let CRED=null, credCarregando=false, credErro=false;
