@@ -507,9 +507,10 @@ def main() -> int:
                 log(f"Licitações e viagens {ENTIDADE}/{ano}")
                 licitacoes += cv.coletar_licitacoes(get, ano, ENTIDADE, nome)
                 mapa = cv.mapa_orgao_empenhos(get, ano, ENTIDADE, orgaos, AVISOS, nome) if orgaos else {}
-                viagens += cv.coletar_diarias(get, ano, ENTIDADE, nome,
-                                              lambda ex, num, m=mapa, a=ano: m.get(num) if ex == a else None)
+                orgao_de = (lambda ex, num, m=mapa, a=ano: m.get(num) if ex == a else None)
+                viagens += cv.coletar_diarias(get, ano, ENTIDADE, nome, orgao_de)
                 viagens += cv.coletar_passagens(get, ano, ENTIDADE, nome)
+                viagens += cv.coletar_passagens_empenhos(get, ano, ENTIDADE, nome, orgao_de)
         ENTIDADE = ENTIDADE_PRINCIPAL
         unicos = {}
         for v in viagens:
@@ -598,8 +599,13 @@ def main() -> int:
                "licitacoes": licitacoes, "mudancas": mudancas}
         via = {"meta": {**meta_cv, "anos": anos_cv,
                         "observacoes": ("Diárias: valor líquido (empenhado menos anulações), por data de saída; "
-                                        "o órgão vem do empenho que pagou a diária. Passagens: valor do "
-                                        "adiantamento para compra da passagem; o portal não informa o órgão.")},
+                                        "o órgão vem do empenho que pagou a diária. Passagens de duas formas (campo forma): "
+                                        "'Adiantamento ao servidor' (valor adiantado para o servidor comprar a "
+                                        "passagem; o portal não informa o órgão) e 'Empresa contratada' (empenhos "
+                                        "do elemento 3.3.90.33 a agências de viagem e transportadoras, por data do "
+                                        "empenho, valor empenhado menos anulado; sem o nome do viajante)."),
+                        "resumo_forma": {f: round(sum(v["valor"] for v in viagens if v["forma"] == f), 2)
+                                         for f in sorted({v["forma"] for v in viagens})}},
                "diarias": viagens}
         js_lic = json.dumps(lic, ensure_ascii=False, separators=(",", ":"))
         js_via = json.dumps(via, ensure_ascii=False, separators=(",", ":"))
