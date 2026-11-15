@@ -25,6 +25,7 @@ receitas: {ano, mes, entidade, categoria, origem, fonte_recurso, previsto, arrec
 - `dotacao_inicial`, `dotacao_atualizada` e `previsto` são a posição acumulada no fim do mês; o painel usa a do último mês de cada combinação.
 - `entidade` (opcional): Prefeitura, autarquia, empresa pública etc. Com mais de uma entidade, o painel mostra o filtro "Entidade".
 - `docs/dados/credores.js` (opcional, carregado só ao abrir a aba Credores): `window.DADOS_CREDORES = {meta, credores:[{ano, mes, entidade, credor_documento, credor, qtd_empenhos, empenhado, anulado, liquidado, pago}]}`.
+- `meta.fora_do_portal` (opcional): entidades sem execução no portal (ex.: INPACTA), com `nome, tipo, cnpj, transparencia, observacao, repasses_por_ano:[{ano, empenhado, anulado, liquidado, pago, qtd_empenhos}]`; aparecem no cartão "Entidades fora do Portal da Transparência".
 - `meta.exemplo = true` mostra um aviso de dados de exemplo.
 
 ## Coleta de dados
