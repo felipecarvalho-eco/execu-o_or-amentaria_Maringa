@@ -475,7 +475,7 @@ def main() -> int:
             receitas += [{"entidade": nome, "entidade_id": ENTIDADE, **x} for x in r]
             empenhos += [{"entidade": nome, "entidade_id": ENTIDADE, **x} for x in e]
         n = [len(despesas) - cont[0], len(receitas) - cont[1], len(empenhos) - cont[2]]
-        if n[0] == 0:
+        if n[0] == 0 and ENTIDADE != sbmg.ENTIDADE_SBMG:  # SBMG: números vêm dos balancetes (empresas)
             AVISOS.append(f"{nome}: o portal não publica execução orçamentária desta entidade")
         info_ent.append({"id": ENTIDADE, "nome": nome, "nome_oficial": ent["nome"], "cnpj": ent.get("cnpj"),
                          "tipo": TIPOS.get(ent.get("tipo"), ent.get("tipo")),
