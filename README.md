@@ -16,13 +16,15 @@ Para ver localmente, abra `docs/index.html` no navegador (funciona sem servidor)
 
 ```
 meta:     {municipio, fonte, atualizado_em (ISO), exemplo (bool), observacoes}
-despesas: {ano, mes, orgao, funcao, subfuncao, programa, categoria, grupo, elemento,
+despesas: {ano, mes, entidade, orgao, funcao, subfuncao, programa, categoria, grupo, elemento,
            fonte_recurso, dotacao_inicial, dotacao_atualizada, empenhado, liquidado, pago}
-receitas: {ano, mes, categoria, origem, fonte_recurso, previsto, arrecadado}   (opcional)
+receitas: {ano, mes, entidade, categoria, origem, fonte_recurso, previsto, arrecadado}   (opcional)
 ```
 
 - `empenhado`, `liquidado`, `pago` e `arrecadado` são o movimento **do mês**.
 - `dotacao_inicial`, `dotacao_atualizada` e `previsto` são a posição acumulada no fim do mês; o painel usa a do último mês de cada combinação.
+- `entidade` (opcional): Prefeitura, autarquia, empresa pública etc. Com mais de uma entidade, o painel mostra o filtro "Entidade".
+- `docs/dados/credores.js` (opcional, carregado só ao abrir a aba Credores): `window.DADOS_CREDORES = {meta, credores:[{ano, mes, entidade, credor_documento, credor, qtd_empenhos, empenhado, anulado, liquidado, pago}]}`.
 - `meta.exemplo = true` mostra um aviso de dados de exemplo.
 
 ## Coleta de dados

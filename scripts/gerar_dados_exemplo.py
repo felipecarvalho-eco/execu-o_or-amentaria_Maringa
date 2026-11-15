@@ -40,6 +40,8 @@ def fontes(funcao):
     if funcao in ("Urbanismo","Transporte"): return {"Recursos Livres":0.6,"Operações de Crédito":0.25,"Convênios":0.15}
     if funcao=="Assistência Social": return {"Recursos Livres":0.7,"Convênios":0.3}
     return {"Recursos Livres":1.0}
+ENT_PADRAO = "Prefeitura do Município de Maringá"
+ENT = {"Maringá Previdência": "Maringá Previdência (autarquia)", "Câmara Municipal de Maringá": "Câmara Municipal de Maringá"}
 TOTAL = {2025: 3_150_000_000, 2026: 3_420_000_000}
 ULT = {2025:12, 2026:10}
 desp=[]
@@ -66,7 +68,7 @@ for ano,tot in TOTAL.items():
                                 frac_e = min(1,0.25+0.75*m/12) ; frac_l=(m/12)**1.05; frac_p=(m/12)**1.1*0.97
                             e=alvo_emp*frac_e; l=min(e,alvo_emp*frac_l); p=min(l,alvo_emp*max(0,frac_p))
                             if m==12: l=e*0.96 if grupo=="Investimentos" else e*0.995; p=l*0.93 if grupo=="Investimentos" else l*0.985
-                            row=dict(ano=ano,mes=m,orgao=org,funcao=funcao,subfuncao=sub,programa=prog,categoria=cat,grupo=grupo,elemento=el,fonte_recurso=fonte,
+                            row=dict(ano=ano,mes=m,entidade=ENT.get(org,ENT_PADRAO),orgao=org,funcao=funcao,subfuncao=sub,programa=prog,categoria=cat,grupo=grupo,elemento=el,fonte_recurso=fonte,
                                      dotacao_inicial=round(base,2),dotacao_atualizada=round(dot,2),
                                      empenhado=round(max(0,e-emp_acc),2),liquidado=round(max(0,l-liq_acc),2),pago=round(max(0,p-pag_acc),2))
                             emp_acc=max(emp_acc,e); liq_acc=max(liq_acc,l); pag_acc=max(pag_acc,p)
@@ -85,9 +87,28 @@ for ano,tot in TOTAL.items():
         for m in range(1,ULT[ano]+1):
             saz = 1.9 if (orig.startswith("Impostos") and m in (2,3)) else 1.0
             arr = prev/12*saz*random.uniform(0.85,1.1)*(0.6 if cat=="Receitas de Capital" else 1)
-            rec.append(dict(ano=ano,mes=m,categoria=cat,origem=orig,fonte_recurso=fonte,previsto=round(prev,2),arrecadado=round(arr,2)))
+            rec.append(dict(ano=ano,mes=m,entidade=ENT["Maringá Previdência"] if orig=="Contribuições" else ENT_PADRAO,categoria=cat,origem=orig,fonte_recurso=fonte,previsto=round(prev,2),arrecadado=round(arr,2)))
 out=dict(meta=dict(municipio="Maringá - PR",fonte="https://www.maringa.pr.gov.br/portaltransparencia (exemplo)",atualizado_em="2026-11-15T12:00:00-03:00",
         exemplo=True,observacoes="DADOS DE EXEMPLO gerados para testar o painel. Não representam a execução real do município."),despesas=desp,receitas=rec)
+# credores de exemplo (nomes genéricos, claramente fictícios)
+cred=[]
+for ano in TOTAL:
+    for i in range(1,401):
+        peso=1/(i**1.1)
+        pf = i%7==0
+        doc = f"***.{i:03d}.{(i*7)%1000:03d}-**" if pf else f"00.000.{i:03d}/0001-{i%100:02d}"
+        nome = f"Pessoa Física Exemplo {i:03d}" if pf else f"Fornecedor Exemplo {i:03d} Ltda"
+        ent = ENT["Maringá Previdência"] if i%23==0 else ENT_PADRAO
+        for m in range(1,ULT[ano]+1):
+            if random.random() < (0.9 if i<40 else 0.35):
+                e=round(TOTAL[ano]*0.35*peso/12*random.uniform(0.3,1.7)/4.5,2)
+                an=round(e*random.choice([0,0,0,0.02,0.1]),2)
+                idade=(ULT[ano]-m)/12
+                liq=round((e-an)*min(1,0.55+idade*3),2); pg=round(liq*min(1,0.85+idade*2),2)
+                cred.append(dict(ano=ano,mes=m,entidade=ent,credor_documento=doc,credor=nome,qtd_empenhos=random.randint(1,6 if i<40 else 2),empenhado=e,anulado=an,liquidado=liq,pago=pg))
+cs=json.dumps(dict(meta=dict(exemplo=True),credores=cred),ensure_ascii=False,separators=(",",":"))
+open(os.path.join(RAIZ,"docs/dados/credores.js"),"w").write("window.DADOS_CREDORES = "+cs+";\n")
+open(os.path.join(RAIZ,"docs/dados/credores.json"),"w").write(cs)
 s=json.dumps(out,ensure_ascii=False,separators=(",",":"))
 open(os.path.join(RAIZ,"docs/dados/execucao.js"),"w").write("window.DADOS_EXECUCAO = "+s+";\n")
 open(os.path.join(RAIZ,"docs/dados/execucao.json"),"w").write(s)
