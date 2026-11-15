@@ -232,6 +232,8 @@ def coletar_despesas(ano: int, meses: list[int]) -> list[dict]:
             prefixo = ".".join(segs[: i + 1])
             reg[nome + "_codigo"] = codigo_despesa(nome, segs, i)
             reg[nome] = descricoes.get(prefixo) or NAO_INF
+        # modalidade de aplicação (9º segmento): 91 = intraorçamentária (pagamento a outra entidade do município)
+        reg["modalidade_aplicacao"] = f"{segs[8]} - {reg['modalidade']}"
         reg["programatica"] = l["cod"]
         for k in ("dotacao_inicial", "dotacao_atualizada", "empenhado", "liquidado", "pago"):
             reg[k] = r2(l[k])
@@ -307,6 +309,8 @@ def coletar_receitas(ano: int, meses: list[int]) -> list[dict]:
             "especie": nomes[2] if len(nomes) > 2 else NAO_INF,
             "rubrica": nomes[-1] if nomes else NAO_INF,
             "natureza_codigo": c,
+            # categorias 7 e 8 = receitas correntes/de capital intraorçamentárias (vindas de outra entidade do município)
+            "intra_orcamentaria": c[:1] in ("7", "8"),
             "fonte_recurso": NAO_INF,
         }
         for k in ("previsto_inicial", "previsto", "arrecadado_bruto", "deducoes", "arrecadado"):
@@ -396,8 +400,9 @@ def agregar_painel(linhas_folha: list[dict], id_folha: str, dims: list[str],
     return saida
 
 
-DIM_DESPESA_PAINEL = ["entidade", "orgao", "funcao", "subfuncao", "programa", "categoria", "grupo", "elemento", "fonte_recurso"]
-DIM_RECEITA_PAINEL = ["entidade", "categoria", "origem", "fonte_recurso"]
+DIM_DESPESA_PAINEL = ["entidade", "orgao", "funcao", "subfuncao", "programa", "categoria", "grupo", "modalidade_aplicacao",
+                      "elemento", "fonte_recurso"]
+DIM_RECEITA_PAINEL = ["entidade", "categoria", "origem", "fonte_recurso", "intra_orcamentaria"]
 
 
 def despesas_painel(despesas: list[dict]) -> list[dict]:
