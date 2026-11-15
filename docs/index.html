@@ -187,6 +187,7 @@ footer,.desc,.banner{overflow-wrap:anywhere}
 
   <!-- DESPESAS -->
   <section id="secDesp">
+    <div id="despEmpresa" class="hidden"></div>
     <p class="summary" id="sumD"></p>
     <div class="kpis" id="kpisD"></div>
 
@@ -224,6 +225,12 @@ footer,.desc,.banner{overflow-wrap:anywhere}
       <div class="legend"><span><i style="background:var(--track)"></i>Orçado</span><span><i style="background:var(--emp)"></i>Empenhado</span><span><i style="background:var(--pag)"></i>Pago</span></div>
       <div class="bars" id="barsEntidade"></div>
       <div id="notaEntidade" class="desc" style="margin:10px 0 0;font-size:12.5px"></div>
+    </div>
+
+    <div class="card full hidden" id="cardEmpresas">
+      <h2>Empresas do Município</h2>
+      <p class="desc">Empresas públicas não têm orçamento como a Prefeitura: elas faturam, têm custos e dão lucro ou prejuízo. Os números vêm dos balancetes mensais. Clique para ver o detalhe.</p>
+      <div id="listaEmpresas"></div>
     </div>
 
     <div class="card full">
@@ -338,7 +345,7 @@ const pct=(a,b)=>b>0?a/b*100:0;
 const pctS=(a,b)=>b>0?nf1.format(a/b*100)+"%":"–";
 const num=v=>{const n=typeof v==="number"?v:parseFloat(String(v).replace(",","."));return isFinite(n)?n:0;};
 
-let D=null, DESP=[], REC=[], PARCIAL=null;
+let D=null, DESP=[], REC=[], EMP=[], PARCIAL=null;
 const SIGLAS=new Set("SUS FUNDEB MDE RPPS ICMS IPTU ISS ISSQN ITBI IRRF FPM IPVA SAMU CMEI UBS UPA LTDA ME EPP EIRELI SA S/A S.A. S.A CNPJ CPF PR BR CIA ONG APAE CEU SESC SENAC SESI SENAI SEBRAE FNDE FNAS FNS PNAE PDDE COSIP CIP TI II III IV VI VII VIII IX XI XII".split(" "));
 const MINUSC=new Set("DE DA DO DAS DOS E A O AS OS EM NA NO NAS NOS PARA COM POR À AO AOS SOBRE".split(" "));
 function legivel(t){t=String(t);if(/[a-zà-ÿ]/.test(t)||!/[A-Z]/.test(t))return t;
@@ -351,6 +358,8 @@ function boot(data){
   DESP=(D.despesas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};DIMS.forEach(k=>o[k]=txt(r[k]));
     ["dotacao_inicial","dotacao_atualizada","empenhado","liquidado","pago"].forEach(k=>o[k]=num(r[k]));
     o._key=DIMS.map(k=>o[k]).join("\u0001");return o;});
+  EMP=(D.empresas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes,entidade:txt(r.entidade),fonte:String(r.fonte||"")};
+    ["receita_liquida","custo_servicos","despesas_operacionais","resultado_financeiro","ir_csll","outros_resultados","lucro_liquido","caixa","ativo_total","emprestimos_curto_prazo","emprestimos_longo_prazo","patrimonio_liquido"].forEach(k=>o[k]=r[k]==null||r[k]===""?null:num(r[k]));return o;});
   REC=(D.receitas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};RDIMS.forEach(k=>o[k]=txt(r[k]));o.previsto=num(r.previsto);o.arrecadado=num(r.arrecadado);
     o._key=RDIMS.map(k=>o[k]).join("\u0001");return o;});
   if(!REC.length) $("#tabR").classList.add("hidden");
@@ -430,6 +439,7 @@ function refreshFilterOptions(){
     const k=s.dataset.dim;
     const tot=new Map();
     src.forEach(r=>{if(r.ano!==st.ano||r[k]===undefined)return;if(!matchF(r,k))return;tot.set(r[k],(tot.get(r[k])||0)+(st.tab==="rec"?r.arrecadado:st.tab==="cred"?r.qtd:r.empenhado+r.dotacao_atualizada*1e-9));});
+    if(k==="entidade"&&st.tab!=="cred") EMP.forEach(r=>{if(r.ano===st.ano&&!tot.has(r.entidade))tot.set(r.entidade,0);});
     const opts=[...tot.keys()].sort((a,b)=>a.localeCompare(b,"pt-BR"));
     if(st.f[k]&&!tot.has(st.f[k])) opts.unshift(st.f[k]);
     s.innerHTML=`<option value="">${k==="entidade"?"Todas (consolidado)":"Todos"}</option>`+opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("");
@@ -488,7 +498,11 @@ function kpi(lbl,color,val,sub,meter,tip,extra){
   <div class="val" title="${esc(brlFull(val))}">${brl(val)}</div><div class="sub">${sub}</div>${extra||""}
   ${meter!=null?`<div class="meter" role="img" aria-label="${nf1.format(meter)}% do orçado"><i style="width:${Math.min(100,meter)}%;background:${color}"></i></div>`:""}</div>`;
 }
+function ehEmpresa(e){return !!e&&EMP.some(r=>r.entidade===e)&&!DESP.some(r=>r.entidade===e);}
 function renderDesp(){
+  const emp=ehEmpresa(st.f.entidade);
+  [...$("#secDesp").children].forEach(el=>{if(el.id==="despEmpresa")el.classList.toggle("hidden",!emp);else if(emp)el.dataset.oculto="1",el.classList.add("hidden");else if(el.dataset.oculto){delete el.dataset.oculto;if(el.id!=="cardEntidade"&&el.id!=="cardEmpresas")el.classList.remove("hidden");}});
+  if(emp){renderEmpresa(st.f.entidade);return;}
   const rows=despRows(st.ano,st.ate);
   const dot=dotacao(rows), ex=execSum(rows,st.de);
   // comparação com o mesmo período do ano anterior
@@ -515,6 +529,7 @@ function renderDesp(){
   const mostraEnt=ge.length>1||fora.length>0;
   $("#cardEntidade").classList.toggle("hidden",!mostraEnt);
   if(mostraEnt){barList("#barsEntidade",ge,"entidade",10);renderFora(ge,fora);}
+  renderListaEmpresas();
   renderTable();
 }
 
@@ -619,6 +634,7 @@ function csv(){
 
 /* ---------- receitas ---------- */
 function renderRec(){
+  if(ehEmpresa(st.f.entidade)){$("#sumR").innerHTML=`A ${esc(st.f.entidade)} é uma empresa e não tem receita orçamentária no portal. Veja o faturamento e o lucro dela na aba <b>Despesas</b>.`;$("#kpisR").innerHTML="";$("#chRec").innerHTML="";$("#barsOrigem").innerHTML="";return;}
   const rows=REC.filter(r=>r.ano===st.ano&&r.mes<=st.ate&&matchF(r));
   const last=new Map();rows.forEach(r=>{const p=last.get(r._key);if(!p||r.mes>p.mes)last.set(r._key,r);});
   let prev=0;last.forEach(r=>prev+=r.previsto);
@@ -688,6 +704,50 @@ function renderFora(ge,fora){
     if(entPadrao())st.f.entidade=entPadrao();st.tab="cred";render();window.scrollTo({top:0});});
   nota.innerHTML=fora.map(({e})=>{const url=/^https?:\/\//.test(e.transparencia||"")?e.transparencia:"";
     return `<sup>1</sup> ${esc(e.nome)}${e.tipo?" ("+esc(e.tipo.toLowerCase())+")":""} não publica sua execução no Portal da Transparência. Os números são o que a Prefeitura empenhou e pagou a ele${e.cnpj?" (CNPJ "+esc(e.cnpj)+")":""}, e já estão dentro dos valores da Prefeitura. Clique na linha para ver esses empenhos na aba Credores.${url?` Documentos da própria entidade: <a href="${esc(url)}" target="_blank" rel="noopener" style="color:inherit">${esc(url.replace(/^https?:\/\//,""))}</a>.`:""}`;}).join("<br>");
+}
+
+
+/* ---------- empresas (contabilidade empresarial: balancetes mensais, ex.: SBMG) ---------- */
+function resumoEmpresa(nome){
+  const rows=EMP.filter(r=>r.entidade===nome&&r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate).sort((a,b)=>a.mes-b.mes);
+  if(!rows.length)return null;
+  const soma=k=>rows.reduce((a,r)=>a+(r[k]||0),0),ult=rows[rows.length-1];
+  return {rows,ult,rec:soma("receita_liquida"),custo:soma("custo_servicos")+soma("despesas_operacionais"),fin:soma("resultado_financeiro"),ir:soma("ir_csll"),out:soma("outros_resultados"),lucro:soma("lucro_liquido")};
+}
+function ultimoMesEmp(nome){let m=0;EMP.forEach(r=>{if(r.entidade===nome&&r.ano===st.ano&&r.mes>m)m=r.mes;});return m;}
+function notaEmpresas(){const n=(D.meta||{}).empresas_fonte;return n?`<p class="desc" style="margin:10px 0 0;font-size:12.5px">${esc(n)}</p>`:"";}
+function renderListaEmpresas(){
+  const nomes=[...new Set(EMP.filter(r=>r.ano===st.ano).map(r=>r.entidade))];
+  const card=$("#cardEmpresas"),mostra=nomes.length>0&&!st.f.entidade;
+  card.classList.toggle("hidden",!mostra);if(!mostra)return;
+  $("#listaEmpresas").innerHTML=nomes.map(n=>{const r=resumoEmpresa(n);
+    if(!r)return `<div class="bar" style="cursor:default"><div class="top"><span class="nm">${esc(n)}</span><span class="vv">Sem balancete publicado para o período escolhido</span></div></div>`;
+    return `<button class="bar" data-v="${esc(n)}"><div class="top"><span class="nm">${esc(n)}</span><span class="vv">Receita <b>${brl(r.rec)}</b> · ${r.lucro>=0?"lucro":"prejuízo"} <b>${brl(Math.abs(r.lucro))}</b> · caixa ${r.ult.caixa!=null?brl(r.ult.caixa):"–"} (${MESES[r.ult.mes-1]}/${st.ano})</span></div></button>`;}).join("")+notaEmpresas();
+  $("#listaEmpresas").querySelectorAll(".bar[data-v]").forEach(b=>b.onclick=()=>{st.f.entidade=b.dataset.v;render();window.scrollTo({top:0});});
+}
+function renderEmpresa(nome){
+  const box=$("#despEmpresa"),r=resumoEmpresa(nome),um=ultimoMesEmp(nome);
+  if(!r){box.innerHTML=`<div class="card empty">${esc(nome)} ainda não publicou balancete para ${um?"esse período. O último disponível é de "+MESES_L[um-1]+" de "+st.ano:"esse ano"}.</div>`+notaEmpresas();return;}
+  const u=r.ult,emprest=(u.emprestimos_curto_prazo||0)+(u.emprestimos_longo_prazo||0);
+  const periodo=`De ${MESES_L[r.rows[0].mes-1]} a ${MESES_L[u.mes-1]} de ${st.ano}`;
+  const aviso=um&&um<st.ate?`<div class="sub" style="margin-top:4px">Os balancetes publicados vão até ${MESES_L[um-1]} de ${st.ano}.</div>`:"";
+  const tile=(lbl,val,sub,tip,cls)=>`<div class="card kpi"><div class="lbl">${lbl}<span class="help" tabindex="0" data-tip="${esc(tip)}">?</span></div><div class="val${cls?" "+cls:""}">${val}</div><div class="sub">${sub}</div></div>`;
+  const pdf=u.fonte&&/^https?:\/\//.test(u.fonte)?u.fonte:"";
+  box.innerHTML=`<p class="summary">${periodo}, a <b>${esc(nome)}</b> teve receita líquida de <b>${brl(r.rec)}</b> e ${r.lucro>=0?"<b>lucro</b>":"<b>prejuízo</b>"} de <b>${brl(Math.abs(r.lucro))}</b>. No fim de ${MESES_L[u.mes-1]}, tinha <b>${u.caixa!=null?brl(u.caixa):"–"}</b> em caixa.${aviso}</p>
+    <div class="kpis">
+      ${tile("Receita líquida",brl(r.rec),"faturamento menos impostos sobre vendas","Quanto a empresa faturou no período, já descontados os impostos sobre o faturamento.")}
+      ${tile(r.lucro>=0?"Lucro líquido":"Prejuízo líquido",brl(Math.abs(r.lucro)),r.rec?`margem de ${pctS(r.lucro,r.rec)}`:"","Resultado final do período: receita menos custos, despesas, resultado financeiro e impostos sobre o lucro.",r.lucro>=0?"":"delta down")}
+      ${tile("Caixa",u.caixa!=null?brl(u.caixa):"–",`no fim de ${MESES_L[u.mes-1]}`,"Dinheiro disponível em caixa e bancos no fim do mês.")}
+      ${tile("Patrimônio líquido",u.patrimonio_liquido!=null?brl(u.patrimonio_liquido):"–",`empréstimos: ${brl(emprest)}`,"Patrimônio líquido = o que a empresa tem menos o que deve. Empréstimos = dívidas com bancos, de curto e longo prazo.")}
+    </div>
+    <div class="card full">
+      <h2>Mês a mês</h2>
+      <p class="desc">Resultado de cada mês, conforme o balancete. Clique em "PDF" para abrir o documento original.</p>
+      <div class="tablewrap"><table><thead><tr><th style="cursor:default">Mês</th><th style="cursor:default">Receita líquida</th><th style="cursor:default">Custos e despesas</th><th style="cursor:default">Lucro do mês</th><th style="cursor:default">Caixa no fim</th><th style="cursor:default">Balancete</th></tr></thead>
+      <tbody>${r.rows.map(x=>`<tr><td>${MESES_L[x.mes-1]}</td><td>${brl(x.receita_liquida||0)}</td><td>${brl(Math.abs((x.custo_servicos||0)+(x.despesas_operacionais||0)))}</td><td class="${(x.lucro_liquido||0)<0?"delta down":""}">${brl(x.lucro_liquido||0)}</td><td>${x.caixa!=null?brl(x.caixa):"–"}</td><td>${/^https?:\/\//.test(x.fonte)?`<a href="${esc(x.fonte)}" target="_blank" rel="noopener" style="color:var(--accent)">PDF ↗</a>`:"–"}</td></tr>`).join("")}</tbody>
+      <tfoot><tr><td>Total</td><td>${brl(r.rec)}</td><td>${brl(Math.abs(r.custo))}</td><td>${brl(r.lucro)}</td><td>${u.caixa!=null?brl(u.caixa):"–"}</td><td>${pdf?`<a href="${esc(pdf)}" target="_blank" rel="noopener" style="color:var(--accent)">último ↗</a>`:""}</td></tr></tfoot></table></div>
+      ${notaEmpresas()}
+    </div>`;
 }
 
 /* ---------- credores (carregados só quando a aba é aberta) ---------- */
