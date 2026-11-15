@@ -18,6 +18,7 @@
   --accent:#2a78d6; --accent-ink:#ffffff;
   --good:#006300; --bad:#b42323;
   --warn-bg:#fff4d6; --warn-ink:#5c4200;
+  --amber:#a35f00; --cinza:#a7adb5;
   --shadow:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.04);
 }
 @media (prefers-color-scheme: dark){
@@ -31,6 +32,7 @@
     --arr:#199e70; --accent:#3987e5; --accent-ink:#ffffff;
     --good:#0ca30c; --bad:#e66767;
     --warn-bg:#3a2e0c; --warn-ink:#f5d98a;
+    --amber:#e0a43a; --cinza:#6d737b;
     --shadow:none;
   }
 }
@@ -44,6 +46,7 @@
   --arr:#199e70; --accent:#3987e5; --accent-ink:#ffffff;
   --good:#0ca30c; --bad:#e66767;
   --warn-bg:#3a2e0c; --warn-ink:#f5d98a;
+  --amber:#e0a43a; --cinza:#6d737b;
   --shadow:none;
 }
 *{box-sizing:border-box}
@@ -135,6 +138,30 @@ tfoot td{font-weight:700;border-bottom:0;background:var(--surface-2)}
 footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
 .empty{padding:30px;text-align:center;color:var(--ink-2)}
 .hidden,.sem-info{display:none !important}
+.subtabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:thin;margin:0 0 12px;border-bottom:1px solid var(--border)}
+.subtab{white-space:nowrap;flex:none;font:inherit;font-size:14px;background:none;border:0;border-bottom:2px solid transparent;padding:7px 12px;color:var(--ink-2);cursor:pointer;margin-bottom:-1px}
+.subtab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.kpis6{grid-template-columns:repeat(6,minmax(0,1fr))}
+.kpis6 .kpi .val{font-size:23px}
+.kpi .val.ok{color:var(--good)} .kpi .val.bad{color:var(--bad)} .kpi .val.warn{color:var(--amber)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.semana{display:flex;flex-wrap:wrap;gap:10px 40px;margin:10px 0}
+.semana b{display:block;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.semana span{font-size:13px;color:var(--ink-2)}
+.hbars{display:flex;flex-direction:column;gap:2px}
+.hbar{display:grid;grid-template-columns:minmax(0,38%) minmax(0,1fr);gap:8px;align-items:center;padding:4px 6px;border:0;border-radius:6px;background:none;font:inherit;font-size:13px;color:inherit;cursor:pointer;text-align:left;width:100%}
+.hbar:hover{background:var(--surface-2)}
+.hbar.sel{background:var(--surface-2);box-shadow:inset 3px 0 0 var(--accent)}
+.hbar .nm{text-align:right;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbt{display:flex;align-items:center;gap:6px;min-width:0}
+.hbt i{display:block;height:16px;border-radius:0 3px 3px 0;flex:none;min-width:2px}
+.hbt em{font-style:normal;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12.5px;white-space:nowrap;background:color-mix(in srgb,var(--c) 15%,transparent);border:1px solid color-mix(in srgb,var(--c) 50%,transparent)}
+tr.clk{cursor:pointer} tr.det td{white-space:normal;text-align:left;background:var(--surface-2);font-size:13.5px;color:var(--ink-2)}
+#secLic th:first-child,#secLic td:first-child{min-width:0}
+@media (max-width:1100px){.kpis6{grid-template-columns:repeat(3,minmax(0,1fr))}.grid3{grid-template-columns:1fr 1fr}}
+@media (max-width:900px){.grid3{grid-template-columns:1fr}}
+@media (max-width:520px){.kpis6{grid-template-columns:1fr 1fr}.kpis6 .kpi .val{font-size:18px}.semana{gap:10px 24px}}
 footer,.desc,.banner{overflow-wrap:anywhere}
 @media (max-width:900px){.kpis{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
 @media (max-width:520px){
@@ -310,40 +337,57 @@ footer,.desc,.banner{overflow-wrap:anywhere}
   <!-- LICITAÇÕES -->
   <section id="secLic" class="hidden">
     <p class="summary" id="sumL"></p>
+    <div id="licTopo">
+      <div class="subtabs" role="tablist" aria-label="Partes da aba Licitações">
+        <button class="subtab" role="tab" data-la="painel">Painel</button>
+        <button class="subtab" role="tab" data-la="lista">Licitações</button>
+        <button class="subtab" role="tab" data-la="acomp">Acompanhamento</button>
+        <button class="subtab" role="tab" data-la="hist">Histórico</button>
+      </div>
+      <div class="tblbar"><div class="f"><label for="lBusca">Buscar no objeto</label><input id="lBusca" type="search" placeholder="ex.: merenda, asfalto"></div></div>
+    </div>
     <div id="licCorpo">
-      <div class="kpis" id="kpisL"></div>
-      <div class="card full">
-        <h2>Estimado x contratado por mês</h2>
-        <p class="desc">Valor que a prefeitura estimou gastar e valor efetivamente contratado, pelo mês em que a licitação foi publicada.</p>
-        <div class="legend"><span><i style="background:var(--emp)"></i>Estimado</span><span><i style="background:var(--pag)"></i>Contratado</span></div>
-        <div class="chart" id="chLicValor"></div>
+      <!-- Painel -->
+      <div data-lpart="painel">
+        <div class="kpis kpis6" id="kpisL"></div>
+        <div class="card full" id="licSemana"></div>
+        <div class="card full">
+          <h2>Estimado x contratado por mês</h2>
+          <p class="desc">Licitações homologadas com valor contratado, em milhões de reais, pelo mês de publicação. A diferença entre as barras é a economia.</p>
+          <div class="legend"><span><i style="background:var(--cinza)"></i>Estimado</span><span><i style="background:var(--good)"></i>Contratado</span></div>
+          <div class="chart" id="chLicValor"></div>
+        </div>
+        <div class="grid3">
+          <div class="card"><h2>Licitações por mês de publicação</h2><p class="desc">Quantidade; passe o mouse para ver o valor estimado.</p><div class="chart" id="chLicQtd"></div></div>
+          <div class="card"><h2>Valor estimado por entidade</h2><p class="desc">Em milhões de reais. Clique para filtrar.</p><div class="hbars" id="barsLicEnt"></div></div>
+          <div class="card"><h2>Licitações por modalidade</h2><p class="desc">Quantidade de processos. Clique para filtrar.</p><div class="hbars" id="barsLicMod"></div></div>
+          <div class="card"><h2>Situação</h2><p class="desc">Quantidade de processos por grupo de situação. Clique para filtrar.</p><div class="hbars" id="barsLicSit"></div></div>
+          <div class="card"><h2>Secretarias que mais demandam</h2><p class="desc">Prefeitura, valor estimado em milhões; só quando o objeto cita a secretaria. Clique para filtrar.</p><div class="hbars" id="barsLicSec"></div></div>
+          <div class="card"><h2>Contratação direta por mês</h2><p class="desc">Parte das licitações do mês feita por dispensa ou inexigibilidade, em %.</p><div class="chart" id="chLicDireta"></div></div>
+          <div class="card"><h2>Agenda das próximas aberturas</h2><p class="desc">Licitações em andamento que abrem em cada uma das próximas 4 semanas, a partir de hoje.</p><div class="chart" id="chLicAgenda"></div></div>
+          <div class="card"><h2>Concentração do valor</h2><p class="desc">Licitações ordenadas pelo valor estimado: quanto do valor total (%) está nas 10 maiores, nas 40 seguintes e em todas as demais.</p><div class="hbars" id="barsLicConc"></div></div>
+          <div class="card"><h2>Contratação direta por secretaria</h2><p class="desc">Prefeitura: quantidade de dispensas e inexigibilidades, quando o objeto cita a secretaria.</p><div class="hbars" id="barsLicDirSec"></div></div>
+        </div>
       </div>
-      <div class="grid2">
-        <div class="card"><h2>Licitações por mês de publicação</h2><p class="desc">Quantidade de processos publicados em cada mês.</p><div class="chart" id="chLicQtd"></div></div>
-        <div class="card"><h2>Contratação direta por mês</h2><p class="desc">Dispensas e inexigibilidades: compras feitas sem disputa entre fornecedores.</p><div class="legend"><span><i style="background:var(--emp)"></i>Quantidade</span></div><div class="chart" id="chLicDireta"></div></div>
+      <!-- Lista -->
+      <div data-lpart="lista">
+        <div class="card full"><h2>Todas as licitações</h2><p class="desc">Clique numa linha para ver o detalhe. Clique no título de uma coluna para ordenar.</p>
+          <div class="tblbar"><span class="desc" id="licCont" style="margin:0"></span><button class="btn" id="btnCsvL" type="button">Baixar CSV</button></div>
+          <div class="tablewrap"><table id="tblLic"></table></div><div id="licMais" style="margin-top:10px"></div></div>
       </div>
-      <div class="grid2">
-        <div class="card"><h2>Valor estimado por entidade</h2><p class="desc">Clique para filtrar.</p><div class="legend"><span><i style="background:var(--emp)"></i>Estimado</span><span><i style="background:var(--pag)"></i>Contratado</span></div><div class="bars" id="barsLicEnt"></div></div>
-        <div class="card"><h2>Licitações por modalidade</h2><p class="desc">Pregão e concorrência têm disputa; dispensa e inexigibilidade são contratação direta. Clique para filtrar.</p><div class="legend"><span><i style="background:var(--emp)"></i>Estimado</span><span><i style="background:var(--pag)"></i>Contratado</span></div><div class="bars" id="barsLicMod"></div></div>
+      <!-- Acompanhamento -->
+      <div data-lpart="acomp">
+        <div class="card full"><h2>Próximas aberturas</h2><p class="desc">Licitações em andamento que abrem nos próximos 15 dias.</p><div class="tablewrap"><table id="tblLicAb"></table></div></div>
+        <div class="card full"><h2>10 maiores licitações</h2><p class="desc">Por valor estimado, com os filtros escolhidos.</p><div class="tablewrap"><table id="tblLicTop"></table></div></div>
+        <div class="card full"><h2>Sem sucesso</h2><p class="desc">Revogadas, fracassadas (ninguém atendeu às exigências) ou desertas (ninguém apareceu).</p><div class="tablewrap"><table id="tblLicSem"></table></div></div>
+        <div class="card full"><h2>Não homologadas</h2><p class="desc">Suspensas primeiro, depois em andamento e sem sucesso.</p><div class="tablewrap"><table id="tblLicNao"></table></div></div>
       </div>
-      <div class="grid2">
-        <div class="card"><h2>Situação</h2><p class="desc">Em que pé estão os processos. Clique para filtrar.</p><div class="bars" id="barsLicSit"></div></div>
-        <div class="card"><h2>Concentração do valor</h2><p class="desc">Quanto do valor estimado está nas maiores licitações.</p><div id="licConc"></div></div>
+      <!-- Histórico -->
+      <div data-lpart="hist">
+        <div class="card full"><h2>O que mudou a cada atualização</h2><p class="desc">Licitações novas e mudanças de situação encontradas em cada busca semanal no portal. Os filtros do topo valem aqui também.</p>
+          <div class="tblbar"><div class="f"><label for="lHist">Atualização</label><select id="lHist"></select></div><span class="desc" id="licHistCont" style="margin:0"></span></div>
+          <div class="tablewrap"><table id="tblLicHist"></table></div></div>
       </div>
-      <div class="grid2">
-        <div class="card"><h2>Secretarias que mais demandam</h2><p class="desc">Por valor estimado. Clique para filtrar.</p><div class="legend"><span><i style="background:var(--emp)"></i>Estimado</span><span><i style="background:var(--pag)"></i>Contratado</span></div><div class="bars" id="barsLicSec"></div></div>
-        <div class="card"><h2>Contratação direta por secretaria</h2><p class="desc">Valor estimado em dispensas e inexigibilidades.</p><div class="bars" id="barsLicDirSec"></div></div>
-      </div>
-      <div class="card full"><h2>Agenda das próximas aberturas</h2><p class="desc">Licitações com abertura marcada a partir de hoje (não depende do período escolhido).</p><div id="licAgenda"></div></div>
-      <div class="card full"><h2>10 maiores licitações do ano</h2><p class="desc">Por valor estimado, no período e filtros escolhidos.</p><div class="tablewrap"><table id="tblLicTop"></table></div></div>
-      <div class="card full"><h2>Todas as licitações</h2><p class="desc">Pesquise por objeto, número ou secretaria, ordene pelas colunas e baixe em planilha.</p>
-        <div class="tblbar"><div class="f"><label for="lBusca">Pesquisar</label><input id="lBusca" type="search" placeholder="Objeto, número ou secretaria…"></div><button class="btn" id="btnCsvL" type="button">Baixar CSV</button></div>
-        <div class="tablewrap"><table id="tblLic"></table></div><div id="licMais" style="margin-top:10px"></div></div>
-      <div class="grid2">
-        <div class="card"><h2>Licitações sem sucesso</h2><p class="desc">Desertas (ninguém apareceu), fracassadas (ninguém atendeu às exigências) ou revogadas.</p><div class="tablewrap"><table id="tblLicSem"></table></div></div>
-        <div class="card"><h2>Licitações não homologadas</h2><p class="desc">Processos que ainda não terminaram com contrato: em andamento, suspensos ou sem sucesso.</p><div class="tablewrap"><table id="tblLicNao"></table></div></div>
-      </div>
-      <div class="card full"><h2>O que mudou a cada atualização</h2><p class="desc">Licitações novas e mudanças de situação ou de valor desde a coleta anterior.</p><div id="licMud"></div></div>
       <p class="desc" id="licNota" style="margin-top:10px"></p>
     </div>
   </section>
@@ -423,7 +467,7 @@ const SIGLAS=new Set("SUS FUNDEB MDE RPPS ICMS IPTU ISS ISSQN ITBI IRRF FPM IPVA
 const MINUSC=new Set("DE DA DO DAS DOS E A O AS OS EM NA NO NAS NOS PARA COM POR À AO AOS SOBRE".split(" "));
 function legivel(t){t=String(t);if(/[a-zà-ÿ]/.test(t)||!/[A-Z]/.test(t))return t;
   return t.split(/(\s+|-|\/)/).map((w,i)=>{if(!w||/^\s+$|^-$|^\/$/.test(w))return w;if(SIGLAS.has(w))return w;if(i>0&&MINUSC.has(w))return w.toLowerCase();if(/\d/.test(w))return w;return w.charAt(0)+w.slice(1).toLowerCase();}).join("");}
-const st={tab:"desp",ano:null,de:1,ate:12,f:{},tDim:"orgao",busca:"",sort:{k:"pago",d:-1}};
+const st={tab:"desp",la:"painel",ano:null,de:1,ate:12,f:{},tDim:"orgao",busca:"",sort:{k:"pago",d:-1}};
 
 function boot(data){
   D=data||{meta:{},despesas:[],receitas:[]};
@@ -467,6 +511,7 @@ function readHash(){
   st.ate=p.has("ate")?Math.max(1,Math.min(um,+p.get("ate"))):um;
   if(st.de>st.ate) st.de=1;
   const aba=p.get("aba");st.tab=aba==="rec"&&REC.length?"rec":["cred","lic","diar"].includes(aba)?aba:"desp";
+  if(["lista","acomp","hist"].includes(p.get("la")))st.la=p.get("la");
   FDIMS.forEach(k=>{if(p.get(k)) st.f[k]=p.get(k);});
   // Entidade: por padrão mostra só a Prefeitura, porque somar todas conta duas vezes os repasses entre entidades
   if(st.f.entidade==="todas") delete st.f.entidade; else if(!st.f.entidade&&entPadrao()) st.f.entidade=entPadrao();
@@ -479,6 +524,7 @@ function writeHash(){
   const p=new URLSearchParams();p.set("ano",st.ano);p.set("de",st.de);p.set("ate",st.ate);
   if(!st.f.entidade&&entPadrao())p.set("entidade","todas");
   if(st.tab!=="desp")p.set("aba",st.tab);
+  if(st.tab==="lic"&&st.la!=="painel")p.set("la",st.la);
   Object.entries(st.f).forEach(([k,v])=>p.set(k,v));
   history.replaceState(null,"","#"+p.toString());
 }
@@ -498,7 +544,9 @@ function initControls(){
   $("#btnCsv").onclick=csv;
   $("#cBusca").oninput=e=>{cst.busca=e.target.value;cst.lim=50;if(CRED)renderCred();};
   $("#btnCsvC").onclick=csvCred;
-  $("#lBusca").oninput=e=>{lst.busca=e.target.value;lst.lim=50;render();};
+  $("#lBusca").oninput=e=>{lst.busca=e.target.value;lst.lim=100;render();};
+  document.querySelectorAll(".subtab").forEach(b=>b.onclick=()=>{st.la=b.dataset.la;render();});
+  $("#lHist").onchange=e=>{lst.hist=e.target.value;render();};
   $("#btnCsvL").onclick=csvLic;
   $("#vBusca").oninput=e=>{vst.busca=e.target.value;vst.lim=50;render();};
   $("#btnCsvV").onclick=csvDiar;
@@ -853,7 +901,7 @@ function lerLic(d){d=d||{};LICMETA=d.meta||{};
   LIC=(d.licitacoes||[]).map(r=>({id:String(r.id||""),ano:+r.ano||+String(r.publicacao||"").slice(0,4)||0,mes:mesNum(r.mes,r.publicacao),entidade:txtv(r.entidade),secretaria:txtv(r.secretaria),
     numero:String(r.numero||""),modalidade:txtv(r.modalidade),objeto:String(r.objeto||""),est:num(r.valor_estimado),con:num(r.valor_contratado),situacao:txtv(r.situacao),
     sit:txtv(r.grupo||r.situacao),publicacao:String(r.publicacao||""),abertura:String(r.abertura||""),fornecedor:r.fornecedor?String(r.fornecedor):"",link:/^https?:\/\//.test(r.link||"")?r.link:""}));
-  LICM=(d.mudancas||[]).map(r=>({atualizacao:String(r.atualizacao||""),entidade:txtv(r.entidade),numero:String(r.numero||""),modalidade:txtv(r.modalidade),objeto:String(r.objeto||""),
+  LICM=(d.mudancas||[]).map(r=>({atualizacao:String(r.atualizacao||""),id:String(r.id||""),entidade:txtv(r.entidade),numero:String(r.numero||""),modalidade:txtv(r.modalidade),objeto:String(r.objeto||""),
     est:num(r.valor_estimado),con:num(r.valor_contratado),tipo:String(r.tipo||""),de:String(r.de||""),para:String(r.para||"")}));}
 function lerDia(d){d=d||{};DIAMETA=d.meta||{};
   DIA=(d.diarias||[]).map(r=>({ano:+r.ano||+String(r.data_saida||"").slice(0,4)||0,mes:mesNum(r.mes,r.data_saida),entidade:txtv(r.entidade),orgao:txtv(r.orgao),tipo:txtv(r.tipo),
@@ -903,7 +951,8 @@ function tabela(el,cols,rows,ts,opt){
   rows=rows.slice().sort((a,b)=>{const va=val(a),vb=val(b);return (typeof va==="number"&&typeof vb==="number"?va-vb:String(va).localeCompare(String(vb),"pt-BR"))*d;});
   const vis=opt.lim?rows.slice(0,opt.lim):rows;
   el.innerHTML=`<thead><tr>${cols.map(x=>`<th data-k="${x.k}"${x.num?"":' style="text-align:left"'} ${k===x.k?`aria-sort="${d<0?"descending":"ascending"}"`:""}>${x.t}</th>`).join("")}</tr></thead>
-    <tbody>${vis.length?vis.map(r=>`<tr>${cols.map(x=>`<td style="${x.num?"":"text-align:left;"}${x.wrap?"white-space:normal;min-width:220px":""}">${x.f?x.f(r):esc(r[x.k])}</td>`).join("")}</tr>`).join(""):`<tr><td colspan="${cols.length}" class="empty">${opt.vazio||"Nada encontrado."}</td></tr>`}</tbody>`;
+    <tbody>${vis.length?vis.map((r,i)=>`<tr${opt.det?` class="clk" data-i="${i}" tabindex="0"`:""}>${cols.map(x=>`<td style="${x.num?"":"text-align:left;"}${x.wrap?"white-space:normal;min-width:220px":""}">${x.f?x.f(r):esc(r[x.k])}</td>`).join("")}</tr>${opt.det&&r.id&&lst.aberto===r.id?`<tr class="det"><td colspan="${cols.length}">${opt.det(r)}</td></tr>`:""}`).join(""):`<tr><td colspan="${cols.length}" class="empty">${opt.vazio||"Nada encontrado."}</td></tr>`}</tbody>`;
+  if(opt.det)el.querySelectorAll("tr.clk").forEach(tr=>{const r=vis[+tr.dataset.i],tg=()=>{lst.aberto=lst.aberto===r.id?null:r.id;render();};tr.onclick=tg;tr.onkeydown=e=>{if(e.key==="Enter")tg();};});
   el.querySelectorAll("th").forEach(th=>th.onclick=()=>{const kk=th.dataset.k;if(ts.k===kk)ts.d*=-1;else{ts.k=kk;ts.d=cols.find(x=>x.k===kk).num?-1:1;}render();});
   return rows;
 }
@@ -919,63 +968,159 @@ function notaFonte(sel,m){const o=[];if(m.atualizado_em){const d=new Date(m.atua
   $(sel).innerHTML=o.join(" · ");}
 
 /* ---------- aba Licitações ---------- */
-const lst={busca:"",lim:50,ts:{k:"est",d:-1},tsTop:{k:"est",d:-1},tsSem:{k:"est",d:-1},tsNao:{k:"est",d:-1}};let licLista=[];
+const lst={busca:"",lim:100,hist:"",aberto:null,ts:{k:"publicacao",d:-1},tsAb:{k:"abertura",d:1},tsTop:{k:"est",d:-1},tsSem:{k:"publicacao",d:-1},tsNao:{k:"ordem",d:1},tsHist:{k:"ordem",d:1}};let licLista=[];
+const SIT_COR={"Homologada":"var(--good)","Em andamento":"var(--cinza)","Suspensa":"var(--amber)","Sem sucesso":"var(--bad)"};
+const mi=v=>nf1.format(v/1e6);
+// nome curto de secretaria: a sigla, quando há; senão o nome sem "Secretaria Municipal de"
+const secCurta=n=>{const s=String(n).split(";").pop().trim(),a=s.match(/\(([A-Z/]+)\)/);return a?a[1]:s.replace(/^Secretaria (Municipal )?(de |da |do |dos |das )?/,"").replace(/^Gerência (de |da |do )?/,"Ger. ");};
+const secInfo=r=>/^prefeitura/i.test(r.entidade)&&!/^não informado/i.test(r.secretaria);
+// colunas verticais: series=[{nome,cor,vals}] ; opt={fmt,rot:[índices com rótulo],tip(i)}
+function colunas(el,labels,series,opt){
+  el=$(el);opt=opt||{};const fmt=opt.fmt||(v=>nf0.format(v));
+  if(!labels.length){el.innerHTML='<div class="empty">Sem dados para os filtros escolhidos.</div>';return;}
+  const W=Math.max(260,el.clientWidth||400),H=opt.H||(W<420?190:220),mt=18,mb=24,ml=4,mr=4;
+  const ymax=Math.max(1e-9,...series.flatMap(s=>s.vals))*1.08,y=v=>mt+(H-mt-mb)*(1-Math.max(0,v)/ymax);
+  const bw=(W-ml-mr)/labels.length,n=series.length,gw=bw*.78,w=Math.max(3,(gw-(n-1)*3)/n);
+  const rot=opt.rot||[];const cabe=w>=(opt.minRot||26);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opt.aria||series.map(x=>x.nome).join(" e "))}">`;
+  for(let i=0;i<=3;i++){const yy=mt+(H-mt-mb)*i/3;s+=`<line x1="${ml}" x2="${W-mr}" y1="${yy}" y2="${yy}" stroke="var(${i<3?"--grid":"--axis"})"/>`;}
+  labels.forEach((lb,i)=>{const gx=ml+i*bw;series.forEach((se,j)=>{const v=se.vals[i],x=gx+(bw-gw)/2+j*(w+3);
+      if(v>0){const h=y(0)-y(v),r=Math.min(3,h,w/2);s+=`<path d="M${x},${y(0)}V${y(v)+r}q0,-${r} ${r},-${r}h${w-2*r}q${r},0 ${r},${r}V${y(0)}Z" fill="${se.cor}"/>`;}
+      if(rot.includes(j)&&cabe)s+=`<text x="${x+w/2}" y="${y(v)-4}" text-anchor="middle" font-size="11" fill="var(--ink)">${fmt(v)}</text>`;});
+    s+=`<text x="${gx+bw/2}" y="${H-7}" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(lb)}</text><rect x="${gx}" y="0" width="${bw}" height="${H-mb}" fill="transparent" data-i="${i}" class="hb"/>`;});
+  s+=`</svg><div class="tt"></div>`;el.innerHTML=s;
+  if(!opt.tip)return;const tt=el.querySelector(".tt"),svg=el.querySelector("svg");
+  el.querySelectorAll(".hb").forEach(rc=>{rc.addEventListener("pointerenter",()=>{const i=+rc.dataset.i,r=svg.getBoundingClientRect();
+    tt.innerHTML=opt.tip(i);tt.style.opacity=1;const px=(ml+i*bw+bw/2)*r.width/W,tw=tt.offsetWidth;tt.style.left=Math.max(0,Math.min(r.width-tw,px-tw/2))+"px";tt.style.top="0px";});
+    rc.addEventListener("pointerleave",()=>tt.style.opacity=0);});
+}
+const ttH=(h,linhas)=>`<div class="h">${esc(h)}</div>`+linhas.map(([n,v,c])=>`<div class="r"><span>${c?`<i style="background:${c}"></i>`:""}${esc(n)}</span><span>${v}</span></div>`).join("");
+// barras horizontais com nome à esquerda e valor ao lado: items=[{nome,curto,v,txt,cor,tip}]
+function hbarras(sel,items,opt){
+  opt=opt||{};const el=$(sel);
+  if(!items.length){el.innerHTML='<div class="empty">Sem dados para os filtros escolhidos.</div>';return;}
+  const max=Math.max(1e-9,...items.map(i=>i.v));
+  el.innerHTML=items.map((i,k)=>`<button class="hbar${opt.sel===i.nome?" sel":""}" data-k="${k}" title="${esc(i.tip||i.nome)}" ${opt.onClick?"":'style="cursor:default"'}>
+    <span class="nm">${esc(i.curto||i.nome)}</span><span class="hbt"><i style="width:calc((100% - 64px) * ${Math.max(0,i.v)/max});background:${i.cor||"var(--liq)"}"></i><em>${i.txt}</em></span></button>`).join("");
+  if(opt.onClick)el.querySelectorAll(".hbar").forEach(b=>b.onclick=()=>opt.onClick(items[+b.dataset.k]));
+}
+const sitPill=r=>`<span class="pill" style="--c:${SIT_COR[r.sit]||"var(--cinza)"}">${esc(r.situacao)}</span>`;
 function renderLic(){
+  $("#licTopo").classList.toggle("hidden",carga.licitacoes!=="ok");
   if(!estadoCarga("licitacoes","DADOS_LICITACOES",lerLic,"#sumL","#licCorpo","licitações"))return;
-  const rows=LIC.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r));
+  $("#licTopo").classList.remove("hidden");
+  document.querySelectorAll(".subtab").forEach(b=>b.setAttribute("aria-selected",b.dataset.la===st.la));
+  document.querySelectorAll("[data-lpart]").forEach(p=>p.classList.toggle("hidden",p.dataset.lpart!==st.la));
+  const q=semAcento(lst.busca.trim());
+  const busca=r=>!q||semAcento(r.objeto+" "+r.numero+" "+r.secretaria+" "+r.fornecedor).includes(q);
+  const base=(except)=>LIC.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r,except)&&busca(r));
+  const rows=base();
   if(!rows.length){$("#licCorpo").classList.add("hidden");$("#sumL").textContent=`${periodoTxt()}: nenhuma licitação encontrada para os filtros escolhidos.`;return;}
   $("#licCorpo").classList.remove("hidden");
   const S=(a,f)=>a.reduce((t,r)=>t+f(r),0);
-  const est=S(rows,r=>r.est),hom=rows.filter(r=>/homolog/i.test(r.sit)),con=S(hom,r=>r.con),estHom=S(hom.filter(r=>r.con>0),r=>r.est),conHom=S(hom.filter(r=>r.con>0),r=>r.con);
-  const dir=rows.filter(r=>ehDireta(r.modalidade)),estDir=S(dir,r=>r.est);
-  $("#sumL").innerHTML=`${periodoTxt()}, foram publicadas <b>${nf0.format(rows.length)} licitações</b>, com valor estimado de <b>${brl(est)}</b>. ${nf0.format(hom.length)} já foram homologadas, somando <b>${brl(con)}</b> contratados${estHom>0?`, ${conHom<=estHom?"<b>"+pctS(estHom-conHom,estHom)+" abaixo</b>":"<b>"+pctS(conHom-estHom,estHom)+" acima</b>"} do estimado`:""}. <b>${pctS(dir.length,rows.length)}</b> dos processos foram contratação direta (sem disputa).`;
-  $("#kpisL").innerHTML=kpiT("Licitações",nf0.format(rows.length),`${nf0.format(hom.length)} homologadas`,"Processos de compra publicados no período (pela data de publicação).")+
-    kpiT("Valor estimado",brl(est),"quanto se previa gastar","Soma do valor estimado de todos os processos do período.","var(--emp)")+
-    kpiT("Valor contratado",brl(con),estHom>0?`economia de ${pctS(estHom-conHom,estHom)} sobre o estimado`:"nas licitações homologadas","Soma do valor contratado nas licitações homologadas. A economia compara com o estimado dessas mesmas licitações.","var(--pag)")+
-    kpiT("Contratação direta",pctS(dir.length,rows.length),`dos processos · ${brl(estDir)} estimados`,"Dispensas e inexigibilidades: compras sem disputa entre fornecedores, permitidas em casos previstos em lei.","var(--emp)",pct(dir.length,rows.length));
-  const ms=mesesPeriodo(),porMes=f=>ms.map(m=>S(rows.filter(r=>r.mes===m),f));
-  barrasMes("#chLicValor",ms,[{nome:"Estimado",cor:"var(--emp)",vals:porMes(r=>r.est)},{nome:"Contratado",cor:"var(--pag)",vals:porMes(r=>/homolog/i.test(r.sit)?r.con:0)}]);
-  barrasMes("#chLicQtd",ms,[{nome:"Licitações",cor:"var(--liq)",vals:porMes(()=>1)}],v=>nf0.format(v));
-  barrasMes("#chLicDireta",ms,[{nome:"Contratações diretas",cor:"var(--emp)",vals:ms.map(m=>dir.filter(r=>r.mes===m).length)}],v=>nf0.format(v));
-  const ev=(rs,dim)=>{const tg=agrupa(rs,r=>r[dim],(t,r)=>{t.est=(t.est||0)+r.est;t.con=(t.con||0)+(/homolog/i.test(r.sit)?r.con:0);});
-    return tg.sort((a,b)=>b.est-a.est).map(t=>({nome:t.nome,v:t.est,v2:t.con,txt:`<b>${brl(t.est)}</b> estimados · ${nf0.format(t.n)} ${t.n===1?"processo":"processos"}`}));};
+  const g=k=>rows.filter(r=>r.sit===k);
+  const est=S(rows,r=>r.est),hom=g("Homologada"),cv=hom.filter(r=>r.est>0&&r.con>0),vc=S(cv,r=>r.con),ve=S(cv,r=>r.est);
+  const and=g("Em andamento"),sem=g("Sem sucesso"),sus=g("Suspensa"),dir=rows.filter(r=>ehDireta(r.modalidade));
+  // aberturas: em andamento com data a partir de hoje (todos os meses do ano, para não sumir quando o período termina antes de hoje)
+  const hoje=hojeISO(),dia=n=>{const d=new Date(hoje+"T12:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
+  const futuras=LIC.filter(r=>r.ano===st.ano&&matchF(r)&&busca(r)&&r.sit==="Em andamento"&&r.abertura>=hoje);
+  const em7=futuras.filter(r=>r.abertura<=dia(7)).length;
+  const prazos=rows.filter(r=>/^preg/i.test(r.modalidade)&&r.publicacao&&r.abertura>=r.publicacao).map(r=>(Date.parse(r.abertura)-Date.parse(r.publicacao))/864e5).sort((a,b)=>a-b);
+  const pz=prazos.length?prazos[Math.floor(prazos.length/2)]:null;
+  // resumo
+  const ativos=[st.f.secretaria,st.f.modalidade,lst.busca.trim()?`objeto com “${lst.busca.trim()}”`:""].filter(Boolean);
+  const um=rows.length===1,lic=um?"licitação":"licitações",estT=`<b>R$ ${mi(est)} milhões</b> estimados`;let t;
+  if(st.f.sit==="Homologada")t=`<b>${nf0.format(rows.length)}</b> ${lic} ${um?"homologada soma":"homologadas somam"} ${estT} e <b>R$ ${mi(vc)} milhões</b> contratados, ${pctS(ve-vc,ve)} abaixo do estimado.`;
+  else if(st.f.sit==="Em andamento")t=`<b>${nf0.format(rows.length)}</b> ${lic} em andamento ${um?"soma":"somam"} ${estT}; <b>${nf0.format(em7)}</b> ${em7===1?"abre":"abrem"} nos próximos 7 dias.`;
+  else if(st.f.sit==="Suspensa")t=`<b>${nf0.format(rows.length)}</b> ${lic} ${um?"suspensa soma":"suspensas somam"} ${estT} e aguardam decisão para seguir.`;
+  else if(st.f.sit==="Sem sucesso")t=`<b>${nf0.format(rows.length)}</b> ${lic} sem sucesso (revogadas, fracassadas ou desertas) ${um?"somava":"somavam"} ${estT}.`;
+  else t=`<b>${nf0.format(rows.length)}</b> ${lic} ${um?"soma":"somam"} ${estT}. <b>${nf0.format(Math.round(pct(hom.length,rows.length)))}%</b> já foram homologadas, <b>${nf0.format(sus.length)}</b> ${sus.length===1?"está suspensa":"estão suspensas"} e <b>${nf0.format(em7)}</b> ${em7===1?"abre":"abrem"} nos próximos 7 dias.`;
+  $("#sumL").innerHTML=`${periodoTxt()}${ativos.length?", com "+esc(ativos.join(", ")):""}: ${t}`;
+  // indicadores (mesmos 12 do painel original)
+  const k=(lbl,val,sub,tip,cls)=>`<div class="card kpi"><div class="lbl">${lbl}<span class="help" tabindex="0" data-tip="${esc(tip)}">?</span></div><div class="val${cls?" "+cls:""}">${val}</div><div class="sub">${sub}</div></div>`;
+  $("#kpisL").innerHTML=
+    k("Licitações",nf0.format(rows.length),"no período, com os filtros","Processos de compra publicados no período (pela data de publicação).")+
+    k("Valor estimado",`R$ ${mi(est)} mi`,"soma dos valores máximos","Soma do valor estimado (o máximo que se aceita pagar) de todos os processos.")+
+    k("Homologadas",nf0.format(hom.length),"concluídas com vencedor","Homologar é o ato final que confirma o vencedor. Depois disso vem o contrato.","ok")+
+    k("Não homologadas",nf0.format(rows.length-hom.length),"em andamento, suspensas ou sem sucesso","Processos que ainda não terminaram com um vencedor confirmado.")+
+    k("Valor contratado",`R$ ${mi(vc)} mi`,"nas homologadas com valor","Soma do valor contratado nas licitações homologadas que informam estimado e contratado.")+
+    k("Economia",`R$ ${mi(ve-vc)} mi`,`${pctS(ve-vc,ve)} abaixo do estimado`,"Diferença entre o estimado e o contratado nas mesmas licitações homologadas.","ok")+
+    k("Em andamento",nf0.format(and.length),"inclui prorrogadas e a abrir","Processos ainda em disputa, inclusive os prorrogados e os aguardando a data de abertura.")+
+    k("Sem sucesso",nf0.format(sem.length),"revogadas, fracassadas, desertas","Revogada: cancelada pela prefeitura. Fracassada: ninguém atendeu às exigências. Deserta: ninguém apareceu.","bad")+
+    k("Suspensas",nf0.format(sus.length),"aguardando decisão","Processos parados, por exemplo por um questionamento ou decisão do Tribunal de Contas.","warn")+
+    k("Contratação direta",pctS(dir.length,rows.length),"dispensas e inexigibilidades","Compras sem disputa entre fornecedores, permitidas pela lei em casos específicos.")+
+    k("Abrem em 7 dias",nf0.format(em7),"a partir de hoje","Licitações em andamento com abertura (sessão de disputa) marcada para os próximos 7 dias.")+
+    k("Prazo do pregão",pz==null?"–":`${nf0.format(pz)} dias`,"mediana da publicação à abertura","Tempo típico entre publicar o edital do pregão e abrir as propostas. Metade dos pregões leva menos que isso.");
+  // última atualização
+  const ats=[...new Set(LICM.map(m=>m.atualizacao))].sort();const ult=ats[ats.length-1];
+  if(ult){const m=LICM.filter(x=>x.atualizacao===ult),s=m.filter(x=>x.tipo!=="Nova"),n=v=>nf0.format(v);
+    $("#licSemana").innerHTML=`<h2>Última atualização <span style="font-weight:400;color:var(--ink-2);font-size:14px">· ${dataBR(ult)}</span></h2><div class="semana">
+      <div><b>${n(m.length-s.length)}</b><span>licitações novas</span></div><div><b>${n(s.length)}</b><span>mudaram de situação</span></div>
+      <div><b>${n(s.filter(x=>/^homolog/i.test(x.para)).length)}</b><span>foram homologadas</span></div><div><b>${n(s.filter(x=>/revog|fracass|desert/i.test(x.para)).length)}</b><span>ficaram sem sucesso</span></div>
+      <div><b>${n(s.filter(x=>/^suspens/i.test(x.para)).length)}</b><span>foram suspensas</span></div></div>
+      <p class="desc" style="margin:0">Contagem desde a busca anterior, em todas as entidades. O detalhe de cada mudança está em <a href="#" data-ir="hist" style="color:var(--accent)">Histórico</a>.</p>`;
+    $("#licSemana").querySelector("[data-ir]").onclick=e=>{e.preventDefault();st.la="hist";render();window.scrollTo({top:$("#secLic").offsetTop-10});};
+  }else $("#licSemana").innerHTML='<h2>Última atualização</h2><div class="empty">Nenhuma atualização registrada ainda.</div>';
+  // gráficos por mês
+  const ms=mesesPeriodo().filter(m=>rows.some(r=>r.mes===m)),ML=ms.map(m=>MESES[m-1][0].toUpperCase()+MESES[m-1].slice(1));
+  const pm=ms.map(m=>{const r=rows.filter(x=>x.mes===m),h=r.filter(x=>x.sit==="Homologada"&&x.est>0&&x.con>0);
+    return {n:r.length,est:S(r,x=>x.est),dir:r.filter(x=>ehDireta(x.modalidade)).length,he:S(h,x=>x.est),hc:S(h,x=>x.con)};});
+  colunas("#chLicValor",ML,[{nome:"Estimado",cor:"var(--cinza)",vals:pm.map(p=>p.he/1e6)},{nome:"Contratado",cor:"var(--good)",vals:pm.map(p=>p.hc/1e6)}],
+    {fmt:v=>nf1.format(v),rot:[1],H:250,tip:i=>ttH(`${MESES_L[ms[i]-1]} de ${st.ano}`,[["Estimado",`R$ ${nf1.format(pm[i].he/1e6)} mi`,"var(--cinza)"],["Contratado",`R$ ${nf1.format(pm[i].hc/1e6)} mi`,"var(--good)"],["Economia",`R$ ${nf1.format((pm[i].he-pm[i].hc)/1e6)} mi`]])});
+  colunas("#chLicQtd",ML,[{nome:"Licitações",cor:"var(--liq)",vals:pm.map(p=>p.n)}],{rot:[0],minRot:22,tip:i=>ttH(`${MESES_L[ms[i]-1]} de ${st.ano}`,[["Licitações",nf0.format(pm[i].n)],["Valor estimado",`R$ ${mi(pm[i].est)} mi`]])});
+  colunas("#chLicDireta",ML,[{nome:"Contratação direta",cor:"var(--liq)",vals:pm.map(p=>p.n?p.dir/p.n*100:0)}],{fmt:v=>nf0.format(v)+"%",rot:[0],minRot:22,tip:i=>ttH(`${MESES_L[ms[i]-1]} de ${st.ano}`,[["Contratação direta",pctS(pm[i].dir,pm[i].n)],["Processos diretos",`${nf0.format(pm[i].dir)} de ${nf0.format(pm[i].n)}`]])});
+  // agenda: 4 semanas a partir de hoje
+  const sem4=[0,1,2,3].map(w=>{const ini=dia(7*w),fim=dia(7*w+6),r=futuras.filter(x=>x.abertura>=ini&&x.abertura<=fim);return {ini,fim,n:r.length,est:S(r,x=>x.est)};});
+  colunas("#chLicAgenda",sem4.map(s=>dataBR(s.ini).slice(0,5)),[{nome:"Aberturas",cor:"var(--liq)",vals:sem4.map(s=>s.n)}],{rot:[0],minRot:1,aria:"Aberturas por semana",
+    tip:i=>ttH(`${dataBR(sem4[i].ini).slice(0,5)} a ${dataBR(sem4[i].fim).slice(0,5)}`,[["Aberturas",nf0.format(sem4[i].n)],["Valor estimado",`R$ ${mi(sem4[i].est)} mi`]])});
+  // barras horizontais
   const filtra=dim=>i=>{if(st.f[dim]===i.nome)delete st.f[dim];else st.f[dim]=i.nome;render();};
-  listaBarras("#barsLicEnt",ev(LIC.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r,"entidade")),"entidade"),{onClick:filtra("entidade"),sel:st.f.entidade});
-  listaBarras("#barsLicMod",ev(rows,"modalidade"),{onClick:filtra("modalidade"),sel:st.f.modalidade});
-  listaBarras("#barsLicSec",ev(rows,"secretaria"),{onClick:filtra("secretaria"),sel:st.f.secretaria,limite:10});
-  listaBarras("#barsLicDirSec",ev(dir,"secretaria").map(i=>({...i,v2:null})),{limite:10});
-  const sits=agrupa(LIC.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r,"sit")),r=>r.sit,(t,r)=>{t.est=(t.est||0)+r.est;}).sort((a,b)=>b.n-a.n);
-  listaBarras("#barsLicSit",sits.map(t=>({nome:t.nome,v:t.n,txt:`<b>${nf0.format(t.n)}</b> ${t.n===1?"processo":"processos"} · ${brl(t.est)}`})),{onClick:filtra("sit"),sel:st.f.sit});
-  // concentração
-  const ord=rows.slice().sort((a,b)=>b.est-a.est),top10=S(ord.slice(0,10),r=>r.est);let acc=0,n50=0,n80=0;
-  for(const r of ord){acc+=r.est;if(!n50&&acc>=est*.5)n50=ord.indexOf(r)+1;if(!n80&&acc>=est*.8){n80=ord.indexOf(r)+1;break;}}
-  $("#licConc").innerHTML=est>0?`<div class="kpi"><div class="val">${pctS(top10,est)}</div><div class="sub">do valor estimado está nas 10 maiores licitações (${brl(top10)} de ${brl(est)}).</div><div class="meter"><i style="width:${pct(top10,est)}%;background:var(--pag)"></i></div></div>
-    <p style="margin:14px 0 0">Metade de todo o valor está em <b>${nf0.format(n50)}</b> ${n50===1?"licitação":"licitações"}, e 80% em <b>${nf0.format(n80)}</b>, de um total de ${nf0.format(rows.length)}.</p>`:'<div class="empty">Sem valores estimados.</div>';
-  // agenda
-  const hoje=hojeISO(),prox=LIC.filter(r=>r.abertura>=hoje&&matchF(r)).sort((a,b)=>a.abertura.localeCompare(b.abertura));
-  const dias=agrupa(prox,r=>r.abertura,(t,r)=>{(t.l=t.l||[]).push(r);});
-  $("#licAgenda").innerHTML=dias.length?dias.slice(0,15).map(d=>`<div style="display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;padding:8px 0;border-top:1px solid var(--grid)">
-      <div><b>${dataBR(d.nome)}</b><div class="desc" style="margin:0">${["domingo","segunda","terça","quarta","quinta","sexta","sábado"][new Date(d.nome+"T12:00").getDay()]}</div></div>
-      <div>${d.l.map(r=>`<div style="margin-bottom:4px">${esc(r.modalidade)} ${esc(r.numero)} · <span style="color:var(--ink-2)">${esc(r.entidade)}</span><br>${esc(r.objeto)} <span style="color:var(--ink-2);white-space:nowrap">· ${brl(r.est)}</span></div>`).join("")}</div></div>`).join("")+
-      (dias.length>15?`<p class="desc">E mais ${nf0.format(dias.length-15)} datas.</p>`:""):'<div class="empty">Nenhuma abertura marcada a partir de hoje para os filtros escolhidos.</div>';
+  const ag=(rs,ch)=>agrupa(rs,ch,(t,r)=>{t.est=(t.est||0)+r.est;});
+  const ents=ag(base("entidade"),r=>r.entidade).sort((a,b)=>b.est-a.est);
+  hbarras("#barsLicEnt",ents.map(t=>({nome:t.nome,curto:t.nome.replace(/ \(administração direta\)/,"").replace(/ - .*/,""),v:t.est,txt:mi(t.est),tip:`${t.nome}: ${nf0.format(t.n)} licitações, R$ ${mi(t.est)} mi`})),{onClick:filtra("entidade"),sel:st.f.entidade});
+  const mods=ag(base("modalidade"),r=>r.modalidade).sort((a,b)=>b.n-a.n);
+  hbarras("#barsLicMod",mods.map(t=>({nome:t.nome,v:t.n,txt:nf0.format(t.n),tip:`${t.nome}: ${nf0.format(t.n)} licitações, R$ ${mi(t.est)} mi`})),{onClick:filtra("modalidade"),sel:st.f.modalidade});
+  const bs=base("sit");
+  hbarras("#barsLicSit",["Homologada","Em andamento","Suspensa","Sem sucesso"].map(s=>{const r=bs.filter(x=>x.sit===s);return {nome:s,v:r.length,txt:nf0.format(r.length),cor:SIT_COR[s],tip:`${s}: ${nf0.format(r.length)} licitações, R$ ${mi(S(r,x=>x.est))} mi`};}),{onClick:filtra("sit"),sel:st.f.sit});
+  const secs=agrupa(base("secretaria").filter(secInfo),r=>r.secretaria.split(";").pop().trim(),(t,r)=>{t.est=(t.est||0)+r.est;}).sort((a,b)=>b.est-a.est).slice(0,10);
+  hbarras("#barsLicSec",secs.map(t=>({nome:t.nome,curto:secCurta(t.nome),v:t.est,txt:mi(t.est),tip:`${t.nome}: ${nf0.format(t.n)} licitações, R$ ${mi(t.est)} mi`})),{onClick:i=>{if(LIC.some(r=>r.secretaria===i.nome))filtra("secretaria")(i);else{lst.busca=secCurta(i.nome);$("#lBusca").value=lst.busca;render();}},sel:st.f.secretaria});
+  const ord=rows.slice().sort((a,b)=>b.est-a.est),fx=(nome,a,b)=>{const r=ord.slice(a,b);return {nome,n:r.length,est:S(r,x=>x.est)};};
+  const conc=[fx("10 maiores",0,10),fx("11ª à 50ª maior",10,50),fx("Todas as demais",50,ord.length)].filter(x=>x.n>0);
+  hbarras("#barsLicConc",conc.map(c=>({nome:c.nome,v:pct(c.est,est),txt:pctS(c.est,est),tip:`${c.nome}: ${nf0.format(c.n)} licitações, R$ ${mi(c.est)} mi (${pctS(c.est,est)} do total)`})));
+  const ds=agrupa(dir.filter(secInfo),r=>r.secretaria.split(";").pop().trim(),(t,r)=>{t.est=(t.est||0)+r.est;}).sort((a,b)=>b.n-a.n).slice(0,10);
+  hbarras("#barsLicDirSec",ds.map(t=>({nome:t.nome,curto:secCurta(t.nome),v:t.n,txt:nf0.format(t.n),tip:`${t.nome}: ${nf0.format(t.n)} contratações diretas, R$ ${mi(t.est)} mi`})));
   // tabelas
-  const sitTag=r=>esc(r.situacao)+(r.situacao!==r.sit?` <span style="color:var(--muted)">(${esc(r.sit)})</span>`:"");
-  const obj=r=>`${esc(r.objeto)}${r.link?` <a href="${esc(r.link)}" target="_blank" rel="noopener" style="color:var(--accent)">↗</a>`:""}<div style="font-size:12px;color:var(--muted)">${esc(r.secretaria)}</div>`;
-  const colsBase=[{k:"numero",t:"Número",f:r=>`${esc(r.modalidade)}<br>${esc(r.numero)}`},{k:"objeto",t:"Objeto",f:obj,wrap:1},{k:"entidade",t:"Entidade"},
-    {k:"est",t:"Estimado",f:r=>brl(r.est),num:1},{k:"con",t:"Contratado",f:r=>r.con?brl(r.con):"–",num:1},{k:"situacao",t:"Situação",f:sitTag},{k:"publicacao",t:"Publicação",f:r=>dataBR(r.publicacao)}];
-  tabela("#tblLicTop",colsBase,ord.slice(0,10),lst.tsTop);
-  tabela("#tblLicSem",colsBase.filter(c=>c.k!=="con"&&c.k!=="entidade"),rows.filter(r=>/sem sucesso|desert|fracass|revog/i.test(r.sit+" "+r.situacao)),lst.tsSem,{vazio:"Nenhuma licitação sem sucesso no período."});
-  tabela("#tblLicNao",colsBase.filter(c=>c.k!=="con"&&c.k!=="entidade"),rows.filter(r=>!/homolog/i.test(r.sit)),lst.tsNao,{vazio:"Todas as licitações do período foram homologadas."});
-  const q=semAcento(lst.busca.trim());
-  const lista=q?rows.filter(r=>semAcento(r.objeto+" "+r.numero+" "+r.secretaria+" "+r.fornecedor).includes(q)):rows;
-  licLista=tabela("#tblLic",colsBase,lista,lst.ts,{lim:lst.lim});
-  $("#licMais").innerHTML=lista.length>lst.lim?`<span class="desc" style="margin-right:10px">Mostrando ${nf0.format(lst.lim)} de ${nf0.format(lista.length)}.</span><button class="btn" id="btnMaisL" type="button">Mostrar mais 50</button>`:`<span class="desc">${nf0.format(lista.length)} licitações.</span>`;
-  const bm=$("#btnMaisL");if(bm)bm.onclick=()=>{lst.lim+=50;render();};
-  // mudanças
-  const mud=LICM.filter(r=>matchF(r)).sort((a,b)=>b.atualizacao.localeCompare(a.atualizacao));
-  const porAt=agrupa(mud,r=>r.atualizacao,(t,r)=>{(t.l=t.l||[]).push(r);});
-  $("#licMud").innerHTML=porAt.length?porAt.slice(0,6).map(a=>`<details ${a===porAt[0]?"open":""} style="border-top:1px solid var(--grid);padding:8px 0"><summary style="cursor:pointer"><b>${dataBR(a.nome)}</b> · ${nf0.format(a.n)} ${a.n===1?"mudança":"mudanças"}</summary>
-      <div class="tablewrap" style="margin-top:8px"><table><thead><tr><th style="cursor:default">O que mudou</th><th style="cursor:default">Licitação</th><th style="cursor:default">Objeto</th><th style="cursor:default">Estimado</th></tr></thead><tbody>${a.l.map(r=>`<tr><td>${esc(r.tipo)}${r.de||r.para?`<div style="font-size:12px;color:var(--ink-2)">${r.de?esc(r.de)+" → ":""}${esc(r.para)}</div>`:""}</td><td>${esc(r.modalidade)} ${esc(r.numero)}<div style="font-size:12px;color:var(--muted)">${esc(r.entidade)}</div></td><td style="white-space:normal;min-width:220px">${esc(r.objeto)}</td><td>${brl(r.est)}</td></tr>`).join("")}</tbody></table></div></details>`).join(""):'<div class="empty">Nenhuma mudança registrada ainda.</div>';
+  const C={entidade:{k:"entidade",t:"Entidade",f:r=>esc(r.entidade.replace(/ \(administração direta\)/,""))},
+    secretaria:{k:"secretaria",t:"Secretaria",f:r=>secInfo(r)?`<span title="${esc(r.secretaria)}">${esc(secCurta(r.secretaria))}</span>`:""},
+    numero:{k:"numero",t:"Número",sort:r=>parseInt(r.numero,10)||0},modalidade:{k:"modalidade",t:"Modalidade"},
+    objeto:{k:"objeto",t:"Objeto",f:r=>esc(r.objeto)+(r.link?` <a href="${esc(r.link)}" target="_blank" rel="noopener" style="color:var(--accent)" onclick="event.stopPropagation()">↗</a>`:""),wrap:1},
+    est:{k:"est",t:"Estimado (R$)",f:r=>nf2.format(r.est),num:1},con:{k:"con",t:"Contratado (R$)",f:r=>r.con?nf2.format(r.con):"",num:1},
+    situacao:{k:"situacao",t:"Situação",f:sitPill},publicacao:{k:"publicacao",t:"Publicação",f:r=>dataBR(r.publicacao)},abertura:{k:"abertura",t:"Abertura",f:r=>dataBR(r.abertura)}};
+  const cols=ks=>ks.map(x=>C[x]);
+  const detalhe=r=>{const eco=r.sit==="Homologada"&&r.con&&r.est?` Economia de R$ ${nf2.format(r.est-r.con)} (${pctS(r.est-r.con,r.est)}).`:"";
+    const d=r.publicacao&&r.abertura?Math.round((Date.parse(r.abertura)-Date.parse(r.publicacao))/864e5):null;
+    return `${esc(r.modalidade)} ${esc(r.numero)}, ${esc(r.entidade)}${secInfo(r)?" ("+esc(r.secretaria)+")":""}. ${esc(r.objeto)}. Situação: ${esc(r.situacao)}. Publicada em ${dataBR(r.publicacao)}, abertura em ${dataBR(r.abertura)}${d!=null?" ("+d+" dias depois)":""}.${eco}${r.fornecedor?" Fornecedor: "+esc(r.fornecedor)+".":""}`;};
+  if(st.la==="lista"){
+    licLista=tabela("#tblLic",cols(["entidade","secretaria","numero","modalidade","objeto","est","con","situacao","publicacao","abertura"]),rows,lst.ts,{lim:lst.lim,det:detalhe});
+    $("#licCont").textContent=`${nf0.format(rows.length)} ${rows.length===1?"licitação":"licitações"} com os filtros.`;
+    $("#licMais").innerHTML=rows.length>lst.lim?`<span class="desc" style="margin-right:10px">Mostrando ${nf0.format(lst.lim)} de ${nf0.format(rows.length)}.</span><button class="btn" id="btnMaisL" type="button">Mostrar mais 100</button>`:"";
+    const bm=$("#btnMaisL");if(bm)bm.onclick=()=>{lst.lim+=100;render();};
+  }else licLista=rows;
+  if(st.la==="acomp"){
+    tabela("#tblLicAb",cols(["abertura","entidade","numero","modalidade","objeto","est","situacao"]),futuras.filter(r=>r.abertura<=dia(15)),lst.tsAb,{vazio:"Nenhuma abertura nos próximos 15 dias com estes filtros.",det:detalhe});
+    tabela("#tblLicTop",cols(["entidade","numero","modalidade","objeto","est","con","situacao"]),ord.slice(0,10),lst.tsTop,{det:detalhe});
+    tabela("#tblLicSem",cols(["publicacao","entidade","numero","modalidade","objeto","est","situacao"]),sem,lst.tsSem,{vazio:"Nenhuma licitação sem sucesso com estes filtros.",det:detalhe});
+    const ORD={"Suspensa":0,"Em andamento":1,"Sem sucesso":2};
+    tabela("#tblLicNao",[{...C.situacao,k:"ordem",sort:r=>(ORD[r.sit]??3)+r.situacao},...cols(["entidade","numero","modalidade","objeto","est","abertura"])],rows.filter(r=>r.sit!=="Homologada"),lst.tsNao,{vazio:"Todas as licitações com estes filtros estão homologadas.",det:detalhe});
+  }
+  if(st.la==="hist"){
+    const at=ats.includes(lst.hist)?lst.hist:ult;
+    $("#lHist").innerHTML=ats.slice().reverse().map(a=>`<option value="${a}">${dataBR(a)}</option>`).join("");$("#lHist").value=at||"";
+    const ok=new Set(rows.map(r=>r.id));
+    const mh=LICM.filter(m=>m.atualizacao===at&&(m.id?ok.has(m.id):matchF(m)));
+    $("#licHistCont").textContent=at?`${nf0.format(mh.length)} ${mh.length===1?"mudança":"mudanças"} nesta atualização.`:"";
+    tabela("#tblLicHist",[{k:"ordem",t:"O que mudou",f:r=>esc(r.tipo),sort:r=>(r.tipo==="Nova"?"0":"1")+String(1e12-r.est).padStart(14,"0")},C.entidade,C.numero,C.modalidade,C.objeto,{k:"de",t:"De"},{k:"para",t:"Para"},C.est],mh,lst.tsHist,{vazio:"Nenhuma mudança registrada nesta atualização com estes filtros."});
+  }
   notaFonte("#licNota",LICMETA);
 }
 function csvLic(){baixarCSV(`licitacoes_maringa_${st.ano}.csv`,["Entidade","Secretaria","Modalidade","Número","Objeto","Valor estimado","Valor contratado","Situação","Publicação","Abertura"],
