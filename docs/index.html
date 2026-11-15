@@ -141,6 +141,7 @@ tfoot td{font-weight:700;border-bottom:0;background:var(--surface-2)}
 footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
 .empty{padding:30px;text-align:center;color:var(--ink-2)}
 .hidden,.sem-info{display:none !important}
+.h3{font-size:14px;margin:4px 0 6px;color:var(--ink-2)}
 .tabs::-webkit-scrollbar,.subtabs::-webkit-scrollbar{display:none}
 .subtabs{display:flex;gap:2px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;margin:0 0 12px;border-bottom:1px solid var(--border)}
 .subtab{white-space:nowrap;flex:none;font:inherit;font-size:14px;background:none;border:0;border-bottom:2px solid transparent;padding:7px 12px;color:var(--ink-2);cursor:pointer;margin-bottom:-1px}
@@ -262,6 +263,16 @@ footer,.desc,.banner{overflow-wrap:anywhere}
       <div class="legend"><span><i style="background:var(--track)"></i>Orçado</span><span><i style="background:var(--emp)"></i>Empenhado</span><span><i style="background:var(--pag)"></i>Pago</span></div>
       <div class="bars" id="barsEntidade"></div>
       <div id="notaEntidade" class="desc" style="margin:10px 0 0;font-size:12.5px"></div>
+    </div>
+
+    <div class="card full hidden" id="cardRepasses">
+      <h2>Repasses entre entidades</h2>
+      <p class="desc">Dinheiro que uma entidade do Município paga a outra, como a contribuição da Prefeitura à Maringá Previdência. Ele aparece como despesa de quem paga e de novo como receita (e depois despesa) de quem recebe. Por isso, ao somar todas as entidades, o total sem repasses mostra o gasto real do Município.</p>
+      <div class="kpis" id="kpisRep"></div>
+      <div class="grid2">
+        <div><h3 class="h3">Quem repassou</h3><div class="bars" id="barsRepEnt"></div></div>
+        <div><h3 class="h3">Para quê</h3><div class="bars" id="barsRepEl"></div></div>
+      </div>
     </div>
 
     <div class="card full hidden" id="cardEmpresas">
@@ -466,7 +477,7 @@ const pct=(a,b)=>b>0?a/b*100:0;
 const pctS=(a,b)=>b>0?nf1.format(a/b*100)+"%":"–";
 const num=v=>{const n=typeof v==="number"?v:parseFloat(String(v).replace(",","."));return isFinite(n)?n:0;};
 
-let D=null, DESP=[], REC=[], EMP=[], PARCIAL=null;
+let D=null, DESP=[], REC=[], EMP=[], PARCIAL=null, TEM_INTRA=false;
 const SIGLAS=new Set("SUS FUNDEB MDE RPPS ICMS IPTU ISS ISSQN ITBI IRRF FPM IPVA SAMU CMEI UBS UPA LTDA ME EPP EIRELI SA S/A S.A. S.A CNPJ CPF PR BR CIA ONG APAE CEU SESC SENAC SESI SENAI SEBRAE FNDE FNAS FNS PNAE PDDE COSIP CIP TI II III IV VI VII VIII IX XI XII".split(" "));
 const MINUSC=new Set("DE DA DO DAS DOS E A O AS OS EM NA NO NAS NOS PARA COM POR À AO AOS SOBRE".split(" "));
 function legivel(t){t=String(t);if(/[a-zà-ÿ]/.test(t)||!/[A-Z]/.test(t))return t;
@@ -478,11 +489,15 @@ function boot(data){
   const txt=v=>(v==null||v==="")?"Não informado":legivel(v);
   DESP=(D.despesas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};DIMS.forEach(k=>o[k]=txt(r[k]));
     ["dotacao_inicial","dotacao_atualizada","empenhado","liquidado","pago"].forEach(k=>o[k]=num(r[k]));
-    o._key=DIMS.map(k=>o[k]).join("\u0001");return o;});
+    // repasse intraorçamentário: modalidade de aplicação 91 (operação entre órgãos e entidades do próprio Município)
+    const mod=String(r.modalidade_aplicacao||"");o.intra=/^\s*91\b/.test(mod)||/intra/i.test(mod);
+    o._key=DIMS.map(k=>o[k]).join("\u0001")+"\u0001"+mod;return o;});
+  TEM_INTRA=DESP.some(r=>r.intra);
   EMP=(D.empresas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes,entidade:txt(r.entidade),fonte:String(r.fonte||"")};
     ["receita_liquida","custo_servicos","despesas_operacionais","resultado_financeiro","ir_csll","outros_resultados","lucro_liquido","caixa","ativo_total","emprestimos_curto_prazo","emprestimos_longo_prazo","patrimonio_liquido"].forEach(k=>o[k]=r[k]==null||r[k]===""?null:num(r[k]));return o;});
   REC=(D.receitas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};RDIMS.forEach(k=>o[k]=txt(r[k]));o.previsto=num(r.previsto);o.arrecadado=num(r.arrecadado);
-    o._key=RDIMS.map(k=>o[k]).join("\u0001");return o;});
+    o.intra=r.intra_orcamentaria===true||/intra/i.test(String(r.categoria||""));
+    o._key=RDIMS.map(k=>o[k]).join("\u0001")+(o.intra?"\u0001i":"");return o;});
   if(!REC.length) $("#tabR").classList.add("hidden");
   const m=D.meta||{};
   let ml=[];
@@ -581,7 +596,7 @@ function refreshFilterOptions(){
   let h=per?`<span class="chip">Período: ${per}<button aria-label="Remover filtro de período" data-x="per">×</button></span>`:"";
   for(const k in st.f){ if(!dimsAba.includes(k))continue;
     h+=`<span class="chip">${DIM_NOME[k]}: ${esc(st.f[k])}<button aria-label="Remover filtro ${DIM_NOME[k]}" data-x="${k}">×</button></span>`;}
-  if(!st.f.entidade&&entPadrao()&&(st.tab==="desp"||st.tab==="rec")) h+=`<span class="chip" style="padding-right:10px">Somando todas as entidades, os repasses entre elas (como a contribuição da Prefeitura à previdência) aparecem duas vezes.</span>`;
+  if(!st.f.entidade&&entPadrao()&&(st.tab==="desp"||st.tab==="rec")) h+=`<span class="chip" style="padding-right:10px">Somando todas as entidades, os repasses entre elas (como a contribuição da Prefeitura à previdência) aparecem duas vezes.${TEM_INTRA&&st.tab==="desp"?" Veja o total sem repasses nos cartões e em “Repasses entre entidades”.":""}</span>`;
   else if(entPadrao()&&st.f.entidade===entPadrao()&&st.tab!=="cred") h+=`<span class="chip" style="padding-right:10px;background:none">Mostrando só a Prefeitura. Autarquias e demais entidades estão no filtro “Entidade”.</span>`;
   $("#chips").innerHTML=h;
   $("#chips").querySelectorAll("button").forEach(b=>b.onclick=()=>{const k=b.dataset.x;if(k==="per"){st.de=1;st.ate=um;}else delete st.f[k];render();});
@@ -628,7 +643,7 @@ function kpi(lbl,color,val,sub,meter,tip,extra){
 function ehEmpresa(e){return !!e&&EMP.some(r=>r.entidade===e)&&!DESP.some(r=>r.entidade===e);}
 function renderDesp(){
   const emp=ehEmpresa(st.f.entidade);
-  [...$("#secDesp").children].forEach(el=>{if(el.id==="despEmpresa")el.classList.toggle("hidden",!emp);else if(emp)el.dataset.oculto="1",el.classList.add("hidden");else if(el.dataset.oculto){delete el.dataset.oculto;if(el.id!=="cardEntidade"&&el.id!=="cardEmpresas")el.classList.remove("hidden");}});
+  [...$("#secDesp").children].forEach(el=>{if(el.id==="despEmpresa")el.classList.toggle("hidden",!emp);else if(emp)el.dataset.oculto="1",el.classList.add("hidden");else if(el.dataset.oculto){delete el.dataset.oculto;if(el.id!=="cardEntidade"&&el.id!=="cardEmpresas"&&el.id!=="cardRepasses")el.classList.remove("hidden");}});
   if(emp){renderEmpresa(st.f.entidade);return;}
   const rows=despRows(st.ano,st.ate);
   const dot=dotacao(rows), ex=execSum(rows,st.de);
@@ -641,12 +656,17 @@ function renderDesp(){
   $("#sumD").innerHTML=dot.atu>0
     ? `${periodoTxt()}, ${sujeito()} já <b>pagou ${brl(ex.pag)}</b>${parcial}, o equivalente a <b>${pctS(ex.pag,dot.atu)}</b> do orçamento de <b>${brl(dot.atu)}</b> previsto para o ano. Outros <b>${brl(Math.max(0,ex.emp-ex.pag))}</b> já estão comprometidos (empenhados) e ainda não foram pagos.`
     : `${periodoTxt()}: nenhum valor encontrado para os filtros escolhidos.`;
+  // sem repasses entre entidades (só faz diferença quando mais de uma entidade está somada)
+  const iRows=rows.filter(r=>r.intra),consol=TEM_INTRA&&!st.f.entidade&&iRows.length>0;
+  const iDot=consol?dotacao(iRows):{atu:0},iEx=consol?execSum(iRows,st.de):{emp:0,pag:0};
+  const semRep=(v,iv)=>consol&&iv>0?`<div class="sub" style="margin-top:4px">Sem repasses: <b>${brl(v-iv)}</b></div>`:"";
+  if(consol&&dot.atu>0)$("#sumD").innerHTML+=` Descontando os <b>${brl(iEx.pag)}</b> repassados de uma entidade a outra, o gasto real pago pelo Município foi de <b>${brl(ex.pag-iEx.pag)}</b>.`;
   const ini=dot.ini>0&&Math.abs(dot.atu-dot.ini)>1?`Inicial: ${brl(dot.ini)} (${dot.atu>=dot.ini?"+":""}${pctS(dot.atu-dot.ini,dot.ini)})`:"Orçamento autorizado no ano";
   $("#kpisD").innerHTML=
-    kpi("Orçado","var(--orcado)",dot.atu,ini,null,"Dotação atualizada: valor máximo autorizado para gastar no ano, já incluindo créditos adicionais e cortes.")+
-    kpi("Empenhado","var(--emp)",ex.emp,pctS(ex.emp,dot.atu)+" do orçado",pct(ex.emp,dot.atu),"Valor reservado para contratos e compras. É o primeiro passo do gasto público.")+
+    kpi("Orçado","var(--orcado)",dot.atu,ini,null,"Dotação atualizada: valor máximo autorizado para gastar no ano, já incluindo créditos adicionais e cortes.",semRep(dot.atu,iDot.atu))+
+    kpi("Empenhado","var(--emp)",ex.emp,pctS(ex.emp,dot.atu)+" do orçado",pct(ex.emp,dot.atu),"Valor reservado para contratos e compras. É o primeiro passo do gasto público.",semRep(ex.emp,iEx.emp))+
     kpi("Liquidado","var(--liq)",ex.liq,pctS(ex.liq,dot.atu)+" do orçado",pct(ex.liq,dot.atu),"Serviço ou produto entregue e conferido. Falta só o pagamento.")+
-    kpi("Pago","var(--pag)",ex.pag,pctS(ex.pag,dot.atu)+" do orçado",pct(ex.pag,dot.atu),"Dinheiro que efetivamente saiu do caixa.",cmp);
+    kpi("Pago","var(--pag)",ex.pag,pctS(ex.pag,dot.atu)+" do orçado",pct(ex.pag,dot.atu),"Dinheiro que efetivamente saiu do caixa.",cmp+semRep(ex.pag,iEx.pag));
   lineChart(rows);
   barList("#barsFuncao",grouped(rows,"funcao"),"funcao",8);
   barList("#barsGrupo",grouped(rows,"grupo"),"grupo",8);
@@ -656,8 +676,26 @@ function renderDesp(){
   const mostraEnt=ge.length>1||fora.length>0;
   $("#cardEntidade").classList.toggle("hidden",!mostraEnt);
   if(mostraEnt){barList("#barsEntidade",ge,"entidade",10);renderFora(ge,fora);}
+  renderRepasses();
   renderListaEmpresas();
   renderTable();
+}
+function renderRepasses(){
+  const card=$("#cardRepasses");
+  const rowsE=despRows(st.ano,st.ate,"entidade"),iRows=rowsE.filter(r=>r.intra);
+  if(!TEM_INTRA||!iRows.length){card.classList.add("hidden");return;}
+  card.classList.remove("hidden");
+  const tot=dotacao(rowsE),ex=execSum(rowsE,st.de),iDot=dotacao(iRows),iEx=execSum(iRows,st.de);
+  $("#kpisRep").innerHTML=
+    kpi("Repassado (pago)","var(--pag)",iEx.pag,`${pctS(iEx.pag,ex.pag)} do total pago somando as entidades`,null,"Pagamentos feitos de uma entidade do Município a outra, na modalidade 91 (intraorçamentária).")+
+    kpi("Pago, somando tudo","var(--orcado)",ex.pag,"total bruto, com os repasses",null,"Soma simples do que todas as entidades pagaram. Conta duas vezes o dinheiro que passou de uma entidade a outra.")+
+    kpi("Pago, sem repasses","var(--good)",ex.pag-iEx.pag,"gasto real do Município",null,"Total pago somando as entidades, menos os repasses entre elas. É o que de fato saiu do Município.")+
+    kpi("Orçado, sem repasses","var(--good)",tot.atu-iDot.atu,`bruto: ${brl(tot.atu)}`,null,"Orçamento de todas as entidades somadas, menos o que está previsto para repasses entre elas.");
+  const g=grouped(iRows,"entidade").filter(i=>i.orc>0||i.emp>0);
+  barList("#barsRepEnt",g,"entidade",8);
+  const el=grouped(iRows,"elemento").filter(i=>i.orc>0||i.emp>0);
+  barList("#barsRepEl",el,"elemento",8);
+  $("#barsRepEl").querySelectorAll(".bar").forEach(b=>{b.onclick=null;b.style.cursor="default";});
 }
 
 const expanded={};
@@ -771,6 +809,8 @@ function renderRec(){
     const dias=new Date(st.ano,st.ate,0).getDate();if(!isNaN(ref)&&ref.getFullYear()===st.ano&&ref.getMonth()+1===st.ate)nm=nm-1+Math.min(1,ref.getDate()/dias);}
   const esperado=prev*nm/12;
   $("#sumR").innerHTML=prev>0?`${periodoTxt()}, ${sujeito()} <b>arrecadou ${brl(arr)}</b>, o que corresponde a <b>${pctS(arr,prev)}</b> dos <b>${brl(prev)}</b> previstos para o ano. Se a arrecadação fosse igual todo mês, o esperado para o período seria ${brl(esperado)}.`:`${periodoTxt()}: nenhuma receita encontrada.`;
+  if(!st.f.entidade){const ia=rows.reduce((t,r)=>t+(r.intra&&r.mes>=st.de?r.arrecadado:0),0);
+    if(ia>0)$("#sumR").innerHTML+=` Desse valor, <b>${brl(ia)}</b> são repasses entre entidades do próprio Município (receitas intraorçamentárias); sem eles, a arrecadação foi de <b>${brl(arr-ia)}</b>.`;}
   const dif=arr-esperado;
   $("#kpisR").innerHTML=
     kpi("Previsto no ano","var(--orcado)",prev,"Receita estimada no orçamento",null,"Quanto a prefeitura espera arrecadar no ano, segundo a lei orçamentária.")+
