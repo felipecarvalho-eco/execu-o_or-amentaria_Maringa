@@ -26,6 +26,7 @@ receitas: {ano, mes, entidade, categoria, origem, fonte_recurso, previsto, arrec
 - `entidade` (opcional): Prefeitura, autarquia, empresa pública etc. Com mais de uma entidade, o painel mostra o filtro "Entidade".
 - `docs/dados/credores.js` (opcional, carregado só ao abrir a aba Credores): `window.DADOS_CREDORES = {meta, credores:[{ano, mes, entidade, credor_documento, credor, qtd_empenhos, empenhado, anulado, liquidado, pago}]}`.
 - `meta.fora_do_portal` (opcional): entidades sem execução no portal (ex.: INPACTA), com `nome, tipo, cnpj, transparencia, observacao, repasses_por_ano:[{ano, empenhado, anulado, liquidado, pago, qtd_empenhos}]`; aparecem no cartão "Entidades fora do Portal da Transparência".
+- `empresas` (opcional): balancetes mensais de empresas do Município (ex.: SBMG), `{entidade, ano, mes, receita_liquida, custo_servicos, despesas_operacionais, resultado_financeiro, ir_csll, outros_resultados, lucro_liquido, caixa, ativo_total, emprestimos_curto_prazo, emprestimos_longo_prazo, patrimonio_liquido, fonte}`; os seis primeiros são do mês e os demais, posição no fim do mês. A empresa aparece no filtro Entidade com uma visão própria; `meta.empresas_fonte` é a nota de rodapé.
 - `meta.exemplo = true` mostra um aviso de dados de exemplo.
 
 ## Coleta de dados
