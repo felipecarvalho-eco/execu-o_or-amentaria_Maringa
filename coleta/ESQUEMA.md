@@ -76,6 +76,9 @@ entra sozinha, com o nome oficial):
 | `receitas.csv` | análise detalhada | por natureza da receita (rubrica), com código |
 | `credores.csv` | análise | mesmo conteúdo de `credores` |
 | `empresas.csv` | análise | mesmo conteúdo de `empresas` (SBMG) |
+| `licitacoes.js` / `.json` | aba Licitações | `window.DADOS_LICITACOES = {meta, licitacoes, mudancas}` |
+| `diarias.js` / `.json` | aba Diárias e passagens | `window.DADOS_DIARIAS = {meta, diarias}` |
+| `licitacoes.csv`, `diarias.csv` | análise | mesmo conteúdo das listas acima |
 | `empenhos.csv` | só com `--com-empenhos` | um empenho por linha |
 
 ### `meta`
@@ -151,6 +154,42 @@ patrimonio_liquido, fonte`
 - Se algum PDF não puder ser lido, a coleta segue e registra o problema em `meta.avisos`.
 - `--sem-sbmg` pula essa parte. Requer o pacote `pypdf`.
 
+### `licitacoes` (de 2026 em diante; `--desde` muda o ano inicial)
+
+`id, ano, mes, entidade, secretaria, numero, modalidade, contratacao_direta, natureza, objeto, valor_estimado,
+valor_contratado, situacao, grupo, publicacao, abertura, processo, link`
+
+- Inclui licitações e **contratações diretas** (Dispensa e Inexigibilidade; `contratacao_direta = true`).
+- `ano` = exercício do processo; `mes` = mês da publicação.
+- `valor_estimado` = valor máximo do processo; `valor_contratado` = total vencido (homologado).
+- `situacao` = texto do portal (Homologada, Andamento, Prorrogada, Suspensa, Revogada...). `grupo` resume em
+  Homologada / Em andamento / Sem sucesso (revogada, fracassada, deserta, anulada) / Suspensa.
+- `secretaria`: o portal não tem esse campo; é lida do texto do objeto quando ele cita "Secretaria Municipal
+  de ...". Senão, "Não informado".
+- O portal não informa a data de homologação. Para acompanhar, use `mudancas`: quando uma licitação passa a
+  "Homologada", a mudança fica registrada com a data da coleta.
+- `link` abre o processo no portal.
+
+### `mudancas`
+
+`atualizacao, id, entidade, numero, modalidade, objeto, valor_estimado, valor_contratado, tipo, de, para`
+
+- Cada coleta compara as licitações com as da coleta anterior (o `licitacoes.json` que já está na pasta).
+  `tipo` = "Nova", "Mudou de situação" ou "Mudou valor contratado". Guarda as 500 mais recentes.
+- Na primeira coleta não há com o que comparar, então a lista começa vazia.
+
+### `diarias` (diárias e passagens, de 2026 em diante)
+
+`id, ano, mes, entidade, orgao, tipo, beneficiario, cargo, destino, motivo, objetivo, data_saida, data_retorno,
+quantidade, valor, valor_empenhado, situacao, meio_transporte, documento, empresa`
+
+- `tipo` = "Diária" ou "Passagem". `ano`/`mes` = data de saída da viagem.
+- **Diárias:** `valor` = valor líquido (empenhado menos anulações; diária cancelada fica com 0).
+  `valor_empenhado` = valor original. `orgao` vem do empenho que pagou a diária (a API de diárias não traz a
+  secretaria). `quantidade` = número de diárias. `documento` = número do empenho.
+- **Passagens:** `valor` = adiantamento para comprar a passagem; `empresa` = companhia; o portal não informa
+  o órgão (`orgao` = "Não informado"); `quantidade` = 1.
+
 ### `empenhos.csv`
 
 `entidade, entidade_id, ano, empenho (nº/ano), data, mes, credor_documento, credor, fonte_recurso, historico, empenhado, anulado,
@@ -170,6 +209,10 @@ Todos exigem os cabeçalhos HTTP `entidade: <id>` e `exercicio: <ano>` (nos exem
 | última atualização | `/api/ultimas-atualizacoes/last-update-despesas` e `-receitas` |
 | publicações (SBMG) | `/api/publicacoes?entidade=10&exercicio=A` → grupo "Balancetes Mensais" |
 | arquivo PDF | `/api/files/arquivo/<idArquivo>` (não precisa de cabeçalhos) |
+| licitações | `/api/licitacoes?entidade=E&exercicio=A&page=0&size=2000` |
+| diárias | `/api/diarias?entidade=E&exercicio=A&dataInicial=A-01-01&dataFinal=A-12-31&page=0&size=2000` |
+| passagens | `/api/passagens?entidade=E&exercicio=A&page=0&size=2000` |
+| órgão do empenho | `/empenhos/lista?...&programatica.orgao=<código do órgão>` |
 
 A API devolve valores do intervalo de datas pedido (inclusive créditos adicionais). Por isso o script pede
 sempre de 1º de janeiro até o fim de cada mês e calcula o movimento do mês pela diferença entre dois meses
