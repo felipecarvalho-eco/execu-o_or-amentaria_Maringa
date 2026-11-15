@@ -136,7 +136,87 @@ def celula(conteudo, i, al="left", extra=""):
             f"padding:8px 10px;text-align:{al};vertical-align:middle;{extra}'>{conteudo}</td>")
 
 
-def montar(dados, anterior, link):
+def data_curta(iso):
+    try:
+        d = dt.date.fromisoformat(str(iso)[:10])
+        return f"{d.day:02d}/{d.month:02d}/{d.year}"
+    except Exception:
+        return "—"
+
+
+def resumir_texto(texto, limite=90):
+    t = " ".join(str(texto or "").split())
+    return t if len(t) <= limite else t[:limite].rsplit(" ", 1)[0] + "…"
+
+
+def secao_licitacoes(lic):
+    """Tabelas curtas: o que mudou na semana e as próximas aberturas."""
+    if not lic or not lic.get("licitacoes"):
+        return ""
+    itens = lic["licitacoes"]
+    mud = lic.get("mudancas") or []
+    hoje = max((m.get("atualizacao") or "" for m in mud), default="") or dt.date.today().isoformat()
+    inicio = (dt.date.fromisoformat(hoje) - dt.timedelta(days=6)).isoformat()
+    semana = [m for m in mud if (m.get("atualizacao") or "") >= inicio]
+    novas = {m["id"] for m in semana if m.get("tipo") == "Nova"}
+    homolog = {m["id"] for m in semana if m.get("tipo") == "Mudou de situação" and m.get("para") == "Homologada"}
+    andamento = sum(1 for l in itens if l.get("grupo") == "Em andamento")
+    nr = "white-space:nowrap;"
+    cont = [("Processos publicados no ano", f"{len(itens):,}".replace(",", ".")),
+            ("Em andamento agora", str(andamento)),
+            ("Novos na semana", str(len(novas))),
+            ("Homologados na semana", str(len(homolog)))]
+    lin = "".join("<tr>" + celula(n, i) + celula(f"<b>{v}</b>", i, "right", nr) + "</tr>" for i, (n, v) in enumerate(cont))
+    t1 = tabela([("Licitações e contratações diretas", "left"), ("Quantidade", "right")], lin)
+
+    hoje_d = dt.date.today().isoformat()
+    prox = sorted((l for l in itens if (l.get("abertura") or "") >= hoje_d and l.get("grupo") == "Em andamento"),
+                  key=lambda l: l["abertura"])[:5]
+    t2 = ""
+    if prox:
+        lin2 = []
+        for i, l in enumerate(prox):
+            obj = (f"<a href='{html.escape(l.get('link') or '')}' style='color:#1f4e79;text-decoration:none'>"
+                   f"<b>{html.escape(l.get('modalidade') or '')} {html.escape(l.get('numero') or '')}</b></a>"
+                   f"<div style='font-size:12px;color:#555'>{html.escape(resumir_texto(l.get('objeto')))}</div>")
+            lin2.append("<tr>" + celula(data_curta(l["abertura"]), i, extra=nr + "font-weight:bold;")
+                        + celula(obj, i) + celula(brl(l.get("valor_estimado") or 0), i, "right", nr) + "</tr>")
+        t2 = (f"<div style='height:12px'></div>"
+              + tabela([("Abertura", "left"), ("Processo", "left"), ("Valor estimado", "right")], "".join(lin2)))
+    return t1 + t2
+
+
+def secao_diarias(via, via_ant):
+    if not via or not via.get("diarias"):
+        return ""
+    ano = max(v["ano"] for v in via["diarias"])
+    soma = lambda lst, tipo: (sum(1 for v in lst if v["ano"] == ano and v["tipo"] == tipo),
+                              sum(v.get("valor") or 0 for v in lst if v["ano"] == ano and v["tipo"] == tipo))
+    ant = (via_ant or {}).get("diarias") or []
+    nr = "white-space:nowrap;"
+    lin, tot = [], [0, 0.0, 0.0]
+    for i, tipo in enumerate(["Diária", "Passagem"]):
+        n, v = soma(via["diarias"], tipo)
+        sem = ""
+        if ant:
+            dif = v - soma(ant, tipo)[1]
+            if dif > 0.005:
+                sem = f"<span style='color:#2e7d32'>+{brl(dif)}</span>"
+                tot[2] += dif
+        tot[0] += n
+        tot[1] += v
+        rot = "Diárias" if tipo == "Diária" else "Passagens"
+        lin.append("<tr>" + celula(f"<b>{rot}</b>", i) + celula(f"{n:,}".replace(",", "."), i, "right", nr)
+                   + celula(brl(v), i, "right", nr) + celula(sem or "<span style='color:#bbb'>—</span>", i, "right", nr) + "</tr>")
+    i = 2
+    lin.append("<tr>" + celula("<b>Total</b>", i) + celula(f"<b>{tot[0]:,}</b>".replace(",", "."), i, "right", nr)
+               + celula(f"<b>{brl(tot[1])}</b>", i, "right", nr)
+               + celula(f"<b style='color:#2e7d32'>+{brl(tot[2])}</b>" if tot[2] else "<span style='color:#bbb'>—</span>", i, "right", nr) + "</tr>")
+    return tabela([(f"Diárias e passagens {ano}", "left"), ("Registros", "right"), ("Valor no ano", "right"),
+                   ("Na semana", "right")], "".join(lin))
+
+
+def montar(dados, anterior, link, lic=None, via=None, via_ant=None, avisos_coleta=""):
     t = totais(dados)
     meta = dados.get("meta", {})
     if t is None:
@@ -188,6 +268,10 @@ def montar(dados, anterior, link):
     aviso = ""
     if meta.get("exemplo"):
         aviso = "<p style='background:#fff3cd;padding:8px;border-radius:4px'>Atenção: dados de exemplo, não reais.</p>"
+    s_lic = secao_licitacoes(lic)
+    s_via = secao_diarias(via, via_ant)
+    if avisos_coleta:
+        aviso += f"<p style='{FONTE}background:#fff3cd;padding:8px;border-radius:4px;font-size:13px'>{html.escape(avisos_coleta)}</p>"
     titulo = lambda x: f"<h3 style='{FONTE}color:{AZUL};font-size:15px;margin:26px 0 8px'>{x}</h3>"
     fonte = html.escape(str(meta.get("fonte", "Portal da Transparência de Maringá")))
     corpo = f"""<div style="background:#f0f3f7;padding:20px 0">
@@ -204,6 +288,8 @@ def montar(dados, anterior, link):
   {t1}
   {titulo("Órgãos com maior valor empenhado")}
   {t2}
+  {(titulo("Licitações") + s_lic) if s_lic else ""}
+  {(titulo("Diárias e passagens") + s_via) if s_via else ""}
   <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:24px"><tr>
     <td style="background:#1565c0;border-radius:4px"><a href="{html.escape(link)}" style="{FONTE}display:inline-block;color:#ffffff;font-size:14px;font-weight:bold;padding:11px 20px;text-decoration:none">Abrir o painel completo</a></td>
   </tr></table>
@@ -219,8 +305,13 @@ if __name__ == "__main__":
     ap.add_argument("anterior", nargs="?")
     ap.add_argument("--link", default="")
     ap.add_argument("--saida", default="resumo.html")
+    ap.add_argument("--licitacoes", help="licitacoes.js/.json da coleta")
+    ap.add_argument("--diarias", help="diarias.js/.json da coleta")
+    ap.add_argument("--diarias-anterior", help="diarias.js da semana anterior")
+    ap.add_argument("--aviso", default="", help="texto de aviso para o topo do e-mail")
     a = ap.parse_args()
-    assunto, corpo = montar(carregar(a.atual), carregar(a.anterior), a.link)
+    assunto, corpo = montar(carregar(a.atual), carregar(a.anterior), a.link,
+                           carregar(a.licitacoes), carregar(a.diarias), carregar(a.diarias_anterior), a.aviso)
     with open(a.saida, "w", encoding="utf-8") as f:
         f.write(corpo)
     gh = os.environ.get("GITHUB_OUTPUT")
