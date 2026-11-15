@@ -331,11 +331,15 @@ const pctS=(a,b)=>b>0?nf1.format(a/b*100)+"%":"–";
 const num=v=>{const n=typeof v==="number"?v:parseFloat(String(v).replace(",","."));return isFinite(n)?n:0;};
 
 let D=null, DESP=[], REC=[], PARCIAL=null;
+const SIGLAS=new Set("SUS FUNDEB MDE RPPS ICMS IPTU ISS ISSQN ITBI IRRF FPM IPVA SAMU CMEI UBS UPA LTDA ME EPP EIRELI SA S/A S.A. S.A CNPJ CPF PR BR CIA ONG APAE CEU SESC SENAC SESI SENAI SEBRAE FNDE FNAS FNS PNAE PDDE COSIP CIP TI II III IV VI VII VIII IX XI XII".split(" "));
+const MINUSC=new Set("DE DA DO DAS DOS E A O AS OS EM NA NO NAS NOS PARA COM POR À AO AOS SOBRE".split(" "));
+function legivel(t){t=String(t);if(/[a-zà-ÿ]/.test(t)||!/[A-Z]/.test(t))return t;
+  return t.split(/(\s+|-|\/)/).map((w,i)=>{if(!w||/^\s+$|^-$|^\/$/.test(w))return w;if(SIGLAS.has(w))return w;if(i>0&&MINUSC.has(w))return w.toLowerCase();if(/\d/.test(w))return w;return w.charAt(0)+w.slice(1).toLowerCase();}).join("");}
 const st={tab:"desp",ano:null,de:1,ate:12,f:{},tDim:"orgao",busca:"",sort:{k:"pago",d:-1}};
 
 function boot(data){
   D=data||{meta:{},despesas:[],receitas:[]};
-  const txt=v=>(v==null||v==="")?"Não informado":String(v);
+  const txt=v=>(v==null||v==="")?"Não informado":legivel(v);
   DESP=(D.despesas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};DIMS.forEach(k=>o[k]=txt(r[k]));
     ["dotacao_inicial","dotacao_atualizada","empenhado","liquidado","pago"].forEach(k=>o[k]=num(r[k]));
     o._key=DIMS.map(k=>o[k]).join("\u0001");return o;});
@@ -351,8 +355,10 @@ function boot(data){
   const avisos=[];
   if(m.exemplo) avisos.push("Atenção: "+(m.observacoes||"estes são dados de exemplo."));
   if(m.mes_corrente_parcial){const [a,mm]=String(m.mes_corrente_parcial).split("-");if(a&&mm){PARCIAL={ano:+a,mes:+mm};avisos.push(`O mês de ${MESES_L[+mm-1]} de ${a} ainda está em andamento, então os valores dele são parciais.`);}}
-  (Array.isArray(m.avisos)?m.avisos:(m.avisos?[m.avisos]:[])).forEach(a=>avisos.push(String(a)));
-  if(avisos.length){const b=$("#banner");b.innerHTML=avisos.map(esc).join("<br>");b.classList.remove("hidden");}
+  const tec=(Array.isArray(m.avisos)?m.avisos:(m.avisos?[m.avisos]:[])).map(String);
+  if(avisos.length||tec.length){const b=$("#banner");
+    b.innerHTML=avisos.map(esc).join("<br>")+(tec.length?`<details style="margin-top:${avisos.length?6:0}px"><summary style="cursor:pointer">Notas técnicas da coleta (${tec.length}): pequenas diferenças de centavos ou poucos reais encontradas no próprio portal</summary><ul style="margin:6px 0 0;padding-left:18px;font-size:13px">${tec.map(a=>"<li>"+esc(a)+"</li>").join("")}</ul></details>`:"");
+    b.classList.remove("hidden");}
   $("#foot").innerHTML="Painel de acompanhamento da execução orçamentária de "+esc(m.municipio||"Maringá - PR")+". Valores em reais (R$), sem correção pela inflação."+(m.fonte?' Fonte: <a style="color:inherit" href="'+esc(m.fonte)+'" target="_blank" rel="noopener">'+esc(m.fonte)+"</a>.":"");
   if(!DESP.length){$("#secDesp").innerHTML='<div class="card empty">Nenhum dado de despesa encontrado. Verifique o arquivo <code>dados/execucao.js</code>.</div>';}
   readHash(); initControls(); render();
@@ -598,13 +604,16 @@ function renderRec(){
   const last=new Map();rows.forEach(r=>{const p=last.get(r._key);if(!p||r.mes>p.mes)last.set(r._key,r);});
   let prev=0;last.forEach(r=>prev+=r.previsto);
   let arr=0;rows.forEach(r=>{if(r.mes>=st.de)arr+=r.arrecadado;});
-  const nm=st.ate-st.de+1, esperado=prev*nm/12;
+  let nm=st.ate-st.de+1;
+  if(PARCIAL&&PARCIAL.ano===st.ano&&PARCIAL.mes===st.ate){const ref=new Date((D.meta||{}).portal_atualizado_receitas||(D.meta||{}).atualizado_em||Date.now());
+    const dias=new Date(st.ano,st.ate,0).getDate();if(!isNaN(ref)&&ref.getFullYear()===st.ano&&ref.getMonth()+1===st.ate)nm=nm-1+Math.min(1,ref.getDate()/dias);}
+  const esperado=prev*nm/12;
   $("#sumR").innerHTML=prev>0?`${periodoTxt()}, ${sujeito()} <b>arrecadou ${brl(arr)}</b>, o que corresponde a <b>${pctS(arr,prev)}</b> dos <b>${brl(prev)}</b> previstos para o ano. Se a arrecadação fosse igual todo mês, o esperado para o período seria ${brl(esperado)}.`:`${periodoTxt()}: nenhuma receita encontrada.`;
   const dif=arr-esperado;
   $("#kpisR").innerHTML=
     kpi("Previsto no ano","var(--orcado)",prev,"Receita estimada no orçamento",null,"Quanto a prefeitura espera arrecadar no ano, segundo a lei orçamentária.")+
     kpi("Arrecadado","var(--arr)",arr,pctS(arr,prev)+" do previsto",pct(arr,prev),"Dinheiro que efetivamente entrou nos cofres no período.")+
-    kpi("Esperado no período","var(--orcado)",esperado,`${nm} ${nm>1?"meses":"mês"} × média mensal prevista`,null,"Previsão anual dividida por 12 e multiplicada pelo número de meses do período. É só uma referência.")+
+    kpi("Esperado no período","var(--orcado)",esperado,`${Number.isInteger(nm)?nm:nf1.format(nm)} ${nm>1?"meses":"mês"} × média mensal prevista`,null,"Previsão anual dividida por 12 e multiplicada pelo número de meses do período. É só uma referência.")+
     kpi(dif>=0?"Acima do esperado":"Abaixo do esperado",dif>=0?"var(--good)":"var(--bad)",Math.abs(dif),`<span class="delta ${dif>=0?"up":"down"}">${dif>=0?"▲":"▼"} ${pctS(Math.abs(dif),esperado)}</span> em relação à média`,null,"Diferença entre o arrecadado e o esperado pela média mensal.");
   // barras mensais
   const box=$("#chRec");const months=[];for(let m=st.de;m<=st.ate;m++)months.push(m);
@@ -643,7 +652,7 @@ const cst={busca:"",sort:{k:"emp",d:-1},lim:50,sel:null};
 let credLista=[];
 function carregarCredores(){
   if(CRED||credCarregando||credErro)return; credCarregando=true;
-  const ok=d=>{CRED=((d&&d.credores)||[]).map(r=>({ano:+r.ano,mes:+r.mes,doc:String(r.credor_documento||""),nome:String(r.credor||"Não informado"),entidade:(r.entidade==null||r.entidade==="")?"Não informado":String(r.entidade),
+  const ok=d=>{CRED=((d&&d.credores)||[]).map(r=>({ano:+r.ano,mes:+r.mes,doc:String(r.credor_documento||""),nome:legivel(r.credor||"Não informado"),entidade:(r.entidade==null||r.entidade==="")?"Não informado":legivel(r.entidade),
       qtd:+r.qtd_empenhos||0,emp:num(r.empenhado),anu:num(r.anulado),liq:num(r.liquidado),pag:num(r.pago)}));
     credCarregando=false;if(st.tab==="cred")render();};
   const falha=()=>{credCarregando=false;credErro=true;if(st.tab==="cred")renderCred();};
