@@ -33,7 +33,9 @@ entra sozinha, com o nome oficial):
 | 15 | IPPLAM - Instituto de Planejamento | Autarquia |
 
 - A **SBMG** aparece na lista, mas o portal não publica execução orçamentária dela (empresa estatal com
-  contabilidade própria). Fica registrada em `meta.entidades` com zero linhas e um aviso em `meta.avisos`.
+  contabilidade própria). Fica em `meta.entidades` com zero linhas. Os números dela vêm dos **balancetes
+  mensais em PDF** que o portal publica (Publicações > Balancetes Mensais), lidos por `coleta/sbmg.py`
+  e gravados em `empresas` (ver abaixo).
 - O **INPACTA** (Instituto de Projetos Avançados, serviço social autônomo criado pela LC 1.503/2025) não está
   neste portal. O [site de transparência dele](https://inpacta.org.br/transparencia) só publica PDFs
   (contratos de gestão, atas, prestações de contas), sem dados de execução para baixar. O que dá para medir
@@ -68,11 +70,12 @@ entra sozinha, com o nome oficial):
 
 | Arquivo | Para quê | Detalhe |
 |---|---|---|
-| `execucao.js` / `execucao.json` | lido pelo painel | `window.DADOS_EXECUCAO = {meta, despesas, receitas}` (agregado) |
+| `execucao.js` / `execucao.json` | lido pelo painel | `window.DADOS_EXECUCAO = {meta, despesas, receitas, empresas}` (agregado) |
 | `credores.js` / `credores.json` | lido pelo painel (aba de credores) | `window.DADOS_CREDORES = {meta, credores}` |
 | `despesas.csv` | análise detalhada | menor nível: até unidade, ação, modalidade e fonte, com códigos |
 | `receitas.csv` | análise detalhada | por natureza da receita (rubrica), com código |
 | `credores.csv` | análise | mesmo conteúdo de `credores` |
+| `empresas.csv` | análise | mesmo conteúdo de `empresas` (SBMG) |
 | `empenhos.csv` | só com `--com-empenhos` | um empenho por linha |
 
 ### `meta`
@@ -89,6 +92,7 @@ entra sozinha, com o nome oficial):
 | `observacoes` | texto com as regras acima |
 | `avisos` | lista de diferenças pequenas encontradas na validação |
 | `linhas_csv` | contagem de linhas dos CSVs |
+| `empresas_fonte` | nota de rodapé sobre a origem dos números de `empresas` |
 
 ### `despesas` (em `execucao.js`), agregada para o painel
 
@@ -129,6 +133,24 @@ Mais `entidade_id`, `especie`, `rubrica` (nome da natureza no menor nível) e `n
 - `empenhado`/`anulado` = valores dos empenhos emitidos no mês. `liquidado`/`pago` = **posição atual**
   desses empenhos (não o que foi pago naquele mês).
 
+### `empresas` (SBMG, a partir dos balancetes mensais)
+
+`entidade, ano, mes, receita_liquida, custo_servicos, despesas_operacionais, resultado_financeiro, ir_csll,
+lucro_liquido, outros_resultados, caixa, ativo_total, emprestimos_curto_prazo, emprestimos_longo_prazo,
+patrimonio_liquido, fonte`
+
+- É **contabilidade empresarial** (receita, custo, lucro), não orçamentária: não há dotação nem empenho.
+- `receita_liquida` a `outros_resultados` são valores **do mês** (Saldo Atual menos Saldo Anterior de cada
+  conta de resultado). Custos, despesas e IR/CSLL vêm negativos. A soma dá `lucro_liquido`
+  (`outros_resultados` = receitas e despesas eventuais).
+- `caixa`, `ativo_total`, `emprestimos_*` e `patrimonio_liquido` são a **posição no fim do mês**.
+- `fonte` = link direto do PDF do balancete.
+- Conferência: a soma do lucro de 2025 (R$ 6.583.988,04) é igual ao lucro das demonstrações contábeis
+  auditadas de 2025.
+- O balancete sai com atraso (em nov/2026 o último publicado era o de mar/2026).
+- Se algum PDF não puder ser lido, a coleta segue e registra o problema em `meta.avisos`.
+- `--sem-sbmg` pula essa parte. Requer o pacote `pypdf`.
+
 ### `empenhos.csv`
 
 `entidade, entidade_id, ano, empenho (nº/ano), data, mes, credor_documento, credor, fonte_recurso, historico, empenhado, anulado,
@@ -146,6 +168,8 @@ Todos exigem os cabeçalhos HTTP `entidade: <id>` e `exercicio: <ano>` (nos exem
 | receita | `/api/receitas/detalhada?entidade=1&exercicio=A&dataInicial=...&dataFinal=...` |
 | empenhos | `/empenhos/lista?search=id.exercicio=='A' and id.entidade=='1' and data>='...' and data<='...'&entidade=1&page=N&size=2000` |
 | última atualização | `/api/ultimas-atualizacoes/last-update-despesas` e `-receitas` |
+| publicações (SBMG) | `/api/publicacoes?entidade=10&exercicio=A` → grupo "Balancetes Mensais" |
+| arquivo PDF | `/api/files/arquivo/<idArquivo>` (não precisa de cabeçalhos) |
 
 A API devolve valores do intervalo de datas pedido (inclusive créditos adicionais). Por isso o script pede
 sempre de 1º de janeiro até o fim de cada mês e calcula o movimento do mês pela diferença entre dois meses

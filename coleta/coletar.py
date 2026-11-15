@@ -42,6 +42,9 @@ from pathlib import Path
 
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import sbmg  # noqa: E402  (balancetes do aeroporto)
+
 # A mesma API é servida em dois endereços oficiais: o domínio da Prefeitura e o do fornecedor (Elotech).
 # A coleta usa o primeiro que responder. PORTAL_API (variável de ambiente) força um endereço.
 ENDERECOS_API = [u for u in [os.environ.get("PORTAL_API", "").rstrip("/")] if u] or [
@@ -97,15 +100,16 @@ def log(msg: str) -> None:
     print(f"[{dt.datetime.now():%H:%M:%S}] {msg}", file=sys.stderr, flush=True)
 
 
-def get(path: str, exercicio: int, params: dict, tentativas: int = 5, timeout: int = 180):
+def get(path: str, exercicio: int, params: dict | None = None, tentativas: int = 5, timeout: int = 180,
+        entidade: int | None = None, binario: bool = False):
     """GET na API com cabeçalhos entidade/exercicio e novas tentativas com espera crescente."""
-    headers = {"entidade": str(ENTIDADE), "exercicio": str(exercicio)}
+    headers = {"entidade": str(entidade or ENTIDADE), "exercicio": str(exercicio)}
     erro = None
     for i in range(tentativas):
         try:
-            r = SESSION.get(API + path, params=params, headers=headers, timeout=timeout)
+            r = SESSION.get(API + path, params=params or {}, headers=headers, timeout=timeout)
             if r.status_code == 200:
-                return r.json()
+                return r.content if binario else r.json()
             erro = f"HTTP {r.status_code}: {r.text[:300]}"
         except (requests.RequestException, ValueError) as e:
             erro = repr(e)
@@ -432,6 +436,7 @@ def main() -> int:
                     help="exercícios a coletar (padrão: ano anterior e ano atual)")
     ap.add_argument("--entidades", type=int, nargs="+",
                     help="ids das entidades (padrão: todas as do portal; 1 = Prefeitura)")
+    ap.add_argument("--sem-sbmg", action="store_true", help="não lê os balancetes do aeroporto (SBMG)")
     ap.add_argument("--sem-credores", action="store_true", help="não baixa empenhos/credores")
     ap.add_argument("--com-empenhos", action="store_true",
                     help="grava também empenhos.csv (um empenho por linha, ~20 MB por ano)")
@@ -487,6 +492,10 @@ def main() -> int:
             return None
 
     credores = agregar_credores(empenhos)
+    empresas = [] if args.sem_sbmg else sbmg.coletar(
+        lambda path, ex, params, entidade: get(path, ex, params, entidade=entidade),
+        lambda path, ex, entidade: get(path, ex, entidade=entidade, binario=True),
+        anos, API, AVISOS, log)
     fora = []
     for f in FORA_DO_PORTAL:
         por_ano = defaultdict(lambda: defaultdict(float))
@@ -501,6 +510,9 @@ def main() -> int:
         "municipio": "Maringá-PR",
         "entidades": info_ent,
         "fora_do_portal": fora,
+        "empresas_fonte": ("SBMG: balancetes mensais publicados em PDF no portal (Publicações > Balancetes "
+                           "Mensais). Valores de resultado são do mês; caixa, ativo, empréstimos e patrimônio "
+                           "são a posição no fim do mês. Contabilidade empresarial, não orçamentária."),
         "fonte": PORTAL,
         "api": API,
         "atualizado_em": dt.datetime.now(dt.timezone.utc).astimezone().isoformat(timespec="seconds"),
@@ -520,13 +532,16 @@ def main() -> int:
         "linhas_csv": {"despesas": len(despesas), "receitas": len(receitas), "credores": len(credores)},
     }
 
-    obj = {"meta": meta, "despesas": despesas_painel(despesas), "receitas": receitas_painel(receitas)}
+    obj = {"meta": meta, "despesas": despesas_painel(despesas), "receitas": receitas_painel(receitas),
+           "empresas": empresas}
     js = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
     js_cred = json.dumps({"meta": meta, "credores": credores}, ensure_ascii=False, separators=(",", ":"))
 
     sem_id = lambda L: [{k: v for k, v in x.items() if k != "id_folha"} for x in L]
     escrever_atomico(saida / "despesas.csv", csv_texto(sem_id(despesas)))
     escrever_atomico(saida / "receitas.csv", csv_texto(sem_id(receitas)))
+    if empresas:
+        escrever_atomico(saida / "empresas.csv", csv_texto(empresas))
     if not args.sem_credores:
         escrever_atomico(saida / "credores.csv", csv_texto(credores))
         if args.com_empenhos:
