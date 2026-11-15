@@ -378,9 +378,16 @@ function readHash(){
   if(st.de>st.ate) st.de=1;
   const aba=p.get("aba");st.tab=aba==="rec"&&REC.length?"rec":aba==="cred"?"cred":"desp";
   FDIMS.forEach(k=>{if(p.get(k)) st.f[k]=p.get(k);});
+  // Entidade: por padrão mostra só a Prefeitura, porque somar todas conta duas vezes os repasses entre entidades
+  if(st.f.entidade==="todas") delete st.f.entidade; else if(!st.f.entidade&&entPadrao()) st.f.entidade=entPadrao();
 }
+function entPadrao(){
+  if(entPadrao.v!==undefined)return entPadrao.v;
+  const e=new Set(DESP.map(r=>r.entidade));REC.forEach(r=>e.add(r.entidade));e.delete("Não informado");
+  entPadrao.v=e.size>1?([...e].find(x=>/^prefeitura/i.test(x))||null):null;return entPadrao.v;}
 function writeHash(){
   const p=new URLSearchParams();p.set("ano",st.ano);p.set("de",st.de);p.set("ate",st.ate);
+  if(!st.f.entidade&&entPadrao())p.set("entidade","todas");
   if(st.tab!=="desp")p.set("aba",st.tab);
   Object.entries(st.f).forEach(([k,v])=>p.set(k,v));
   history.replaceState(null,"","#"+p.toString());
@@ -393,7 +400,7 @@ function initControls(){
   $("#fDe").onchange=e=>{st.de=+e.target.value;if(st.de>st.ate)st.ate=st.de;render();};
   $("#fAte").onchange=e=>{st.ate=+e.target.value;if(st.ate<st.de)st.de=st.ate;render();};
   document.querySelectorAll("select[data-dim]").forEach(s=>s.onchange=e=>{const k=s.dataset.dim;if(e.target.value)st.f[k]=e.target.value;else delete st.f[k];render();});
-  $("#btnLimpar").onclick=()=>{st.f={};const um=ultimoMes(st.ano);st.de=1;st.ate=um;render();};
+  $("#btnLimpar").onclick=()=>{st.f=entPadrao()?{entidade:entPadrao()}:{};const um=ultimoMes(st.ano);st.de=1;st.ate=um;render();};
   document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{st.tab=t.dataset.tab;render();});
   $("#tDim").value=st.tDim;
   $("#tDim").onchange=e=>{st.tDim=e.target.value;renderTable();};
@@ -417,7 +424,7 @@ function refreshFilterOptions(){
     src.forEach(r=>{if(r.ano!==st.ano||r[k]===undefined)return;if(!matchF(r,k))return;tot.set(r[k],(tot.get(r[k])||0)+(st.tab==="rec"?r.arrecadado:st.tab==="cred"?r.qtd:r.empenhado+r.dotacao_atualizada*1e-9));});
     const opts=[...tot.keys()].sort((a,b)=>a.localeCompare(b,"pt-BR"));
     if(st.f[k]&&!tot.has(st.f[k])) opts.unshift(st.f[k]);
-    s.innerHTML='<option value="">Todos</option>'+opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("");
+    s.innerHTML=`<option value="">${k==="entidade"?"Todas (consolidado)":"Todos"}</option>`+opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("");
     s.value=st.f[k]||"";s.classList.toggle("on",!!st.f[k]);
     // esconde filtros sem informação útil (ex.: fonte de recurso nas receitas)
     s.closest(".f").classList.toggle("sem-info",!st.f[k]&&opts.length<=1&&(opts[0]===undefined||opts[0]==="Não informado"||k==="entidade"));
@@ -429,6 +436,8 @@ function refreshFilterOptions(){
   let h=per?`<span class="chip">Período: ${per}<button aria-label="Remover filtro de período" data-x="per">×</button></span>`:"";
   for(const k in st.f){ if((st.tab==="cred"&&k!=="entidade")||(st.tab==="rec"&&!RDIMS.includes(k)))continue;
     h+=`<span class="chip">${DIM_NOME[k]}: ${esc(st.f[k])}<button aria-label="Remover filtro ${DIM_NOME[k]}" data-x="${k}">×</button></span>`;}
+  if(!st.f.entidade&&entPadrao()) h+=`<span class="chip" style="padding-right:10px">Somando todas as entidades, os repasses entre elas (como a contribuição da Prefeitura à previdência) aparecem duas vezes.</span>`;
+  else if(entPadrao()&&st.f.entidade===entPadrao()&&st.tab!=="cred") h+=`<span class="chip" style="padding-right:10px;background:none">Mostrando só a Prefeitura. Autarquias e demais entidades estão no filtro “Entidade”.</span>`;
   $("#chips").innerHTML=h;
   $("#chips").querySelectorAll("button").forEach(b=>b.onclick=()=>{const k=b.dataset.x;if(k==="per"){st.de=1;st.ate=um;}else delete st.f[k];render();});
 }
@@ -461,7 +470,8 @@ function render(){
   refreshFilterOptions();
   if(st.tab==="desp"&&DESP.length) renderDesp(); else if(st.tab==="rec") renderRec(); else if(st.tab==="cred") renderCred();
 }
-function sujeito(){if(st.f.entidade&&st.f.entidade!=="Não informado")return "a entidade <b>"+esc(st.f.entidade)+"</b>";
+function sujeito(){if(st.f.entidade&&/^prefeitura/i.test(st.f.entidade))return "a Prefeitura";
+  if(st.f.entidade&&st.f.entidade!=="Não informado")return "a entidade <b>"+esc(st.f.entidade)+"</b>";
   const e=new Set(DESP.map(r=>r.entidade));REC.forEach(r=>e.add(r.entidade));e.delete("Não informado");return e.size>1?"o Município":"a Prefeitura";}
 function periodoTxt(){return st.de===1?`Até ${MESES_L[st.ate-1]} de ${st.ano}`:`De ${MESES_L[st.de-1]} a ${MESES_L[st.ate-1]} de ${st.ano}`;}
 
@@ -492,8 +502,8 @@ function renderDesp(){
   barList("#barsFuncao",grouped(rows,"funcao"),"funcao",8);
   barList("#barsGrupo",grouped(rows,"grupo"),"grupo",8);
   barList("#barsOrgao",grouped(rows,"orgao"),"orgao",10);
-  const ge=grouped(rows,"entidade").filter(i=>i.orc>0||i.emp>0);
-  const mostraEnt=ge.length>1||(!!st.f.entidade&&new Set(DESP.map(r=>r.entidade)).size>1);
+  const ge=grouped(despRows(st.ano,st.ate,"entidade"),"entidade").filter(i=>i.orc>0||i.emp>0);
+  const mostraEnt=ge.length>1;
   $("#cardEntidade").classList.toggle("hidden",!mostraEnt);
   if(mostraEnt) barList("#barsEntidade",ge,"entidade",10);
   renderTable();
