@@ -277,23 +277,23 @@ def montar(dados, anterior, link, lic=None, via=None, via_ant=None, avisos_colet
     corpo = f"""<div style="background:#f0f3f7;padding:20px 0">
 <table role="presentation" align="center" cellpadding="0" cellspacing="0" width="680" style="width:680px;max-width:100%;background:#ffffff;border-collapse:collapse;border:1px solid {BORDA}">
 <tr><td style="background:{AZUL};padding:18px 24px">
-  <div style="{FONTE}color:#ffffff;font-size:20px;font-weight:bold">Prefeitura de Maringá - Painel de Transparência</div>
-  <div style="{FONTE}color:#cfe0f1;font-size:14px;margin-top:2px">Resumo semanal: orçamento, licitações, diárias e passagens até {ref}</div>
+  <div style="{FONTE}color:#ffffff;font-size:20px;font-weight:bold">Prefeitura de Maringá</div>
+  <div style="{FONTE}color:#cfe0f1;font-size:14px;margin-top:2px">Execução Orçamentária até {ref}</div>
 </td></tr>
 <tr><td style="padding:18px 24px 24px">
   <p style="{FONTE}font-size:13px;color:#555;margin:0 0 4px">Valores acumulados de 1º de janeiro até {MESES_LONGOS[t['mes'] - 1]} de {t['ano']}.</p>
   <p style="{FONTE}font-size:12px;color:#888;margin:0 0 6px">Dados atualizados em {data_br(meta.get('atualizado_em'))}.</p>
   {aviso}
-  {titulo("Orçamento: resumo do ano")}
+  {titulo("Resumo do ano")}
   {t1}
   {titulo("Órgãos com maior valor empenhado")}
   {t2}
   {(titulo("Licitações") + s_lic) if s_lic else ""}
   {(titulo("Diárias e passagens") + s_via) if s_via else ""}
   <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:24px"><tr>
-    <td style="background:#1565c0;border-radius:4px"><a href="{html.escape(link)}" style="{FONTE}display:inline-block;color:#ffffff;font-size:14px;font-weight:bold;padding:11px 20px;text-decoration:none">Abrir o Painel de Transparência</a></td>
+    <td style="background:#1565c0;border-radius:4px"><a href="{html.escape(link)}" style="{FONTE}display:inline-block;color:#ffffff;font-size:14px;font-weight:bold;padding:11px 20px;text-decoration:none">Abrir o painel completo</a></td>
   </tr></table>
-  <p style="{FONTE}color:#999;font-size:11px;margin-top:20px">Fonte: {fonte}<br>E-mail automático enviado toda segunda-feira pelo Painel de Transparência da Prefeitura de Maringá.</p>
+  <p style="{FONTE}color:#999;font-size:11px;margin-top:20px">Fonte: {fonte}<br>E-mail automático enviado toda segunda-feira pelo painel de execução orçamentária.</p>
 </td></tr></table></div>"""
     assunto = f"Prefeitura de Maringá - Execução Orçamentária até {ref}"
     return assunto, corpo
