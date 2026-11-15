@@ -31,11 +31,22 @@ jobs:
           if [ -f coleta/requirements.txt ]; then pip install -r coleta/requirements.txt; else pip install requests; fi
 
       - name: Guardar dados da semana anterior (para comparar no e-mail)
-        run: cp docs/dados/execucao.js /tmp/anterior.js 2>/dev/null || true
+        run: |
+          cp docs/dados/execucao.js /tmp/anterior.js 2>/dev/null || true
+          cp docs/dados/diarias.js /tmp/diarias_anterior.js 2>/dev/null || true
 
       # O script só sobrescreve os arquivos se a coleta e a validação derem certo.
-      - name: Baixar dados do Portal da Transparência
-        run: python coleta/coletar.py --saida docs/dados
+      # Se licitações/diárias falharem, tenta de novo só com o orçamento, para não perder a semana.
+      - name: Baixar dados do Portal da Transparência (orçamento, licitações, diárias e passagens)
+        id: coleta
+        run: |
+          if python coleta/coletar.py --saida docs/dados; then
+            echo "aviso=" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Coleta completa falhou; tentando só o orçamento."
+            python coleta/coletar.py --saida docs/dados --sem-compras
+            echo "aviso=Nesta semana não foi possível atualizar licitações, diárias e passagens; essas partes mostram os dados da semana anterior." >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Validar dados gerados
         run: |
@@ -54,7 +65,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Sem mudanças nos dados nesta semana."
           else
-            git commit -m "Atualiza dados de execução orçamentária ($(date -u +%Y-%m-%d))"
+            git commit -m "Atualiza dados semanais: orçamento, licitações, diárias e passagens ($(date -u +%Y-%m-%d))"
             git push
           fi
 
@@ -63,6 +74,9 @@ jobs:
         run: |
           python scripts/resumo_email.py docs/dados/execucao.js /tmp/anterior.js \
             --link "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" \
+            --licitacoes docs/dados/licitacoes.js \
+            --diarias docs/dados/diarias.js --diarias-anterior /tmp/diarias_anterior.js \
+            --aviso "${{ steps.coleta.outputs.aviso }}" \
             --saida resumo.html
 
       - name: Enviar resumo semanal por e-mail
