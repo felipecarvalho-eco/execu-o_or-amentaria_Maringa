@@ -19,6 +19,7 @@
   --good:#006300; --bad:#b42323;
   --warn-bg:#fff4d6; --warn-ink:#5c4200;
   --amber:#a35f00; --cinza:#a7adb5;
+  --s1:#2a78d6; --s2:#1baf7a; --s3:#e08a1e; --s4:#8a5cc7; --s5:#d0507a; --s6:#a7adb5;
   --shadow:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.04);
 }
 @media (prefers-color-scheme: dark){
@@ -33,6 +34,7 @@
     --good:#0ca30c; --bad:#e66767;
     --warn-bg:#3a2e0c; --warn-ink:#f5d98a;
     --amber:#e0a43a; --cinza:#6d737b;
+    --s1:#3987e5; --s2:#199e70; --s3:#e6a03c; --s4:#a07ee0; --s5:#e0708f; --s6:#6d737b;
     --shadow:none;
   }
 }
@@ -47,6 +49,7 @@
   --good:#0ca30c; --bad:#e66767;
   --warn-bg:#3a2e0c; --warn-ink:#f5d98a;
   --amber:#e0a43a; --cinza:#6d737b;
+  --s1:#3987e5; --s2:#199e70; --s3:#e6a03c; --s4:#a07ee0; --s5:#e0708f; --s6:#6d737b;
   --shadow:none;
 }
 *{box-sizing:border-box}
@@ -72,7 +75,7 @@ header.top p{margin:0;color:var(--ink-2)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chip{font-size:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:2px 6px 2px 10px;display:inline-flex;align-items:center;gap:4px}
 .chip button{border:0;background:none;color:var(--ink-2);cursor:pointer;font-size:15px;line-height:1;padding:0 4px}
-.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;margin:16px 0 4px;border-bottom:1px solid var(--border)}
+.tabs{display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;margin:16px 0 4px;border-bottom:1px solid var(--border)}
 .tab{white-space:nowrap;flex:none;font:inherit;font-weight:600;background:none;border:0;border-bottom:2px solid transparent;padding:8px 14px;color:var(--ink-2);cursor:pointer;margin-bottom:-1px}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 .summary{font-size:17px;margin:16px 0;max-width:900px}
@@ -138,7 +141,8 @@ tfoot td{font-weight:700;border-bottom:0;background:var(--surface-2)}
 footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
 .empty{padding:30px;text-align:center;color:var(--ink-2)}
 .hidden,.sem-info{display:none !important}
-.subtabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:thin;margin:0 0 12px;border-bottom:1px solid var(--border)}
+.tabs::-webkit-scrollbar,.subtabs::-webkit-scrollbar{display:none}
+.subtabs{display:flex;gap:2px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;margin:0 0 12px;border-bottom:1px solid var(--border)}
 .subtab{white-space:nowrap;flex:none;font:inherit;font-size:14px;background:none;border:0;border-bottom:2px solid transparent;padding:7px 12px;color:var(--ink-2);cursor:pointer;margin-bottom:-1px}
 .subtab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
 .kpis6{grid-template-columns:repeat(6,minmax(0,1fr))}
@@ -296,8 +300,8 @@ footer,.desc,.banner{overflow-wrap:anywhere}
     <div class="kpis" id="kpisR"></div>
     <div class="card full">
       <h2>Arrecadação mês a mês</h2>
-      <p class="desc">Quanto entrou nos cofres em cada mês. A linha tracejada é a média mensal prevista.</p>
-      <div class="legend"><span><i style="background:var(--arr)"></i>Arrecadado no mês</span><span><i class="dash"></i>Média mensal prevista</span></div>
+      <p class="desc">Quanto entrou nos cofres em cada mês, separado pelo tipo de receita. O número em cima de cada coluna é o total do mês, e a linha tracejada é a média mensal prevista.</p>
+      <div class="legend" id="legRec"></div>
       <div class="chart" id="chRec"></div>
     </div>
     <div class="card full">
@@ -486,13 +490,10 @@ function boot(data){
   if(m.portal_atualizado_despesas){const v=String(m.portal_atualizado_despesas),q=v.match(/^(\d{4})-(\d{2})-(\d{2})$/),d=new Date(v);ml.push("Portal atualizado em "+(q?`${q[3]}/${q[2]}/${q[1]}`:isNaN(d)?esc(v):d.toLocaleDateString("pt-BR")));}
   if(m.fonte) ml.push('Fonte: <a href="'+esc(m.fonte)+'" target="_blank" rel="noopener">Portal da Transparência</a>');
   $("#metaLine").innerHTML=ml.join(" · ")||"&nbsp;";
-  const avisos=[];
+  const avisos=AVISOS;
   if(m.exemplo) avisos.push("Atenção: "+(m.observacoes||"estes são dados de exemplo."));
   if(m.mes_corrente_parcial){const [a,mm]=String(m.mes_corrente_parcial).split("-");if(a&&mm){PARCIAL={ano:+a,mes:+mm};avisos.push(`O mês de ${MESES_L[+mm-1]} de ${a} ainda está em andamento, então os valores dele são parciais.`);}}
-  const tec=(Array.isArray(m.avisos)?m.avisos:(m.avisos?[m.avisos]:[])).map(String);
-  if(avisos.length||tec.length){const b=$("#banner");
-    b.innerHTML=avisos.map(esc).join("<br>")+(tec.length?`<details style="margin-top:${avisos.length?6:0}px"><summary style="cursor:pointer">Notas técnicas da coleta (${tec.length}): pequenas diferenças de centavos ou poucos reais encontradas no próprio portal</summary><ul style="margin:6px 0 0;padding-left:18px;font-size:13px">${tec.map(a=>"<li>"+esc(a)+"</li>").join("")}</ul></details>`:"");
-    b.classList.remove("hidden");}
+  notasTec(m.avisos);
   $("#foot").innerHTML="Painel de acompanhamento da execução orçamentária de "+esc(m.municipio||"Maringá - PR")+". Valores em reais (R$), sem correção pela inflação."+(m.fonte?' Fonte: <a style="color:inherit" href="'+esc(m.fonte)+'" target="_blank" rel="noopener">'+esc(m.fonte)+"</a>.":"");
   if(!DESP.length){$("#secDesp").innerHTML='<div class="card empty">Nenhum dado de despesa encontrado. Verifique o arquivo <code>dados/execucao.js</code>.</div>';}
   readHash(); initControls(); render();
@@ -776,23 +777,35 @@ function renderRec(){
     kpi("Arrecadado","var(--arr)",arr,pctS(arr,prev)+" do previsto",pct(arr,prev),"Dinheiro que efetivamente entrou nos cofres no período.")+
     kpi("Esperado no período","var(--orcado)",esperado,`${Number.isInteger(nm)?nm:nf1.format(nm)} ${nm>1?"meses":"mês"} × média mensal prevista`,null,"Previsão anual dividida por 12 e multiplicada pelo número de meses do período. É só uma referência.")+
     kpi(dif>=0?"Acima do esperado":"Abaixo do esperado",dif>=0?"var(--good)":"var(--bad)",Math.abs(dif),`<span class="delta ${dif>=0?"up":"down"}">${dif>=0?"▲":"▼"} ${pctS(Math.abs(dif),esperado)}</span> em relação à média`,null,"Diferença entre o arrecadado e o esperado pela média mensal.");
-  // barras mensais
+  // colunas mensais empilhadas por origem (tipo de receita)
   const box=$("#chRec");const months=[];for(let m=st.de;m<=st.ate;m++)months.push(m);
-  const bym=months.map(m=>rows.reduce((a,r)=>a+(r.mes===m?r.arrecadado:0),0));
-  const W=Math.max(320,box.clientWidth||800),H=W<560?220:260,ml=W<560?44:56,mr=12,mt=12,mb=28;
-  const ref=prev/12, ymax=niceMax(Math.max(...bym,ref,1));
+  const og=new Map();rows.forEach(r=>{if(r.mes<st.de)return;const k=semAcento(r.origem);let o=og.get(k);if(!o){o={tot:0,nomes:new Map()};og.set(k,o);}o.tot+=r.arrecadado;o.nomes.set(r.origem,(o.nomes.get(r.origem)||0)+Math.abs(r.arrecadado)+1e-9);});
+  const nomeDe=o=>{let b="",v=-1;o.nomes.forEach((x,n)=>{const acc=/[à-ÿ]/i.test(n)?1e18:0;if(x+acc>v){v=x+acc;b=n;}});return b;};
+  const ordO=[...og.entries()].sort((a,b)=>b[1].tot-a[1].tot);const NMAX=5;
+  const grupos=ordO.slice(0,NMAX).map(([k,o])=>({k,nome:nomeDe(o)}));if(ordO.length>NMAX)grupos.push({k:"__outras",nome:"Outras receitas"});
+  const gi=new Map(grupos.map((g,i)=>[g.k,i]));const cores=["var(--s1)","var(--s2)","var(--s3)","var(--s4)","var(--s5)","var(--s6)"];
+  const mat=months.map(m=>{const v=grupos.map(()=>0);rows.forEach(r=>{if(r.mes!==m)return;const k=semAcento(r.origem);const i=gi.has(k)?gi.get(k):gi.get("__outras");if(i!=null)v[i]+=r.arrecadado;});return v;});
+  const bym=mat.map(v=>v.reduce((a,b)=>a+b,0));
+  $("#legRec").innerHTML=grupos.map((g,i)=>`<span><i style="background:${cores[i]}"></i>${esc(g.nome)}</span>`).join("")+'<span><i class="dash"></i>Média mensal prevista</span>';
+  const W=Math.max(320,box.clientWidth||800),H=W<560?300:380,ml=W<560?44:56,mr=12,mt=22,mb=28;
+  const ref=prev/12, vmax=Math.max(...mat.map(v=>v.reduce((a,b)=>a+Math.max(0,b),0)),ref,1);
+  // escala justa: passo "redondo" e topo logo acima da maior coluna, para as colunas ficarem altas
+  const raw=vmax/5,pw=Math.pow(10,Math.floor(Math.log10(raw))),stp=[1,2,2.5,5,10].map(x=>x*pw).find(x=>x>=raw),nt=Math.ceil(vmax*1.06/stp),ymax=nt*stp;
   const bw=(W-ml-mr)/months.length, y=v=>mt+(H-mt-mb)*(1-v/ymax);
-  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Arrecadação mensal">`;
-  for(let i=0;i<=4;i++){const v=ymax*i/4;s+=`<line x1="${ml}" x2="${W-mr}" y1="${y(v)}" y2="${y(v)}" stroke="var(${i?"--grid":"--axis"})"/><text x="${ml-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${axisFmt(v)}</text>`;}
-  months.forEach((m,i)=>{const h=y(0)-y(bym[i]),bx=ml+i*bw+Math.max(2,bw*.18),w=Math.max(4,bw*.64);
-    s+=`<path d="M${bx},${y(0)}V${y(bym[i])+Math.min(4,h)}q0,-4 4,-4h${w-8}q4,0 4,4V${y(0)}Z" fill="var(--arr)" data-i="${i}"/>`+
-       `<rect x="${ml+i*bw}" y="${mt}" width="${bw}" height="${H-mt-mb}" fill="transparent" data-i="${i}" class="hb"/>`+
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Arrecadação mensal por tipo de receita">`;
+  for(let i=0;i<=nt;i++){const v=stp*i;s+=`<line x1="${ml}" x2="${W-mr}" y1="${y(v)}" y2="${y(v)}" stroke="var(${i?"--grid":"--axis"})"/><text x="${ml-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${axisFmt(v)}</text>`;}
+  const rotCabe=bw>=40;let rots="";
+  months.forEach((m,i)=>{const bx=ml+i*bw+Math.max(2,bw*.16),w=Math.max(4,bw*.68);let acc=0;
+    mat[i].forEach((v,j)=>{if(v<=0)return;const y1=y(acc),y2=y(acc+v);acc+=v;s+=`<rect x="${bx}" y="${y2}" width="${w}" height="${Math.max(0,y1-y2-(y1-y2>2?1:0))}" fill="${cores[j]}"/>`;});
+    if(bym[i]>0)rots+=`<text x="${bx+w/2}" y="${y(acc)-6}" text-anchor="middle" font-size="${rotCabe?11.5:9.5}" font-weight="600" fill="var(--ink)" stroke="var(--surface)" stroke-width="3" paint-order="stroke">${rotCabe?axisFmt(bym[i]):axisFmt(bym[i]).replace(" mi","")}</text>`;
+    s+=`<rect x="${ml+i*bw}" y="${mt}" width="${bw}" height="${H-mt-mb}" fill="transparent" data-i="${i}" class="hb"/>`+
        `<text x="${ml+i*bw+bw/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${MESES[m-1]}</text>`;});
-  s+=`<line x1="${ml}" x2="${W-mr}" y1="${y(ref)}" y2="${y(ref)}" stroke="var(--orcado)" stroke-width="2" stroke-dasharray="5 4"/></svg><div class="tt" id="ttr"></div>`;
+  s+=`<line x1="${ml}" x2="${W-mr}" y1="${y(ref)}" y2="${y(ref)}" stroke="var(--orcado)" stroke-width="2" stroke-dasharray="5 4"/>${rots}</svg><div class="tt" id="ttr"></div>`;
   box.innerHTML=s;
   const tt=box.querySelector("#ttr"),svg=box.querySelector("svg");
   box.querySelectorAll(".hb").forEach(rc=>{rc.addEventListener("pointerenter",ev=>{const i=+rc.dataset.i,r=svg.getBoundingClientRect();
-    tt.innerHTML=`<div class="h">${MESES_L[months[i]-1]} de ${st.ano}</div><div class="r"><span><i style="background:var(--arr)"></i>Arrecadado</span><span>${brl(bym[i])}</span></div><div class="r"><span>Média prevista</span><span>${brl(ref)}</span></div>`;
+    tt.innerHTML=`<div class="h">${MESES_L[months[i]-1]} de ${st.ano}</div>`+grupos.map((g,j)=>`<div class="r"><span><i style="background:${cores[j]}"></i>${esc(g.nome)}</span><span>${brl(mat[i][j])}</span></div>`).reverse().join("")+
+      `<div class="r" style="border-top:1px solid var(--grid);margin-top:4px;padding-top:4px"><span><b>Total do mês</b></span><span><b>${brl(bym[i])}</b></span></div><div class="r"><span>Média prevista</span><span>${brl(ref)}</span></div>`;
     tt.style.opacity=1;const px=(ml+i*bw+bw/2)*r.width/W,tw=tt.offsetWidth;tt.style.left=Math.max(0,Math.min(r.width-tw,px-tw/2))+"px";tt.style.top="0px";});
     rc.addEventListener("pointerleave",()=>tt.style.opacity=0);});
   // por origem
@@ -963,8 +976,17 @@ function baixarCSV(nome,cab,linhas){
 }
 function mesesPeriodo(){const m=[];for(let i=st.de;i<=st.ate;i++)m.push(i);return m;}
 const kpiT=(lbl,val,sub,tip,cor,meter)=>`<div class="card kpi"><div class="lbl">${cor?`<i class="sw" style="background:${cor}"></i>`:""}${lbl}<span class="help" tabindex="0" data-tip="${esc(tip)}">?</span></div><div class="val">${val}</div><div class="sub">${sub}</div>${meter!=null?`<div class="meter"><i style="width:${Math.max(0,Math.min(100,meter))}%;background:${cor}"></i></div>`:""}</div>`;
-function notaFonte(sel,m){const o=[];if(m.atualizado_em){const d=new Date(m.atualizado_em);o.push("Atualizado em "+(isNaN(d)?esc(m.atualizado_em):d.toLocaleDateString("pt-BR")));}
-  if(m.observacoes)o.push(esc(m.observacoes));(Array.isArray(m.avisos)?m.avisos:[]).forEach(a=>o.push(esc(a)));if(m.fonte&&/^https?:\/\//.test(m.fonte))o.push(`Fonte: <a href="${esc(m.fonte)}" target="_blank" rel="noopener" style="color:inherit">${esc(m.fonte.replace(/^https?:\/\//,""))}</a>`);
+// avisos para todos (banner) e notas técnicas da coleta (recolhidas no fim da página)
+const AVISOS=[],NOTAS_TEC=[];
+function notasTec(lista,prefixo){(Array.isArray(lista)?lista:(lista?[lista]:[])).map(a=>(prefixo||"")+String(a)).forEach(a=>{if(!NOTAS_TEC.includes(a))NOTAS_TEC.push(a);});desenhaBanner();}
+function desenhaBanner(){const b=$("#banner"),tec=NOTAS_TEC;if(!AVISOS.length&&!tec.length)return;
+  const aberto=!!b.querySelector("details[open]");
+  b.innerHTML=AVISOS.map(esc).join("<br>")+(tec.length?`<details style="margin-top:${AVISOS.length?6:0}px"${aberto?" open":""}><summary style="cursor:pointer">Notas técnicas da coleta (${tec.length}): como os dados foram montados e pequenas diferenças de centavos ou poucos reais encontradas no próprio portal</summary><ul style="margin:6px 0 0;padding-left:18px;font-size:13px">${tec.map(a=>"<li>"+esc(a)+"</li>").join("")}</ul></details>`:"");
+  b.classList.remove("hidden");}
+function notaFonte(sel,m,nome){
+  if(m.observacoes)notasTec([m.observacoes],nome?nome+": ":"");notasTec(m.avisos);
+  const o=[];if(m.atualizado_em){const d=new Date(m.atualizado_em);o.push("Atualizado em "+(isNaN(d)?esc(m.atualizado_em):d.toLocaleDateString("pt-BR")));}
+  if(m.fonte&&/^https?:\/\//.test(m.fonte))o.push(`Fonte: <a href="${esc(m.fonte)}" target="_blank" rel="noopener" style="color:inherit">${esc(m.fonte.replace(/^https?:\/\//,""))}</a>`);
   $(sel).innerHTML=o.join(" · ");}
 
 /* ---------- aba Licitações ---------- */
@@ -1121,7 +1143,7 @@ function renderLic(){
     $("#licHistCont").textContent=at?`${nf0.format(mh.length)} ${mh.length===1?"mudança":"mudanças"} nesta atualização.`:"";
     tabela("#tblLicHist",[{k:"ordem",t:"O que mudou",f:r=>esc(r.tipo),sort:r=>(r.tipo==="Nova"?"0":"1")+String(1e12-r.est).padStart(14,"0")},C.entidade,C.numero,C.modalidade,C.objeto,{k:"de",t:"De"},{k:"para",t:"Para"},C.est],mh,lst.tsHist,{vazio:"Nenhuma mudança registrada nesta atualização com estes filtros."});
   }
-  notaFonte("#licNota",LICMETA);
+  notaFonte("#licNota",LICMETA,"Licitações");
 }
 function csvLic(){baixarCSV(`licitacoes_maringa_${st.ano}.csv`,["Entidade","Secretaria","Modalidade","Número","Objeto","Valor estimado","Valor contratado","Situação","Publicação","Abertura"],
   licLista.map(r=>[r.entidade,r.secretaria,r.modalidade,r.numero,r.objeto,r.est,r.con,r.situacao,r.publicacao,r.abertura]));}
@@ -1157,7 +1179,7 @@ function renderDiar(){
     {k:"valor",t:"Valor",f:r=>brl(r.valor),num:1},{k:"orgao",t:"Órgão",f:r=>esc(r.orgao),wrap:1}],lista,vst.ts,{lim:vst.lim});
   $("#diarMais").innerHTML=lista.length>vst.lim?`<span class="desc" style="margin-right:10px">Mostrando ${nf0.format(vst.lim)} de ${nf0.format(lista.length)}.</span><button class="btn" id="btnMaisV" type="button">Mostrar mais 50</button>`:`<span class="desc">${nf0.format(lista.length)} registros.</span>`;
   const bm=$("#btnMaisV");if(bm)bm.onclick=()=>{vst.lim+=50;render();};
-  notaFonte("#diarNota",DIAMETA);
+  notaFonte("#diarNota",DIAMETA,"Diárias e passagens");
   if(DIAMETA.exemplo){$("#diarNota").innerHTML="<b>Atenção: dados de exemplo, com nomes fictícios.</b> "+$("#diarNota").innerHTML;}
 }
 function csvDiar(){baixarCSV(`diarias_passagens_maringa_${st.ano}.csv`,["Saída","Retorno","Quem viajou","Cargo","Órgão","Entidade","Destino","Motivo","Tipo","Quantidade","Valor"],
