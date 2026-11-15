@@ -176,7 +176,7 @@ footer,.desc,.banner{overflow-wrap:anywhere}
   .filters{position:static}
   .summary{font-size:15.5px}
   .bar .top{flex-direction:column;gap:0}
-  .bar .nm{white-space:normal}
+  .bar .nm,.bar .vv{white-space:normal}
   .tblbar .f,.tblbar input{flex:1 1 100%;min-width:0;width:100%}
   .help:hover::after,.help:focus::after{left:auto;right:-8px;transform:none;width:200px}
 }
@@ -495,7 +495,7 @@ function boot(data){
   TEM_INTRA=DESP.some(r=>r.intra);
   EMP=(D.empresas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes,entidade:txt(r.entidade),fonte:String(r.fonte||"")};
     ["receita_liquida","custo_servicos","despesas_operacionais","resultado_financeiro","ir_csll","outros_resultados","lucro_liquido","caixa","ativo_total","emprestimos_curto_prazo","emprestimos_longo_prazo","patrimonio_liquido"].forEach(k=>o[k]=r[k]==null||r[k]===""?null:num(r[k]));return o;});
-  REC=(D.receitas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};RDIMS.forEach(k=>o[k]=txt(r[k]));o.previsto=num(r.previsto);o.arrecadado=num(r.arrecadado);
+  REC=(D.receitas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};RDIMS.forEach(k=>o[k]=txt(r[k]));o.previsto=num(r.previsto);o.arrecadado=num(r.arrecadado);o.bruto=r.arrecadado_bruto==null?null:num(r.arrecadado_bruto);o.deducoes=num(r.deducoes);
     o.intra=r.intra_orcamentaria===true||/intra/i.test(String(r.categoria||""));
     o._key=RDIMS.map(k=>o[k]).join("\u0001")+(o.intra?"\u0001i":"");return o;});
   if(!REC.length) $("#tabR").classList.add("hidden");
@@ -661,9 +661,12 @@ function renderDesp(){
   const iDot=consol?dotacao(iRows):{atu:0},iEx=consol?execSum(iRows,st.de):{emp:0,pag:0};
   const semRep=(v,iv)=>consol&&iv>0?`<div class="sub" style="margin-top:4px">Sem repasses: <b>${brl(v-iv)}</b></div>`:"";
   if(consol&&dot.atu>0)$("#sumD").innerHTML+=` Descontando os <b>${brl(iEx.pag)}</b> repassados de uma entidade a outra, o gasto real pago pelo Município foi de <b>${brl(ex.pag-iEx.pag)}</b>.`;
+  // reserva do RPPS (Maringá Previdência): o RREO mostra separada, aqui ela está dentro do orçado
+  const rpps=dotacao(rows.filter(r=>/reserva/i.test(r.grupo)&&/previd/i.test(r.entidade))).atu;
+  const rppsTxt=rpps>0?`<div class="sub" style="margin-top:4px">Inclui ${brl(rpps)} da reserva da Previdência (RPPS)<span class="help" tabindex="0" style="display:inline-grid;margin-left:4px;vertical-align:-3px" data-tip="Dinheiro que a Maringá Previdência deixa reservado para pagar aposentadorias futuras. Está no orçamento, mas não é para ser gasto no ano. O RREO (relatório oficial) mostra essa reserva separada, por isso o orçado dele parece menor.">?</span></div>`:"";
   const ini=dot.ini>0&&Math.abs(dot.atu-dot.ini)>1?`Inicial: ${brl(dot.ini)} (${dot.atu>=dot.ini?"+":""}${pctS(dot.atu-dot.ini,dot.ini)})`:"Orçamento autorizado no ano";
   $("#kpisD").innerHTML=
-    kpi("Orçado","var(--orcado)",dot.atu,ini,null,"Dotação atualizada: valor máximo autorizado para gastar no ano, já incluindo créditos adicionais e cortes.",semRep(dot.atu,iDot.atu))+
+    kpi("Orçado","var(--orcado)",dot.atu,ini,null,"Dotação atualizada: valor máximo autorizado para gastar no ano, já incluindo créditos adicionais e cortes.",semRep(dot.atu,iDot.atu)+rppsTxt)+
     kpi("Empenhado","var(--emp)",ex.emp,pctS(ex.emp,dot.atu)+" do orçado",pct(ex.emp,dot.atu),"Valor reservado para contratos e compras. É o primeiro passo do gasto público.",semRep(ex.emp,iEx.emp))+
     kpi("Liquidado","var(--liq)",ex.liq,pctS(ex.liq,dot.atu)+" do orçado",pct(ex.liq,dot.atu),"Serviço ou produto entregue e conferido. Falta só o pagamento.")+
     kpi("Pago","var(--pag)",ex.pag,pctS(ex.pag,dot.atu)+" do orçado",pct(ex.pag,dot.atu),"Dinheiro que efetivamente saiu do caixa.",cmp+semRep(ex.pag,iEx.pag));
@@ -811,10 +814,14 @@ function renderRec(){
   $("#sumR").innerHTML=prev>0?`${periodoTxt()}, ${sujeito()} <b>arrecadou ${brl(arr)}</b>, o que corresponde a <b>${pctS(arr,prev)}</b> dos <b>${brl(prev)}</b> previstos para o ano. Se a arrecadação fosse igual todo mês, o esperado para o período seria ${brl(esperado)}.`:`${periodoTxt()}: nenhuma receita encontrada.`;
   if(!st.f.entidade){const ia=rows.reduce((t,r)=>t+(r.intra&&r.mes>=st.de?r.arrecadado:0),0);
     if(ia>0)$("#sumR").innerHTML+=` Desse valor, <b>${brl(ia)}</b> são repasses entre entidades do próprio Município (receitas intraorçamentárias); sem eles, a arrecadação foi de <b>${brl(arr-ia)}</b>.`;}
+  // bruto e deduções, para conferir com as telas do portal que mostram o valor bruto
+  let brutoTxt="";const temB=rows.some(r=>r.bruto!=null);
+  if(temB){let b=0,d=0;rows.forEach(r=>{if(r.mes>=st.de){b+=r.bruto!=null?r.bruto:r.arrecadado;d+=r.deducoes;}});
+    if(Math.abs(d)>1)brutoTxt=`<div class="sub" style="margin-top:4px">Bruto ${brl(b)} − deduções (ex.: FUNDEB) ${brl(Math.abs(d))}</div>`;}
   const dif=arr-esperado;
   $("#kpisR").innerHTML=
     kpi("Previsto no ano","var(--orcado)",prev,"Receita estimada no orçamento",null,"Quanto a prefeitura espera arrecadar no ano, segundo a lei orçamentária.")+
-    kpi("Arrecadado","var(--arr)",arr,pctS(arr,prev)+" do previsto",pct(arr,prev),"Dinheiro que efetivamente entrou nos cofres no período.")+
+    kpi("Arrecadado","var(--arr)",arr,pctS(arr,prev)+" do previsto",pct(arr,prev),"Receita líquida: dinheiro que efetivamente ficou para o Município no período, já descontadas as deduções (como a parte que vai para o FUNDEB). Algumas telas do portal mostram o valor bruto, antes das deduções.",brutoTxt)+
     kpi("Esperado no período","var(--orcado)",esperado,`${Number.isInteger(nm)?nm:nf1.format(nm)} ${nm>1?"meses":"mês"} × média mensal prevista`,null,"Previsão anual dividida por 12 e multiplicada pelo número de meses do período. É só uma referência.")+
     kpi(dif>=0?"Acima do esperado":"Abaixo do esperado",dif>=0?"var(--good)":"var(--bad)",Math.abs(dif),`<span class="delta ${dif>=0?"up":"down"}">${dif>=0?"▲":"▼"} ${pctS(Math.abs(dif),esperado)}</span> em relação à média`,null,"Diferença entre o arrecadado e o esperado pela média mensal.");
   // colunas mensais empilhadas por origem (tipo de receita)
