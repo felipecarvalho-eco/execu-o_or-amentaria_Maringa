@@ -78,6 +78,7 @@ entra sozinha, com o nome oficial):
 | `empresas.csv` | análise | mesmo conteúdo de `empresas` (SBMG) |
 | `licitacoes.js` / `.json` | aba Licitações | `window.DADOS_LICITACOES = {meta, licitacoes, mudancas}` |
 | `diarias.js` / `.json` | aba Diárias e passagens | `window.DADOS_DIARIAS = {meta, diarias}` |
+| `gastos.js` | aba "Para onde vai o dinheiro" (carregar só ao abrir a aba: ~11 MB, ~2 MB comprimido) | `window.DADOS_GASTOS = {meta, colunas, dicionarios, linhas}` |
 | `licitacoes.csv`, `diarias.csv` | análise | mesmo conteúdo das listas acima |
 | `empenhos.csv` | só com `--com-empenhos` | um empenho por linha |
 
@@ -223,6 +224,42 @@ quantidade, valor, valor_empenhado, situacao, meio_transporte, documento, empres
   `valor` = empenhado menos anulado (empenhos por estimativa costumam ter anulações); `empresa` = credor;
   `orgao` vem do empenho; `documento` = número do empenho. A soma confere com o elemento 3.3.90.33 da despesa.
 
+### `gastos` (cada empenho, de 2026 em diante): para onde vai o dinheiro
+
+Um registro por empenho emitido no ano, em todas as entidades do portal. Permite seguir
+secretaria → elemento → fornecedor → empenho → licitação/contrato.
+
+**Formato compacto (tabela + dicionários)**, porque em objetos daria ~55 MB:
+`linhas[i][j]` é o valor da coluna `colunas[j]`; se a coluna está em `dicionarios`, o valor é um índice nessa
+lista. Para voltar a objetos no navegador:
+
+```js
+const G = window.DADOS_GASTOS, dic = G.dicionarios;
+const gastos = G.linhas.map(l => Object.fromEntries(G.colunas.map((c, j) => [c, c in dic ? dic[c][l[j]] : l[j]])));
+```
+
+Colunas: `entidade_id, entidade, data, empenho, orgao_codigo, orgao, unidade, funcao, programa, acao,
+elemento_codigo, elemento, desdobramento, modalidade, licitacao, licitacao_oxy, processo, contrato, itens,
+link_licitacao, credor_documento, credor, fonte_recurso, historico, detalhe, empenhado, anulado, liquidado, pago`
+
+- Chave do empenho = `entidade_id` + `empenho` ("nº/ano"). `data` = emissão (ano e mês saem daí).
+- Valor do empenho = `empenhado − anulado`. A soma por entidade, secretaria e elemento confere com o empenhado
+  da despesa em `execucao.js`.
+- `orgao` (secretaria) e `elemento` usam os mesmos nomes da despesa em `execucao.js`, então os filtros casam.
+  `desdobramento` = detalhe do elemento (ex. "LOCACAO DE SOFTWARE").
+- `modalidade` = forma de contratação (ex. "Pregão", "Processo inexigibilidade", "Dispensável");
+  "Folha de pagamento" para empenhos de folha (sem licitação; nesses, unidade/programa/ação/desdobramento ficam
+  "Não informado").
+- `licitacao`, `processo`, `contrato` = "nº/ano" ou vazio. `link_licitacao` = página da licitação no portal
+  quando ela está em `licitacoes.js` (licitações de 2026); licitações de anos anteriores ficam sem link.
+- `itens` = até 3 itens do empenho (200 caracteres). `historico` = até 250 caracteres.
+- `liquidado` e `pago` = posição atual do empenho (atualizada a cada coleta).
+- `detalhe` = `0` quando o detalhe ainda não foi baixado (falha ou limite de tempo); completa na próxima coleta
+  (`meta.sem_detalhe` conta quantos).
+- `gastos.csv` (objetos, ~35 MB) só com `--com-gastos-csv`.
+- Reaproveitamento: os campos do detalhe não mudam, então a coleta lê o `gastos.js` anterior e só consulta
+  `/empenhos/detalhe` para empenhos novos (`--gastos-max-minutos`, padrão 30, limita o tempo por coleta).
+
 ### `empenhos.csv`
 
 `entidade, entidade_id, ano, empenho (nº/ano), data, mes, credor_documento, credor, fonte_recurso, historico, empenhado, anulado,
@@ -247,6 +284,8 @@ Todos exigem os cabeçalhos HTTP `entidade: <id>` e `exercicio: <ano>` (nos exem
 | diárias | `/api/diarias?entidade=E&exercicio=A&dataInicial=A-01-01&dataFinal=A-12-31&page=0&size=2000` |
 | passagens | `/api/passagens?entidade=E&exercicio=A&page=0&size=2000` |
 | passagens por empresa | `/empenhos/lista?...&programatica.elemento=339033` |
+| detalhe do empenho | `/empenhos/detalhe?entidade=E&exercicio=A&empenho=N` |
+| elemento do empenho (folha) | `/empenhos/lista?...&programatica.elemento=<6 dígitos>` |
 | órgão do empenho | `/empenhos/lista?...&programatica.orgao=<código do órgão>` |
 
 A API devolve valores do intervalo de datas pedido (inclusive créditos adicionais). Por isso o script pede
