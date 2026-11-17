@@ -46,6 +46,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import sbmg  # noqa: E402  (balancetes do aeroporto)
 import compras_viagens as cv  # noqa: E402  (licitações, diárias e passagens)
+import gastos as gs  # noqa: E402  (cada empenho com secretaria, elemento e licitação)
 import repasses as rp  # noqa: E402  (repasses da Prefeitura às outras entidades)
 
 # A mesma API é servida em dois endereços oficiais: o domínio da Prefeitura e o do fornecedor (Elotech).
@@ -451,6 +452,12 @@ def main() -> int:
     ap.add_argument("--sem-repasses", action="store_true",
                     help="não coleta os repasses da Prefeitura às outras entidades")
     ap.add_argument("--sem-credores", action="store_true", help="não baixa empenhos/credores")
+    ap.add_argument("--sem-gastos", action="store_true",
+                    help="não gera gastos.js (cada empenho com secretaria, elemento, licitação e contrato)")
+    ap.add_argument("--gastos-max-minutos", type=float, default=30,
+                    help="tempo máximo baixando detalhes novos de empenhos (0 = sem limite; padrão 30)")
+    ap.add_argument("--com-gastos-csv", action="store_true", help="grava também gastos.csv (~35 MB)")
+    ap.add_argument("--gastos-threads", type=int, default=4, help="consultas simultâneas ao detalhe (padrão 4)")
     ap.add_argument("--com-empenhos", action="store_true",
                     help="grava também empenhos.csv (um empenho por linha, ~20 MB por ano)")
     args = ap.parse_args()
@@ -543,6 +550,16 @@ def main() -> int:
             raise RuntimeError("Nenhuma licitação coletada")
 
     credores = agregar_credores(empenhos)
+    gastos = None
+    if not args.sem_gastos and not args.sem_credores:
+        try:
+            t = (saida / "gastos.js").read_text(encoding="utf-8")
+            prev_g = json.loads(t[t.index("{"): t.rindex("}") + 1])
+        except (OSError, ValueError):
+            prev_g = None
+        gastos = gs.coletar(get, empenhos, despesas, licitacoes, [a for a in anos if a >= args.desde],
+                            gs.cache_de(prev_g), AVISOS, log, threads=args.gastos_threads,
+                            max_minutos=args.gastos_max_minutos)
     empresas = [] if args.sem_sbmg else sbmg.coletar(
         lambda path, ex, params, entidade: get(path, ex, params, entidade=entidade),
         lambda path, ex, entidade: get(path, ex, entidade=entidade, binario=True),
@@ -643,6 +660,24 @@ def main() -> int:
         escrever_atomico(saida / "diarias.json", js_via)
         escrever_atomico(saida / "diarias.js", "window.DADOS_DIARIAS = " + js_via + ";\n")
         escrever_atomico(saida / "diarias.csv", csv_texto(viagens))
+    if gastos is not None:
+        meta_g = {k: meta[k] for k in ("municipio", "fonte", "api", "atualizado_em", "avisos")}
+        gas = {"meta": {**meta_g, "anos": [a for a in anos if a >= args.desde], "versao_cache": gs.VERSAO_CACHE,
+                        "formato": ("tabela: linhas[i][j] é o valor da coluna colunas[j]; nas colunas que estão em "
+                                    "dicionarios, o valor é o índice na lista dicionarios[coluna]"),
+                        "sem_detalhe": sum(1 for g in gastos if not g["detalhe"]),
+                        "observacoes": ("Um registro por empenho emitido no ano. valor = empenhado menos anulado; "
+                                        "liquidado e pago = posição atual do empenho. Secretaria (orgao), unidade, "
+                                        "programa, ação, elemento, desdobramento, modalidade, licitação, processo, "
+                                        "contrato e itens vêm do detalhe do empenho no portal. link_licitacao "
+                                        "aponta para a licitação quando ela está em licitacoes.js. detalhe=false: "
+                                        "detalhe ainda não baixado (completa na próxima coleta). valor = "
+                                        "empenhado - anulado.")},
+               **gs.tabela(gastos)}
+        js_g = json.dumps(gas, ensure_ascii=False, separators=(",", ":"))
+        escrever_atomico(saida / "gastos.js", "window.DADOS_GASTOS = " + js_g + ";\n")
+        if args.com_gastos_csv:
+            escrever_atomico(saida / "gastos.csv", csv_texto(gastos))
     escrever_atomico(saida / "execucao.json", js)
     escrever_atomico(saida / "execucao.js", "window.DADOS_EXECUCAO = " + js + ";\n")
     log(f"OK: {len(despesas)} linhas de despesa, {len(receitas)} de receita, {len(credores)} de credores -> {saida}")
