@@ -1350,7 +1350,7 @@ function lerLic(d){d=d||{};LICMETA=d.meta||{};
 function lerDia(d){d=d||{};DIAMETA=d.meta||{};
   DIA=(d.diarias||[]).map(r=>({ano:+r.ano||+String(r.data_saida||"").slice(0,4)||0,mes:mesNum(r.mes,r.data_saida),entidade:nomeEnt(txtv(r.entidade)),orgao:txtv(r.orgao),tipo:txtv(r.tipo),
     beneficiario:txtv(r.beneficiario),cargo:txtv(r.cargo),forma:r.forma?String(r.forma):(/passag/i.test(r.tipo||"")?"Adiantamento ao servidor":"Diária"),destino:txtv(r.destino),motivo:String(r.motivo||""),saida:String(r.data_saida||""),retorno:String(r.data_retorno||""),
-    qtd:num(r.quantidade),valor:num(r.valor),situacao:String(r.situacao||""),est:!!r.estimativa,pc:r.prestacao&&typeof r.prestacao==="object"?r.prestacao:null}));
+    qtd:num(r.quantidade),valor:num(r.valor),situacao:String(r.situacao||""),est:!!r.estimativa,pc:r.prestacao&&typeof r.prestacao==="object"?r.prestacao:null,url:urlPortal(r)}));
   PCREF=String(DIAMETA.atualizado_em||"").slice(0,10)||hojeISO();PCINS={};marcaViagens(DIA);}
 // Uma viagem = mesma pessoa, mesma saída e mesmo destino, sem diferenciar maiúsculas, acentos e espaços.
 // A passagem paga ao servidor entra na viagem da diária da mesma pessoa cujo período coincide (tolerância de 2 dias)
@@ -1370,6 +1370,13 @@ function marcaViagens(rows){
       const sc=(nd===dp?0:100)+Math.abs(ds-s)+Math.abs(de-e);if(sc<bs){bs=sc;best=d;}});
     if(best&&best.vk!==p.vk){p.vk=best.vk;p.junta=true;}});
 }
+// endereço da diária (ou do adiantamento de passagem) no Portal da Transparência
+const PORTAL_BASE="https://transparencia.maringa.pr.gov.br/portaltransparencia/";
+function urlPortal(r){const id=String(r.id||"").split("|"),ent=+r.entidade_id||+id[0];if(!ent)return "";
+  if(id[1]==="P"&&/^\d+$/.test(id[2]||""))return `${PORTAL_BASE}${ent}/passagens/detalhes?idAdiantamento=${id[2]}`;
+  const m=/(\d+)\/(\d{4})/.exec(r.documento||"");
+  if(id[1]==="D"&&m&&r.id_empenho)return `${PORTAL_BASE}${ent}/diarias/detalhes?entidade=${ent}&exercicio=${m[2]}&empenho=${m[1]}&idEmpenho=${r.id_empenho}&noLiquidacao=&unidadeOrcamentaria=`;
+  return "";}
 const ehDireta=m=>/dispensa|inexig/i.test(m);
 const dataBR=d=>/^\d{4}-\d{2}-\d{2}/.test(d)?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(0,4)}`:(d||"–");
 function hojeISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
@@ -1629,9 +1636,10 @@ function pcSit(r,modo){
   if(!r.retorno||r.retorno>=PCREF)return {s:"andamento"};
   if(p.data){const d=pcDias(r.retorno,p.data,modo);return {s:d<=PC_PRAZO?"prazo":"atraso",dias:d,data:p.data};}
   if(p.nao_lido)return {s:"aguarda"};
-  if(p.arquivos>0)return {s:"semdata"};
+  // sem_relatorio: o portal publicou arquivos, mas nenhum é o relatório desta viagem (só a requisição, notas fiscais...)
+  if(p.arquivos>0&&!p.sem_relatorio)return {s:"semdata"};
   if(PCREF<=pcLimite(r.retorno,modo))return {s:"ainda"};
-  return {s:"pend",dias:pcDias(r.retorno,PCREF,modo)};
+  return {s:"pend",dias:pcDias(r.retorno,PCREF,modo),doc:!!p.sem_relatorio};
 }
 // entidades em que o portal quase não publica o relatório: menos da metade das viagens encerradas tem data
 // Câmara, Previdência e AMR seguem a mesma regra da Prefeitura: todas as entidades entram na conta
@@ -1640,15 +1648,17 @@ const pcUn=(n,modo)=>`${nf0.format(n)} ${n===1?"dia":"dias"}${(modo||pst.modo)==
 const mediana=a=>{if(!a.length)return null;const b=a.slice().sort((x,y)=>x-y),m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2;};
 const pcCor=v=>v==null?"var(--cinza)":v<=3?"var(--good)":v<=7?"var(--amber)":"var(--bad)";
 const nfd=v=>v==null?"–":(Number.isInteger(v)?nf0:nf1).format(v);
-function pcLink(r){const l=r.pc&&r.pc.link;return /^https?:\/\//.test(l||"")?` <a href="${esc(l)}" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px" onclick="event.stopPropagation()">relatório</a>`:"";}
-function pcBadge(r,x){x=x||pcSit(r);if(!x)return '<span style="color:var(--muted)">–</span>';
+// página da diária (ou da passagem) no portal: dados, anexos da diária e anexos da prestação de contas
+function pcLink(r){return r.url?` <a href="${esc(r.url)}" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px;white-space:nowrap" onclick="event.stopPropagation()" title="Abrir esta diária no Portal da Transparência, com todos os documentos">ver no portal</a>`:"";}
+function pcBadge(r,x){x=x||pcSit(r);return x?pcBadge0(r,x)+pcLink(r):'<span style="color:var(--muted)">–</span>'+pcLink(r);}
+function pcBadge0(r,x){
   const pill=(c,t)=>`<span class="pill" style="--c:${c}">${t}</span>`;
   switch(x.s){
-    case "prazo":return pill("var(--good)",`No prazo, ${pcUn(x.dias)}`)+pcLink(r);
-    case "atraso":return pill("var(--amber)",`Atrasada, ${pcUn(x.dias)}`)+pcLink(r);
-    case "pend":return pill("var(--cinza)",`Sem relatório há ${pcUn(x.dias)}`)+(x.pas?'<div style="font-size:12px;color:var(--muted)">só passagem paga</div>':"");
+    case "prazo":return pill("var(--good)",`No prazo, ${pcUn(x.dias)}`);
+    case "atraso":return pill("var(--amber)",`Atrasada, ${pcUn(x.dias)}`);
+    case "pend":return pill("var(--cinza)",`Sem relatório há ${pcUn(x.dias)}`)+(x.pas?'<div style="font-size:12px;color:var(--muted)">só passagem paga</div>':x.doc?'<div style="font-size:12px;color:var(--muted)">portal só tem outros documentos</div>':"");
     case "ainda":return '<span style="color:var(--muted);font-size:12.5px">ainda no prazo</span>';
-    case "semdata":return '<span style="color:var(--muted);font-size:12.5px">relatório sem data legível</span>'+pcLink(r);
+    case "semdata":return '<span style="color:var(--muted);font-size:12.5px">relatório sem data legível</span>';
     case "aguarda":return '<span style="color:var(--muted);font-size:12.5px">em verificação</span>';
     case "andamento":return '<span style="color:var(--muted);font-size:12.5px">viagem não terminou</span>';
     case "cancelada":return '<span style="color:var(--muted);font-size:12.5px">diária cancelada</span>';
@@ -1693,8 +1703,8 @@ function renderPC(rows){
       (med!=null?` Quando o relatório foi entregue, metade levou até <b>${pcUn(med)}</b> depois do retorno.`:"")+(nPe?` Outras <b>${nf0.format(nPe)}</b> viagens não têm relatório publicado no portal.`:"");}
   $("#kpisPC").innerHTML=kpiT("No prazo",pctS(nP,n),`${nf0.format(nP)} viagens, relatório em até 3 ${un}`,"Viagens em que o relatório de viagem foi assinado em até 3 dias depois do retorno.","var(--good)",pct(nP,n))+
     kpiT("Atrasadas",pctS(nA,n),`${nf0.format(nA)} viagens, relatório entregue depois do prazo`,"Viagens em que o relatório foi assinado mais de 3 dias depois do retorno.","var(--amber)",pct(nA,n))+
-    kpiT("Sem relatório",pctS(nPe,n),`${nf0.format(nPe)} viagens já passaram do prazo sem relatório no portal${nPas?`, das quais ${nf0.format(nPas)} só com passagem paga`:""}`,"Viagens que terminaram há mais de 3 dias e não têm relatório de viagem publicado no portal. Inclui as viagens em que só a passagem foi paga. Pode ser atraso do servidor ou demora na publicação.","var(--cinza)",pct(nPe,n))+
-    kpiT("Relatório ilegível",pctS(nI,n),`${nf0.format(nI)} viagens com relatório publicado, mas sem data legível`,"O portal publica o relatório, mas o PDF é escaneado e a data da assinatura não pôde ser lida. Por isso não dá para saber se foi no prazo.","var(--muted)",pct(nI,n));
+    kpiT("Sem relatório",pctS(nPe,n),`${nf0.format(nPe)} viagens já passaram do prazo sem relatório no portal${nPas?`, das quais ${nf0.format(nPas)} só com passagem paga`:""}`,"Viagens que terminaram há mais de 3 dias e não têm relatório de viagem publicado no portal. Inclui as viagens em que só a passagem foi paga e aquelas em que o portal só publicou outros documentos, como a requisição da viagem ou notas fiscais. Pode ser atraso do servidor ou demora na publicação.","var(--cinza)",pct(nPe,n))+
+    kpiT("Relatório ilegível",pctS(nI,n),`${nf0.format(nI)} viagens com relatório publicado, mas sem data legível`,"O portal publica o relatório, mas nele não há assinatura nem data legível, mesmo lendo as páginas escaneadas. Por isso não dá para saber se foi no prazo.","var(--muted)",pct(nI,n));
   $("#kpisPC2").innerHTML=kpiT("Ainda no prazo",nf0.format(nAnd),"viagens que não terminaram ou voltaram há até 3 dias","Viagens que ainda não terminaram ou cujo prazo de 3 dias ainda não venceu.")+
     kpiT("Canceladas",nf0.format(nCan),"diárias canceladas por inteiro","Diárias anuladas por inteiro (valor zero): a viagem não aconteceu, então não há relatório a entregar.");
   $("#pcTotal").innerHTML=`<b>Conta fechada:</b> ${nf0.format(nP)} no prazo + ${nf0.format(nA)} atrasadas + ${nf0.format(nPe)} sem relatório + ${nf0.format(nI)} ilegíveis + ${nf0.format(nAnd)} ainda no prazo + ${nf0.format(nCan)} canceladas = <b>${nf0.format(N)} viagens</b>, o mesmo total do início da aba. Os percentuais acima são sobre as ${nf0.format(n)} viagens que já deveriam ter relatório${nPer?`, incluindo ${nf0.format(nPer)} diárias por período (por exemplo, motoristas que viajam o mês inteiro), que também exigem relatório ao fim do período`:""}. A passagem e a diária da mesma pessoa no mesmo período contam como uma só viagem, mesmo quando o portal escreve o destino de forma diferente.`;
@@ -1786,8 +1796,8 @@ function renderDiar(){
   if(DIAMETA.exemplo){$("#diarNota").innerHTML="<b>Atenção: dados de exemplo, com nomes fictícios.</b> "+$("#diarNota").innerHTML;}
 }
 function csvDiar(){const SIT={prazo:"No prazo",atraso:"Atrasada",pend:"Pendente",ainda:"Ainda no prazo",semdata:"Relatório sem data legível",aguarda:"Em verificação",andamento:"Viagem não terminou",periodo:"Diária por período",cancelada:"Diária cancelada"};
-  baixarCSV(`diarias_passagens_maringa_${st.ano}.csv`,["Saída","Retorno","Quem viajou","Cargo","Órgão","Entidade","Destino","Motivo","Tipo","Quantidade","Valor","Relatório assinado em",`Dias até o relatório (${pst.modo==="u"?"úteis":"corridos"})`,"Prestação de contas","Link do relatório"],
-  diarLista.map(r=>{const x=pcViagem(r);return [r.saida,r.retorno,r.beneficiario,r.cargo,r.orgao,r.entidade,r.destino,r.motivo,r.tipo,r.qtd,r.valor,x&&x.data||"",x&&x.dias!=null?String(x.dias):"",x?(x.pas&&x.s==="pend"?"Sem relatório (só passagem)":SIT[x.s]):"",r.pc&&r.pc.link||""];}));}
+  baixarCSV(`diarias_passagens_maringa_${st.ano}.csv`,["Saída","Retorno","Quem viajou","Cargo","Órgão","Entidade","Destino","Motivo","Tipo","Quantidade","Valor","Relatório assinado em",`Dias até o relatório (${pst.modo==="u"?"úteis":"corridos"})`,"Prestação de contas","Página no portal","Link do relatório"],
+  diarLista.map(r=>{const x=pcViagem(r);return [r.saida,r.retorno,r.beneficiario,r.cargo,r.orgao,r.entidade,r.destino,r.motivo,r.tipo,r.qtd,r.valor,x&&x.data||"",x&&x.dias!=null?String(x.dias):"",x?(x.pas&&x.s==="pend"?"Sem relatório (só passagem)":SIT[x.s]):"",r.url||"",r.pc&&r.pc.link||""];}));}
 
 /* ---------- credores (carregados só quando a aba é aberta) ---------- */
 let CRED=null, credCarregando=false, credErro=false;

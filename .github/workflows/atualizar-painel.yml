@@ -30,6 +30,12 @@ jobs:
         run: |
           if [ -f coleta/requirements.txt ]; then pip install -r coleta/requirements.txt; else pip install requests; fi
 
+      # OCR dos relatórios de viagem escaneados (prestação de contas das diárias)
+      - name: Instalar OCR (tesseract em português e poppler)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-por poppler-utils
+
       - name: Guardar dados da semana anterior (para comparar no e-mail)
         run: |
           cp docs/dados/execucao.js /tmp/anterior.js 2>/dev/null || true
