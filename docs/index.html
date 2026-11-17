@@ -580,7 +580,7 @@ td .clamp.aberto{display:block;-webkit-line-clamp:unset}
         <p class="desc">Depois de uma viagem a serviço, o servidor deve entregar o relatório de viagem em até 3 dias após o retorno. Aqui cada viagem do período aparece uma vez, num dos grupos abaixo, e a soma dos grupos é o total de viagens.</p>
         <p class="summary" id="pcFrase" style="margin:8px 0 14px"></p>
         <div class="kpis" id="kpisPC"></div>
-        <div class="kpis kpis3" id="kpisPC2" style="margin-top:12px"></div>
+        <div class="kpis kpis2" id="kpisPC2" style="margin-top:12px"></div>
         <p class="pctotal" id="pcTotal"></p>
         <div id="pcRankBox" style="margin-top:16px"><h3 class="h3" id="pcRankTit" style="font-size:15px;margin:0 0 2px"></h3><p class="desc">Percentual de viagens com relatório entregue no prazo, da pior para a melhor. Clique para ver só um.</p><div class="bars" id="barsPC"></div></div>
         <div id="pcIns"></div>
@@ -1351,7 +1351,25 @@ function lerDia(d){d=d||{};DIAMETA=d.meta||{};
   DIA=(d.diarias||[]).map(r=>({ano:+r.ano||+String(r.data_saida||"").slice(0,4)||0,mes:mesNum(r.mes,r.data_saida),entidade:nomeEnt(txtv(r.entidade)),orgao:txtv(r.orgao),tipo:txtv(r.tipo),
     beneficiario:txtv(r.beneficiario),cargo:txtv(r.cargo),forma:r.forma?String(r.forma):(/passag/i.test(r.tipo||"")?"Adiantamento ao servidor":"Diária"),destino:txtv(r.destino),motivo:String(r.motivo||""),saida:String(r.data_saida||""),retorno:String(r.data_retorno||""),
     qtd:num(r.quantidade),valor:num(r.valor),situacao:String(r.situacao||""),est:!!r.estimativa,pc:r.prestacao&&typeof r.prestacao==="object"?r.prestacao:null}));
-  PCREF=String(DIAMETA.atualizado_em||"").slice(0,10)||hojeISO();PCINS={};}
+  PCREF=String(DIAMETA.atualizado_em||"").slice(0,10)||hojeISO();PCINS={};marcaViagens(DIA);}
+// Uma viagem = mesma pessoa, mesma saída e mesmo destino, sem diferenciar maiúsculas, acentos e espaços.
+// A passagem paga ao servidor entra na viagem da diária da mesma pessoa cujo período coincide (tolerância de 2 dias)
+// e cujo destino é o mesmo ou não foi informado; sem diária correspondente, a passagem é uma viagem própria.
+const normV=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim().toLowerCase();
+const destNI=d=>!normV(d)||/^nao informad/.test(normV(d));
+function marcaViagens(rows){
+  const dd=s=>Date.parse(s.slice(0,10))/864e5,porPes=new Map(),pas=[];
+  rows.forEach(r=>{r.pk=normV(r.beneficiario);if(/empresa/i.test(r.forma)){r.vk=null;return;}
+    r.vk=r.pk+"|"+r.saida+"|"+normV(r.destino);
+    if(/passag/i.test(r.tipo)){pas.push(r);return;}
+    if(r.saida){let a=porPes.get(r.pk);if(!a)porPes.set(r.pk,a=[]);a.push(r);}});
+  pas.forEach(p=>{if(!p.saida)return;const s=dd(p.saida),e=dd(p.retorno||p.saida),dp=normV(p.destino);
+    let best=null,bs=1e9;
+    (porPes.get(p.pk)||[]).forEach(d=>{const ds=dd(d.saida),de=dd(d.retorno||d.saida);
+      if(ds>e+2||de<s-2)return;const nd=normV(d.destino);if(nd!==dp&&!destNI(p.destino)&&!destNI(d.destino))return;
+      const sc=(nd===dp?0:100)+Math.abs(ds-s)+Math.abs(de-e);if(sc<bs){bs=sc;best=d;}});
+    if(best&&best.vk!==p.vk){p.vk=best.vk;p.junta=true;}});
+}
 const ehDireta=m=>/dispensa|inexig/i.test(m);
 const dataBR=d=>/^\d{4}-\d{2}-\d{2}/.test(d)?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(0,4)}`:(d||"–");
 function hojeISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
@@ -1607,7 +1625,6 @@ function pcLimite(ret,modo){let d=pcD(ret);if(modo!=="u")return pcISO(pcAdd(d,PC
 function pcSit(r,modo){
   modo=modo||pst.modo;if(/passag/i.test(r.tipo)||!r.pc)return null;
   if(/totalmente/i.test(r.situacao)&&r.valor<=0)return {s:"cancelada"};
-  if(r.est)return {s:"periodo"};
   const p=r.pc;
   if(!r.retorno||r.retorno>=PCREF)return {s:"andamento"};
   if(p.data){const d=pcDias(r.retorno,p.data,modo);return {s:d<=PC_PRAZO?"prazo":"atraso",dias:d,data:p.data};}
@@ -1637,7 +1654,7 @@ function pcBadge(r,x){x=x||pcSit(r);if(!x)return '<span style="color:var(--muted
     case "cancelada":return '<span style="color:var(--muted);font-size:12.5px">diária cancelada</span>';
     default:return '<span style="color:var(--muted);font-size:12.5px">diária por período</span>';}
 }
-// Uma viagem = mesma pessoa, mesma saída e mesmo destino (a mesma conta do topo da aba).
+// Uma viagem = chave r.vk de marcaViagens (a mesma conta do topo da aba).
 // Cada viagem recebe uma única situação, para que os grupos somem exatamente o total de viagens.
 const PC_ORDEM=["prazo","atraso","semdata","aguarda","pend","ainda","andamento","periodo","cancelada"];
 function pcSitData(r,modo){modo=modo||pst.modo;const ret=r.retorno||r.saida;
@@ -1646,7 +1663,7 @@ function pcSitData(r,modo){modo=modo||pst.modo;const ret=r.retorno||r.saida;
   return {s:"pend",dias:pcDias(ret,PCREF,modo)};}
 function pcViagens(rows,modo){
   const g=new Map();
-  rows.filter(r=>!/empresa/i.test(r.forma)).forEach(r=>{const k=r.beneficiario+"|"+r.saida+"|"+r.destino;let t=g.get(k);if(!t){t={k,recs:[]};g.set(k,t);}t.recs.push(r);});
+  rows.filter(r=>r.vk).forEach(r=>{const k=r.vk;let t=g.get(k);if(!t){t={k,recs:[]};g.set(k,t);}t.recs.push(r);});
   return [...g.values()].map(t=>{
     const ds=t.recs.map(r=>({r,x:pcSit(r,modo)})).filter(o=>o.x);
     let best=null;
@@ -1667,7 +1684,7 @@ function renderPC(rows){
   const un=pst.modo==="u"?"dias úteis":"dias corridos";
   const c=s=>vs.filter(v=>v.x.s===s).length;
   const nP=c("prazo"),nA=c("atraso"),nPe=c("pend"),nPas=vs.filter(v=>v.x.s==="pend"&&v.x.pas).length,nI=c("semdata")+c("aguarda"),
-    nAnd=c("ainda")+c("andamento"),nPer=c("periodo"),nCan=c("cancelada"),N=vs.length,n=nP+nA+nPe+nI;
+    nAnd=c("ainda")+c("andamento"),nPer=vs.filter(v=>v.r.est&&pcDeve(v.x.s)).length,nCan=c("cancelada"),N=vs.length,n=nP+nA+nPe+nI;
   const med=mediana(vs.filter(v=>v.x.s==="prazo"||v.x.s==="atraso").map(v=>v.x.dias));
   $("#pcRankBox").classList.toggle("hidden",!n);
   if(!n){$("#pcFrase").innerHTML="Ainda não há viagens encerradas com prazo vencido no período escolhido.";}
@@ -1679,9 +1696,8 @@ function renderPC(rows){
     kpiT("Sem relatório",pctS(nPe,n),`${nf0.format(nPe)} viagens já passaram do prazo sem relatório no portal${nPas?`, das quais ${nf0.format(nPas)} só com passagem paga`:""}`,"Viagens que terminaram há mais de 3 dias e não têm relatório de viagem publicado no portal. Inclui as viagens em que só a passagem foi paga. Pode ser atraso do servidor ou demora na publicação.","var(--cinza)",pct(nPe,n))+
     kpiT("Relatório ilegível",pctS(nI,n),`${nf0.format(nI)} viagens com relatório publicado, mas sem data legível`,"O portal publica o relatório, mas o PDF é escaneado e a data da assinatura não pôde ser lida. Por isso não dá para saber se foi no prazo.","var(--muted)",pct(nI,n));
   $("#kpisPC2").innerHTML=kpiT("Ainda no prazo",nf0.format(nAnd),"viagens que não terminaram ou voltaram há até 3 dias","Viagens que ainda não terminaram ou cujo prazo de 3 dias ainda não venceu.")+
-    kpiT("Diárias por período",nf0.format(nPer),"estimativa de diárias para vários meses","Diárias pagas por estimativa para um período longo (por exemplo, motoristas que viajam toda semana). O portal quase não publica relatório para elas, e não encontramos a regra que diga se e quando ele é exigido; por isso ficam num grupo à parte.")+
     kpiT("Canceladas",nf0.format(nCan),"diárias canceladas por inteiro","Diárias anuladas por inteiro (valor zero): a viagem não aconteceu, então não há relatório a entregar.");
-  $("#pcTotal").innerHTML=`<b>Conta fechada:</b> ${nf0.format(nP)} no prazo + ${nf0.format(nA)} atrasadas + ${nf0.format(nPe)} sem relatório + ${nf0.format(nI)} ilegíveis + ${nf0.format(nAnd)} ainda no prazo + ${nf0.format(nPer)} por período + ${nf0.format(nCan)} canceladas = <b>${nf0.format(N)} viagens</b>, o mesmo total do início da aba. Os percentuais acima são sobre as ${nf0.format(n)} viagens que já deveriam ter relatório.`;
+  $("#pcTotal").innerHTML=`<b>Conta fechada:</b> ${nf0.format(nP)} no prazo + ${nf0.format(nA)} atrasadas + ${nf0.format(nPe)} sem relatório + ${nf0.format(nI)} ilegíveis + ${nf0.format(nAnd)} ainda no prazo + ${nf0.format(nCan)} canceladas = <b>${nf0.format(N)} viagens</b>, o mesmo total do início da aba. Os percentuais acima são sobre as ${nf0.format(n)} viagens que já deveriam ter relatório${nPer?`, incluindo ${nf0.format(nPer)} diárias por período (por exemplo, motoristas que viajam o mês inteiro), que também exigem relatório ao fim do período`:""}. A passagem e a diária da mesma pessoa no mesmo período contam como uma só viagem, mesmo quando o portal escreve o destino de forma diferente.`;
   if(n){
     // ranking: por órgão quando há uma entidade escolhida; senão, por entidade
     const porOrg=!!st.f.entidade,ch=porOrg?(r=>r.orgao):(r=>r.entidade);
@@ -1695,12 +1711,12 @@ function renderPC(rows){
     listaBarras("#barsPC",its,{max:100,limite:12,sel,onClick:i=>{const k=porOrg?"orgao":"entidade";if(st.f[k]===i.nome)delete st.f[k];else st.f[k]=i.nome;render();}});
   }
   $("#pcIns").innerHTML="";
-  $("#pcNota").innerHTML=`<b>Como é medido:</b> cada viagem conta uma vez, mesmo quando a diária foi paga em mais de uma parte. A data da entrega é a da primeira assinatura eletrônica (SEI) do relatório de viagem feita no dia do retorno ou depois, lida do PDF publicado no portal. Não é um registro oficial de entrega, e atrasos na publicação podem afetar o resultado. Viagens em que só a passagem foi paga contam como sem relatório. Dias úteis descontam fins de semana, feriados nacionais, Carnaval, Sexta-feira Santa, Corpus Christi e o aniversário de Maringá (10/5). Situação até ${dataBR(PCREF)}.`;
+  $("#pcNota").innerHTML=`<b>Como é medido:</b> cada viagem conta uma vez, mesmo quando a diária foi paga em mais de uma parte. A data da entrega é a da primeira assinatura eletrônica (SEI) do relatório de viagem feita no dia do retorno ou depois, lida do PDF publicado no portal. Não é um registro oficial de entrega, e atrasos na publicação podem afetar o resultado. Viagens em que só a passagem foi paga contam como sem relatório. Diárias por período contam como uma viagem, com prazo a partir do fim do período. Dias úteis descontam fins de semana, feriados nacionais, Carnaval, Sexta-feira Santa, Corpus Christi e o aniversário de Maringá (10/5). Situação até ${dataBR(PCREF)}.`;
   renderPCServ(vs);
 }
 function renderPCServ(vs){
   const g=new Map();
-  vs.forEach(({r,x})=>{if(!pcDeve(x.s))return;const k=r.beneficiario+"|"+r.entidade;let t=g.get(k);
+  vs.forEach(({r,x})=>{if(!pcDeve(x.s))return;const k=r.pk+"|"+r.entidade;let t=g.get(k);
     if(!t){t={id:k,nome:r.beneficiario,cargo:r.cargo,ent:r.entidade,orgs:new Map(),v:[]};g.set(k,t);}t.v.push({r,x});t.orgs.set(r.orgao,(t.orgs.get(r.orgao)||0)+1);});
   let L=[...g.values()].map(t=>{const d=t.v.filter(o=>o.x.s==="prazo"||o.x.s==="atraso").map(o=>o.x.dias);
     return {...t,orgao:[...t.orgs.entries()].sort((a,b)=>b[1]-a[1])[0][0],n:t.v.filter(o=>pcDeve(o.x.s)).length,ent_:d.length,media:d.length?d.reduce((a,b)=>a+b,0)/d.length:null,med:mediana(d),
@@ -1730,7 +1746,7 @@ function csvPC(){const un=pst.modo==="u"?"úteis":"corridos";
 // resumo para o atalho da aba Resumo
 function pcResumo(rows){let n=0,p=0;pcViagens(rows).forEach(v=>{if(!pcDeve(v.x.s))return;n++;if(v.x.s==="prazo")p++;});return {n,p};}
 const vst={busca:"",lim:50,ts:{k:"saida",d:-1},pc:""};let diarLista=[],diarPC=new Map();
-const pcViagem=r=>/empresa/i.test(r.forma)?null:diarPC.get(r.beneficiario+"|"+r.saida+"|"+r.destino)||null;
+const pcViagem=r=>r.vk?diarPC.get(r.vk)||null:null;
 function renderDiar(){
   if(!estadoCarga("diarias","DADOS_DIARIAS",lerDia,"#sumV","#diarCorpo","diárias e passagens"))return;
   const rows=DIA.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r));
@@ -1740,7 +1756,7 @@ function renderDiar(){
   const tot=S(rows,r=>r.valor),pas=rows.filter(isP),dia=rows.filter(r=>!isP(r)),vP=S(pas,r=>r.valor),vD=S(dia,r=>r.valor),nD=S(dia,r=>r.qtd);
   // compras de passagem feitas por agência/empresa contratada não têm uma pessoa identificada: ficam fora da contagem e do ranking de pessoas
   const isEmp=r=>/empresa/i.test(r.forma),pesRows=rows.filter(r=>!isEmp(r)),emp=pas.filter(isEmp),vEmp=S(emp,r=>r.valor);
-  const pessoas=new Set(pesRows.map(r=>r.beneficiario)).size,viagens=new Set(pesRows.map(r=>r.beneficiario+"|"+r.saida+"|"+r.destino)).size;
+  const pessoas=new Set(pesRows.map(r=>r.pk)).size,viagens=new Set(pesRows.map(r=>r.vk)).size;
   $("#sumV").innerHTML=`${abre()}, ${sujeito()} gastou <b>${brl(tot)}</b> com viagens a serviço: <b>${brl(vD)}</b> em diárias e <b>${brl(vP)}</b> em passagens${emp.length?`, das quais ${brl(vEmp)} compradas por empresa contratada (agência de viagens ou transportadora)`:""}. ${emp.length?"Sem contar essas compras, foram":"Foram"} cerca de <b>${nf0.format(viagens)} viagens</b> de <b>${nf0.format(pessoas)} pessoas</b>.`;
   $("#kpisV").innerHTML=kpiT("Total",brl(tot),"diárias e passagens","Soma de tudo o que foi pago em diárias e passagens no período.","var(--orcado)",100)+
     kpiT("Diárias",brl(vD),`${nf0.format(nD)} diárias pagas`,"Valor para hospedagem e alimentação do servidor em viagem.","var(--emp)",pct(vD,tot))+
