@@ -580,7 +580,7 @@ td .clamp.aberto{display:block;-webkit-line-clamp:unset}
         <p class="desc">Depois de uma viagem a serviço, o servidor deve entregar o relatório de viagem em até 3 dias após o retorno. Aqui cada viagem do período aparece uma vez, num dos grupos abaixo, e a soma dos grupos é o total de viagens.</p>
         <p class="summary" id="pcFrase" style="margin:8px 0 14px"></p>
         <div class="kpis" id="kpisPC"></div>
-        <div class="kpis kpis3" id="kpisPC2" style="margin-top:12px"></div>
+        <div class="kpis kpis2" id="kpisPC2" style="margin-top:12px"></div>
         <p class="pctotal" id="pcTotal"></p>
         <div id="pcRankBox" style="margin-top:16px"><h3 class="h3" id="pcRankTit" style="font-size:15px;margin:0 0 2px"></h3><p class="desc">Percentual de viagens com relatório entregue no prazo, da pior para a melhor. Clique para ver só um.</p><div class="bars" id="barsPC"></div></div>
         <div id="pcIns"></div>
@@ -1591,7 +1591,6 @@ function pcLimite(ret,modo){let d=pcD(ret);if(modo!=="u")return pcISO(pcAdd(d,PC
 function pcSit(r,modo){
   modo=modo||pst.modo;if(/passag/i.test(r.tipo)||!r.pc)return null;
   if(/totalmente/i.test(r.situacao)&&r.valor<=0)return {s:"cancelada"};
-  if(r.est)return {s:"periodo"};
   const p=r.pc;
   if(!r.retorno||r.retorno>=PCREF)return {s:"andamento"};
   if(p.data){const d=pcDias(r.retorno,p.data,modo);return {s:d<=PC_PRAZO?"prazo":"atraso",dias:d,data:p.data};}
@@ -1651,7 +1650,7 @@ function renderPC(rows){
   const un=pst.modo==="u"?"dias úteis":"dias corridos";
   const c=s=>vs.filter(v=>v.x.s===s).length;
   const nP=c("prazo"),nA=c("atraso"),nPe=c("pend"),nPas=vs.filter(v=>v.x.s==="pend"&&v.x.pas).length,nI=c("semdata")+c("aguarda"),
-    nAnd=c("ainda")+c("andamento"),nPer=c("periodo"),nCan=c("cancelada"),N=vs.length,n=nP+nA+nPe+nI;
+    nAnd=c("ainda")+c("andamento"),nPer=vs.filter(v=>v.r.est&&pcDeve(v.x.s)).length,nCan=c("cancelada"),N=vs.length,n=nP+nA+nPe+nI;
   const med=mediana(vs.filter(v=>v.x.s==="prazo"||v.x.s==="atraso").map(v=>v.x.dias));
   $("#pcRankBox").classList.toggle("hidden",!n);
   if(!n){$("#pcFrase").innerHTML="Ainda não há viagens encerradas com prazo vencido no período escolhido.";}
@@ -1663,9 +1662,8 @@ function renderPC(rows){
     kpiT("Sem relatório",pctS(nPe,n),`${nf0.format(nPe)} viagens já passaram do prazo sem relatório no portal${nPas?`, das quais ${nf0.format(nPas)} só com passagem paga`:""}`,"Viagens que terminaram há mais de 3 dias e não têm relatório de viagem publicado no portal. Inclui as viagens em que só a passagem foi paga. Pode ser atraso do servidor ou demora na publicação.","var(--cinza)",pct(nPe,n))+
     kpiT("Relatório ilegível",pctS(nI,n),`${nf0.format(nI)} viagens com relatório publicado, mas sem data legível`,"O portal publica o relatório, mas o PDF é escaneado e a data da assinatura não pôde ser lida. Por isso não dá para saber se foi no prazo.","var(--muted)",pct(nI,n));
   $("#kpisPC2").innerHTML=kpiT("Ainda no prazo",nf0.format(nAnd),"viagens que não terminaram ou voltaram há até 3 dias","Viagens que ainda não terminaram ou cujo prazo de 3 dias ainda não venceu.")+
-    kpiT("Diárias por período",nf0.format(nPer),"estimativa de diárias para vários meses","Diárias pagas por estimativa para um período longo (por exemplo, motoristas que viajam toda semana). O portal quase não publica relatório para elas, e não encontramos a regra que diga se e quando ele é exigido; por isso ficam num grupo à parte.")+
     kpiT("Canceladas",nf0.format(nCan),"diárias canceladas por inteiro","Diárias anuladas por inteiro (valor zero): a viagem não aconteceu, então não há relatório a entregar.");
-  $("#pcTotal").innerHTML=`<b>Conta fechada:</b> ${nf0.format(nP)} no prazo + ${nf0.format(nA)} atrasadas + ${nf0.format(nPe)} sem relatório + ${nf0.format(nI)} ilegíveis + ${nf0.format(nAnd)} ainda no prazo + ${nf0.format(nPer)} por período + ${nf0.format(nCan)} canceladas = <b>${nf0.format(N)} viagens</b>, o mesmo total do início da aba. Os percentuais acima são sobre as ${nf0.format(n)} viagens que já deveriam ter relatório.`;
+  $("#pcTotal").innerHTML=`<b>Conta fechada:</b> ${nf0.format(nP)} no prazo + ${nf0.format(nA)} atrasadas + ${nf0.format(nPe)} sem relatório + ${nf0.format(nI)} ilegíveis + ${nf0.format(nAnd)} ainda no prazo + ${nf0.format(nCan)} canceladas = <b>${nf0.format(N)} viagens</b>, o mesmo total do início da aba. Os percentuais acima são sobre as ${nf0.format(n)} viagens que já deveriam ter relatório${nPer?`, incluindo ${nf0.format(nPer)} diárias por período (por exemplo, motoristas que viajam o mês inteiro), que também exigem relatório ao fim do período`:""}.`;
   if(n){
     // ranking: por órgão quando há uma entidade escolhida; senão, por entidade
     const porOrg=!!st.f.entidade,ch=porOrg?(r=>r.orgao):(r=>r.entidade);
@@ -1679,7 +1677,7 @@ function renderPC(rows){
     listaBarras("#barsPC",its,{max:100,limite:12,sel,onClick:i=>{const k=porOrg?"orgao":"entidade";if(st.f[k]===i.nome)delete st.f[k];else st.f[k]=i.nome;render();}});
   }
   $("#pcIns").innerHTML="";
-  $("#pcNota").innerHTML=`<b>Como é medido:</b> cada viagem conta uma vez, mesmo quando a diária foi paga em mais de uma parte. A data da entrega é a da primeira assinatura eletrônica (SEI) do relatório de viagem feita no dia do retorno ou depois, lida do PDF publicado no portal. Não é um registro oficial de entrega, e atrasos na publicação podem afetar o resultado. Viagens em que só a passagem foi paga contam como sem relatório. Dias úteis descontam fins de semana, feriados nacionais, Carnaval, Sexta-feira Santa, Corpus Christi e o aniversário de Maringá (10/5). Situação até ${dataBR(PCREF)}.`;
+  $("#pcNota").innerHTML=`<b>Como é medido:</b> cada viagem conta uma vez, mesmo quando a diária foi paga em mais de uma parte. A data da entrega é a da primeira assinatura eletrônica (SEI) do relatório de viagem feita no dia do retorno ou depois, lida do PDF publicado no portal. Não é um registro oficial de entrega, e atrasos na publicação podem afetar o resultado. Viagens em que só a passagem foi paga contam como sem relatório. Diárias por período contam como uma viagem, com prazo a partir do fim do período. Dias úteis descontam fins de semana, feriados nacionais, Carnaval, Sexta-feira Santa, Corpus Christi e o aniversário de Maringá (10/5). Situação até ${dataBR(PCREF)}.`;
   renderPCServ(vs);
 }
 function renderPCServ(vs){
