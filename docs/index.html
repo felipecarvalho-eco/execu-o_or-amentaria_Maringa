@@ -78,6 +78,8 @@ header.top p{margin:0;color:var(--ink-2)}
 .btn{font:inherit;font-size:14px;border:1px solid var(--border);background:var(--surface);color:var(--ink);border-radius:8px;padding:7px 12px;cursor:pointer}
 .btn:hover{background:var(--surface-2)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.frow.fechado .f.extra:not(.ativo){display:none}
+#btnMaisF{color:var(--accent)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chip{font-size:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:2px 6px 2px 10px;display:inline-flex;align-items:center;gap:4px}
 .chip button{border:0;background:none;color:var(--ink-2);cursor:pointer;font-size:15px;line-height:1;padding:0 4px}
@@ -238,8 +240,15 @@ th{text-transform:uppercase;letter-spacing:.05em;font-size:12px;font-weight:500;
 .banner{border-radius:3px;border-left:4px solid var(--orange)}
 .help{border-color:var(--axis)}
 a{color:var(--accent)}
-@media (max-width:760px){header.top{flex-direction:column-reverse;gap:14px}.logo{padding:8px 10px}.logo img{width:180px}}
-@media (max-width:520px){header.top h1{font-size:20px;letter-spacing:.04em}.head-txt{padding-left:16px}.head-txt::before{width:4px}.summary{font-size:16px}}
+@media (max-width:760px){header.top{flex-direction:column-reverse;gap:10px}.logo{padding:5px 7px}.logo img{width:120px}}
+@media (max-width:520px){header.top{padding:14px 0 8px}header.top p{font-size:14.5px;line-height:1.4}.eyebrow{font-size:11px;margin-bottom:4px}
+  .filters .tabs{flex-wrap:wrap;gap:0 2px;margin-bottom:8px}.filters .tab{padding:7px 9px;font-size:12.5px;letter-spacing:.04em}
+  .summary{margin:12px 0}
+  .head-txt>p{display:none}.meta-line{margin-top:2px}
+  .frow>.f:not([data-tabs]){flex:1 1 calc(33% - 10px)}
+  .frow>.f[data-tabs]:not(.extra){flex-basis:100%}.frow>.btn{flex:1 1 calc(50% - 10px)}
+  .chip.info{display:none}
+  header.top h1{font-size:20px;letter-spacing:.04em}.head-txt{padding-left:16px}.head-txt::before{width:4px}.summary{font-size:16px}}
 .filters .tabs{margin:0 0 12px}
 </style>
 </head>
@@ -270,15 +279,16 @@ a{color:var(--accent)}
       <div class="f"><label for="fDe">De</label><select id="fDe"></select></div>
       <div class="f"><label for="fAte">Até</label><select id="fAte"></select></div>
       <div class="f" data-tabs="desp rec cred lic diar"><label for="f_entidade">Entidade</label><select id="f_entidade" data-dim="entidade"></select></div>
-      <div class="f" data-tabs="desp diar"><label for="f_orgao">Órgão</label><select id="f_orgao" data-dim="orgao"></select></div>
-      <div class="f" data-tabs="desp"><label for="f_funcao">Área (função)</label><select id="f_funcao" data-dim="funcao"></select></div>
-      <div class="f" data-tabs="desp"><label for="f_grupo">Tipo de gasto</label><select id="f_grupo" data-dim="grupo"></select></div>
-      <div class="f" data-tabs="desp"><label for="f_programa">Programa</label><select id="f_programa" data-dim="programa"></select></div>
-      <div class="f" data-tabs="desp rec"><label for="f_fonte_recurso">Origem do recurso</label><select id="f_fonte_recurso" data-dim="fonte_recurso"></select></div>
-      <div class="f" data-tabs="lic"><label for="f_modalidade">Modalidade</label><select id="f_modalidade" data-dim="modalidade"></select></div>
-      <div class="f" data-tabs="lic"><label for="f_sit">Situação</label><select id="f_sit" data-dim="sit"></select></div>
-      <div class="f" data-tabs="lic"><label for="f_secretaria">Órgão</label><select id="f_secretaria" data-dim="secretaria"></select></div>
-      <div class="f" data-tabs="diar"><label for="f_tipo">Tipo</label><select id="f_tipo" data-dim="tipo"></select></div>
+      <div class="f extra" data-tabs="desp diar"><label for="f_orgao">Órgão</label><select id="f_orgao" data-dim="orgao"></select></div>
+      <div class="f extra" data-tabs="desp"><label for="f_funcao">Área (função)</label><select id="f_funcao" data-dim="funcao"></select></div>
+      <div class="f extra" data-tabs="desp"><label for="f_grupo">Tipo de gasto</label><select id="f_grupo" data-dim="grupo"></select></div>
+      <div class="f extra" data-tabs="desp"><label for="f_programa">Programa</label><select id="f_programa" data-dim="programa"></select></div>
+      <div class="f extra" data-tabs="desp rec"><label for="f_fonte_recurso">Origem do recurso</label><select id="f_fonte_recurso" data-dim="fonte_recurso"></select></div>
+      <div class="f extra" data-tabs="lic"><label for="f_modalidade">Modalidade</label><select id="f_modalidade" data-dim="modalidade"></select></div>
+      <div class="f extra" data-tabs="lic"><label for="f_sit">Situação</label><select id="f_sit" data-dim="sit"></select></div>
+      <div class="f extra" data-tabs="lic"><label for="f_secretaria">Órgão</label><select id="f_secretaria" data-dim="secretaria"></select></div>
+      <div class="f extra" data-tabs="diar"><label for="f_tipo">Tipo</label><select id="f_tipo" data-dim="tipo"></select></div>
+      <button class="btn" id="btnMaisF" type="button" aria-expanded="false" aria-controls="filters">Mais filtros</button>
       <button class="btn" id="btnLimpar" type="button">Limpar filtros</button>
     </div>
     <div class="chips" id="chips"></div>
@@ -572,7 +582,7 @@ const ACENTO=Object.fromEntries("saude:saúde publica:pública publicas:pública
 function acentua(t){return String(t).replace(/[A-Za-z]+/g,w=>{const l=w.toLowerCase();
   const r=ACENTO[l]||(l.length>4&&l.endsWith("coes")?l.slice(0,-4)+"ções":l.length>3&&l.endsWith("cao")?l.slice(0,-3)+"ção":null);
   if(!r)return w;if(w.length>1&&w===w.toUpperCase())return r.toUpperCase();return w[0]===w[0].toUpperCase()?r[0].toUpperCase()+r.slice(1):r;});}
-const DIMS_ABA={};let avisoFiltro=null,checarAba=true;
+const DIMS_ABA={};let avisoFiltro=null,checarAba=true,maisF=false;
 const st={tab:"desp",la:"painel",ano:null,de:1,ate:12,f:{},tDim:"orgao",busca:"",sort:{k:"pago",d:-1}};
 
 function boot(data){
@@ -648,6 +658,7 @@ function initControls(){
   $("#fDe").onchange=e=>{st.de=+e.target.value;if(st.de>st.ate)st.ate=st.de;render();};
   $("#fAte").onchange=e=>{st.ate=+e.target.value;if(st.ate<st.de)st.de=st.ate;render();};
   document.querySelectorAll("select[data-dim]").forEach(s=>s.onchange=e=>{const k=s.dataset.dim;if(e.target.value)st.f[k]=e.target.value;else delete st.f[k];render();});
+  $("#btnMaisF").onclick=()=>{maisF=!maisF;refreshFilterOptions();};
   $("#btnLimpar").onclick=()=>{st.f=entPadrao()?{entidade:entPadrao()}:{};const um=ultimoMes(st.ano);st.de=1;st.ate=um;render();};
   document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{st.tab=t.dataset.tab;checarAba=true;avisoFiltro=null;render();});
   $("#tDim").value=st.tDim;
@@ -688,13 +699,19 @@ function refreshFilterOptions(){
   });
   const dimsAba=[];
   document.querySelectorAll(".f[data-tabs]").forEach(e=>{const on=e.dataset.tabs.split(" ").includes(st.tab);e.classList.toggle("hidden",!on);if(on)dimsAba.push(e.querySelector("select").dataset.dim);});
+  // Ano, período e entidade sempre à vista; os demais filtros ficam em "Mais filtros" (os que estão em uso continuam visíveis)
+  const ext=[...document.querySelectorAll(".f.extra")].filter(e=>!e.classList.contains("hidden")&&!e.classList.contains("sem-info"));
+  ext.forEach(e=>e.classList.toggle("ativo",!!e.querySelector("select").value));
+  const nOcultos=ext.filter(e=>!e.classList.contains("ativo")).length,bm=$("#btnMaisF");
+  bm.classList.toggle("hidden",!nOcultos);bm.textContent=maisF?"Menos filtros":`Mais filtros (${nOcultos})`;bm.setAttribute("aria-expanded",maisF);
+  $(".frow").classList.toggle("fechado",!maisF);
   // chips
   const per=st.de===1&&st.ate===um?null:`${MESES[st.de-1]}–${MESES[st.ate-1]}/${st.ano}`;
   let h=per?`<span class="chip">Período: ${per}<button aria-label="Remover filtro de período" data-x="per">×</button></span>`:"";
   for(const k in st.f){ if(!dimsAba.includes(k))continue;
     h+=`<span class="chip">${DIM_NOME[k]}: ${esc(st.f[k])}<button aria-label="Remover filtro ${DIM_NOME[k]}" data-x="${k}">×</button></span>`;}
   if(!st.f.entidade&&entPadrao()&&(st.tab==="desp"||st.tab==="rec")) h+=`<span class="chip" style="padding-right:10px">Somando todas as entidades, os repasses entre elas (como a contribuição da Prefeitura à previdência) aparecem duas vezes.${TEM_INTRA&&st.tab==="desp"?" Veja o total sem repasses nos cartões e em “Repasses entre entidades”.":""}</span>`;
-  else if(entPadrao()&&st.f.entidade===entPadrao()&&st.tab!=="cred") h+=`<span class="chip" style="padding-right:10px;background:none">Mostrando só a Prefeitura. A Câmara, a Previdência e os institutos ligados ao Município estão no filtro “Entidade”.</span>`;
+  else if(entPadrao()&&st.f.entidade===entPadrao()&&st.tab!=="cred") h+=`<span class="chip info" style="padding-right:10px;background:none">Mostrando só a Prefeitura. A Câmara, a Previdência e os institutos ligados ao Município estão no filtro “Entidade”.</span>`;
   if(avisoFiltro&&avisoFiltro.tab===st.tab)h+=`<span class="chip aviso">${esc(avisoFiltro.txt)}<button aria-label="Fechar aviso" data-x="__aviso">×</button></span>`;
   $("#chips").innerHTML=h;
   $("#chips").querySelectorAll("button").forEach(b=>b.onclick=()=>{const k=b.dataset.x;if(k==="__aviso"){avisoFiltro=null;render();return;}if(k==="per"){st.de=1;st.ate=um;}else delete st.f[k];render();});
