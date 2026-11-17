@@ -680,7 +680,9 @@ def main() -> int:
         via = {"meta": {**meta_cv, "anos": anos_via,
                         "prestacao_fonte": ("Prestação de contas das diárias: data da primeira assinatura eletrônica "
                                             "(SEI) do relatório de viagem feita no dia do retorno ou depois, lida do "
-                                            "PDF publicado no portal. Não é um registro oficial de entrega. "
+                                            "PDF publicado no portal (com OCR nos escaneados; sem assinatura, vale a data escrita no relatório). "
+                                            "sem_relatorio=true: o portal publicou só outros documentos (requisição, "
+                                            "notas fiscais). Não é um registro oficial de entrega. "
                                             "estimativa=true: diária que cobre um período (não uma viagem só)."),
                         "observacoes": ("Diárias: valor líquido (empenhado menos anulações), por data de saída; "
                                         "o órgão vem do empenho que pagou a diária. Passagens de duas formas (campo forma): "
