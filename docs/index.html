@@ -156,6 +156,15 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
 .subtab{white-space:nowrap;flex:none;font:inherit;font-size:14px;background:none;border:0;border-bottom:2px solid transparent;padding:7px 12px;color:var(--ink-2);cursor:pointer;margin-bottom:-1px}
 .subtab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
 .kpis6{grid-template-columns:repeat(6,minmax(0,1fr))}
+/* faixa com os 4 passos do gasto, alinhada aos 4 cartões */
+.etapas{list-style:none;margin:0 0 10px;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.etapas li{position:relative;font-size:13.5px;line-height:1.35;color:var(--ink-2)}
+.etapas li b{display:flex;align-items:center;gap:6px;color:var(--ink);font-weight:500;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.etapas li b i{width:10px;height:10px;border-radius:3px;flex:none}
+.etapas li:not(:last-child)::after{content:"→";position:absolute;right:-11px;top:-1px;color:var(--muted);font-size:14px}
+@media (max-width:900px){.etapas{grid-template-columns:1fr 1fr}.etapas li::after{display:none}}
+details.mais{margin:10px 0 0}
+details.mais>summary{cursor:pointer;color:var(--accent);font-size:14.5px;margin-bottom:10px;width:max-content}
 .kpis2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .kpis6 .kpi .val{font-size:23px}
 .kpi .val.ok{color:var(--good)} .kpi .val.bad{color:var(--bad)} .kpi .val.warn{color:var(--amber)}
@@ -194,7 +203,7 @@ footer,.desc,.banner{overflow-wrap:anywhere}
 
 /* ---------- Identidade visual (brandbook IPPLAM): turquesa domina, laranja pontua, cinza estrutura ---------- */
 body{font:16px/1.5 Arial,Helvetica,sans-serif}
-h1,h2,h3,.tab,.subtab,.kpi .lbl,.f label,.legend,.glossary dt,.h3,.summary b,.kpi .val,.semana b,th{font-family:"Jost",Arial,Helvetica,sans-serif}
+h1,h2,h3,.tab,.subtab,.kpi .lbl,.etapas li b,.f label,.legend,.glossary dt,.h3,.summary b,.kpi .val,.semana b,th{font-family:"Jost",Arial,Helvetica,sans-serif}
 header.top{padding:28px 0 14px}
 .head-txt{position:relative;padding-left:22px;min-width:0}
 .head-txt::before{content:"";position:absolute;left:0;top:2px;bottom:4px;width:6px;background:var(--brand)}
@@ -282,6 +291,12 @@ a{color:var(--accent)}
   <section id="secDesp">
     <div id="despEmpresa" class="hidden"></div>
     <p class="summary" id="sumD"></p>
+    <ol class="etapas" aria-label="Os quatro passos do gasto público, na ordem">
+      <li><b><i style="background:var(--orcado)"></i>Orçado</b>quanto a lei permite gastar no ano</li>
+      <li><b><i style="background:var(--emp)"></i>Empenhado</b>compromisso assumido com quem vai vender ou prestar o serviço</li>
+      <li><b><i style="background:var(--liq)"></i>Liquidado</b>produto ou serviço entregue e conferido</li>
+      <li><b><i style="background:var(--pag)"></i>Pago</b>dinheiro que saiu do caixa</li>
+    </ol>
     <div class="kpis" id="kpisD"></div>
 
     <div class="card full">
@@ -314,7 +329,7 @@ a{color:var(--accent)}
 
     <div class="card full hidden" id="cardEntidade">
       <h2>Por entidade</h2>
-      <p class="desc">Prefeitura (administração direta) e entidades da administração indireta, como autarquias e empresas públicas. Mostra sempre todas as entidades, para comparar; clique numa para ver só ela.</p>
+      <p class="desc">A Prefeitura e os órgãos com orçamento próprio ligados ao Município, como a Câmara, a Previdência, os institutos e as empresas públicas. Mostra sempre todas as entidades, para comparar; clique numa para ver só ela.</p>
       <div class="legend"><span><i style="background:var(--track)"></i>Orçado</span><span><i style="background:var(--emp)"></i>Empenhado</span><span><i style="background:var(--pag)"></i>Pago</span></div>
       <div class="bars" id="barsEntidade"></div>
       <div id="notaEntidade" class="desc" style="margin:10px 0 0;font-size:12.5px"></div>
@@ -430,6 +445,7 @@ a{color:var(--accent)}
       <!-- Painel -->
       <div data-lpart="painel">
         <div class="kpis kpis6" id="kpisL"></div>
+        <details class="mais"><summary>Ver mais indicadores</summary><div class="kpis kpis6" id="kpisL2"></div></details>
         <div class="card full" id="licSemana"></div>
         <div class="card full">
           <h2>Estimado x contratado por mês</h2>
@@ -500,6 +516,9 @@ a{color:var(--accent)}
       <div><dt><i class="sw" style="width:10px;height:10px;border-radius:3px;background:var(--orcado)"></i>Orçado</dt><dd>Valor autorizado na lei do orçamento, já com as alterações feitas durante o ano (dotação atualizada). É o teto de gasto.</dd></div>
       <div><dt><i style="width:10px;height:10px;border-radius:3px;background:var(--emp)"></i>Empenhado</dt><dd>Dinheiro reservado para uma compra ou contrato. A prefeitura assumiu o compromisso, mas o serviço ainda pode não ter sido entregue.</dd></div>
       <div><dt><i style="width:10px;height:10px;border-radius:3px;background:var(--liq)"></i>Liquidado</dt><dd>O fornecedor entregou o produto ou serviço e a prefeitura conferiu. Falta apenas pagar.</dd></div>
+      <div><dt>Entidade</dt><dd>Parte do Município com orçamento próprio: a Prefeitura, a Câmara, a Maringá Previdência, os institutos (autarquias) e as empresas públicas.</dd></div>
+      <div><dt>Repasse entre entidades</dt><dd>Pagamento de uma entidade do Município a outra, como a contribuição da Prefeitura à previdência dos servidores. Conta como despesa de uma e receita da outra.</dd></div>
+      <div><dt>Transferência da Prefeitura</dt><dd>Dinheiro que a Prefeitura envia à Câmara (o duodécimo, 1/12 do orçamento dela por mês) e às autarquias para custear as despesas delas.</dd></div>
       <div><dt>Credor</dt><dd>Quem tem algo a receber da prefeitura: uma empresa fornecedora, uma entidade conveniada ou uma pessoa.</dd></div>
       <div><dt>Dispensa e inexigibilidade</dt><dd>Contratação direta, sem disputa entre fornecedores. A lei permite em compras pequenas, emergências ou quando só existe um fornecedor possível.</dd></div>
       <div><dt>Pregão e concorrência</dt><dd>Licitações com disputa: vários fornecedores apresentam propostas e ganha a melhor.</dd></div>
@@ -662,7 +681,7 @@ function refreshFilterOptions(){
     if(k==="entidade"&&st.tab==="rec") REP.forEach(r=>{if(r.ano===st.ano&&!tot.has(r.entidade))tot.set(r.entidade,0);});
     const opts=[...tot.keys()].sort((a,b)=>a.localeCompare(b,"pt-BR"));
     if(st.f[k]&&!tot.has(st.f[k])) opts.unshift(st.f[k]);
-    s.innerHTML=`<option value="">${k==="entidade"?"Todas (consolidado)":"Todos"}</option>`+opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("");
+    s.innerHTML=`<option value="">${k==="entidade"?"Todas as entidades":"Todos"}</option>`+opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("");
     s.value=st.f[k]||"";s.classList.toggle("on",!!st.f[k]);
     // esconde filtros sem informação útil (ex.: fonte de recurso nas receitas)
     s.closest(".f").classList.toggle("sem-info",!st.f[k]&&opts.length<=1&&(opts[0]===undefined||opts[0]==="Não informado"||k==="entidade"));
@@ -675,7 +694,7 @@ function refreshFilterOptions(){
   for(const k in st.f){ if(!dimsAba.includes(k))continue;
     h+=`<span class="chip">${DIM_NOME[k]}: ${esc(st.f[k])}<button aria-label="Remover filtro ${DIM_NOME[k]}" data-x="${k}">×</button></span>`;}
   if(!st.f.entidade&&entPadrao()&&(st.tab==="desp"||st.tab==="rec")) h+=`<span class="chip" style="padding-right:10px">Somando todas as entidades, os repasses entre elas (como a contribuição da Prefeitura à previdência) aparecem duas vezes.${TEM_INTRA&&st.tab==="desp"?" Veja o total sem repasses nos cartões e em “Repasses entre entidades”.":""}</span>`;
-  else if(entPadrao()&&st.f.entidade===entPadrao()&&st.tab!=="cred") h+=`<span class="chip" style="padding-right:10px;background:none">Mostrando só a Prefeitura. Autarquias e demais entidades estão no filtro “Entidade”.</span>`;
+  else if(entPadrao()&&st.f.entidade===entPadrao()&&st.tab!=="cred") h+=`<span class="chip" style="padding-right:10px;background:none">Mostrando só a Prefeitura. A Câmara, a Previdência e os institutos ligados ao Município estão no filtro “Entidade”.</span>`;
   if(avisoFiltro&&avisoFiltro.tab===st.tab)h+=`<span class="chip aviso">${esc(avisoFiltro.txt)}<button aria-label="Fechar aviso" data-x="__aviso">×</button></span>`;
   $("#chips").innerHTML=h;
   $("#chips").querySelectorAll("button").forEach(b=>b.onclick=()=>{const k=b.dataset.x;if(k==="__aviso"){avisoFiltro=null;render();return;}if(k==="per"){st.de=1;st.ate=um;}else delete st.f[k];render();});
@@ -1280,17 +1299,19 @@ function renderLic(){
   $("#sumL").innerHTML=`${abre()}, ${locEnt}${bq?`, com “${esc(bq)}” no objeto`:""}: ${t}`;
   // indicadores (mesmos 12 do painel original)
   const k=(lbl,val,sub,tip,cls)=>`<div class="card kpi"><div class="lbl">${lbl}<span class="help" tabindex="0" data-tip="${esc(tip)}">?</span></div><div class="val${cls?" "+cls:""}">${val}</div><div class="sub">${sub}</div></div>`;
+  // 6 indicadores principais; os outros 6 ficam em "Ver mais indicadores"
   $("#kpisL").innerHTML=
     k("Licitações",nf0.format(rows.length),"no período, com os filtros","Processos de compra publicados no período (pela data de publicação).")+
     k("Valor estimado",brl(est),"soma dos valores máximos","Soma do valor estimado (o máximo que se aceita pagar) de todos os processos.")+
     k("Homologadas",nf0.format(hom.length),"concluídas com vencedor","Homologar é o ato final que confirma o vencedor. Depois disso vem o contrato.","ok")+
-    k("Não homologadas",nf0.format(rows.length-hom.length),"em andamento, suspensas ou sem sucesso","Processos que ainda não terminaram com um vencedor confirmado.")+
-    k("Valor contratado",brl(vc),"nas homologadas com valor","Soma do valor contratado nas licitações homologadas que informam estimado e contratado.")+
-    k("Economia",brl(ve-vc),`${pctS(ve-vc,ve)} abaixo do estimado`,"Diferença entre o estimado e o contratado nas mesmas licitações homologadas.","ok")+
     k("Em andamento",nf0.format(and.length),"inclui prorrogadas e a abrir","Processos ainda em disputa, inclusive os prorrogados e os aguardando a data de abertura.")+
+    k("Valor contratado",brl(vc),"nas homologadas com valor","Soma do valor contratado nas licitações homologadas que informam estimado e contratado.")+
+    k("Economia",brl(ve-vc),`${pctS(ve-vc,ve)} abaixo do estimado`,"Diferença entre o estimado e o contratado nas mesmas licitações homologadas.","ok");
+  $("#kpisL2").innerHTML=
+    k("Não homologadas",nf0.format(rows.length-hom.length),"em andamento, suspensas ou sem sucesso","Processos que ainda não terminaram com um vencedor confirmado.")+
     k("Sem sucesso",nf0.format(sem.length),"revogadas, fracassadas, desertas","Revogada: cancelada pela prefeitura. Fracassada: ninguém atendeu às exigências. Deserta: ninguém apareceu.","bad")+
     k("Suspensas",nf0.format(sus.length),"aguardando decisão","Processos parados, por exemplo por um questionamento ou decisão do Tribunal de Contas.","warn")+
-    k("Contratação direta",pctS(dir.length,rows.length),"dispensas e inexigibilidades","Compras sem disputa entre fornecedores, permitidas pela lei em casos específicos.")+
+    k("Contratação direta",pctS(dir.length,rows.length),"dos processos, sem disputa (conta processos, não valor)","Compras sem disputa entre fornecedores, permitidas pela lei em casos específicos.")+
     k("Abrem em 7 dias",nf0.format(em7),"a partir de hoje","Licitações em andamento com abertura (sessão de disputa) marcada para os próximos 7 dias.")+
     k("Prazo do pregão",pz==null?"–":`${nf0.format(pz)} dias`,"mediana da publicação à abertura","Tempo típico entre publicar o edital do pregão e abrir as propostas. Metade dos pregões leva menos que isso.");
   // última atualização
@@ -1448,7 +1469,7 @@ function renderCred(){
   const tile=(lbl,val,sub,tip,color,meter)=>`<div class="card kpi"><div class="lbl">${color?`<i class="sw" style="background:${color}"></i>`:""}${lbl}<span class="help" tabindex="0" data-tip="${esc(tip)}">?</span></div><div class="val">${val}</div><div class="sub">${sub}</div>${meter!=null?`<div class="meter"><i style="width:${Math.min(100,meter)}%;background:${color}"></i></div>`:""}</div>`;
   $("#kpisC").innerHTML=
     tile("Credores",nf0.format(it.length),nf0.format(tot.qtd)+" empenhos emitidos","Quantidade de empresas, entidades e pessoas com empenho emitido no período.")+
-    tile("Empenhado",`<span title="${esc(brlFull(tot.emp))}">${brl(tot.emp)}</span>`,"já descontadas as anulações","Valor comprometido com os credores, menos o que foi anulado.","var(--emp)")+
+    tile("Empenhado",`<span title="${esc(brlFull(tot.emp))}">${brl(tot.emp)}</span>`,"já descontado o que foi cancelado","Valor comprometido com os credores, menos o que foi anulado.","var(--emp)")+
     tile("Pago",`<span title="${esc(brlFull(tot.pag))}">${brl(tot.pag)}</span>`,pctS(tot.pag,tot.emp)+" do empenhado","Quanto desses empenhos já foi efetivamente pago até hoje.","var(--pag)",pct(tot.pag,tot.emp))+
     tile("Concentração",pctS(top10,tot.emp),"do valor ficou com os 10 maiores","Percentual do valor empenhado que foi para os 10 maiores credores. Quanto maior, mais concentrado o gasto.");
   $("#credAviso").innerHTML=`Nesta aba, o período conta pelo mês em que o empenho foi feito, e o Pago mostra quanto desses empenhos já foi pago até hoje.${st.de>1?" Por isso os valores podem ser diferentes dos da aba <b>Despesas</b>, que conta cada pagamento no mês em que ele aconteceu.":""}`;
