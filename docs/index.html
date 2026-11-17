@@ -86,6 +86,9 @@ header.top p{margin:0;color:var(--ink-2)}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 .summary{font-size:17px;margin:16px 0;max-width:900px}
 .summary b{font-weight:700}
+section.sem-dados>:not(.summary){display:none!important}
+.summary .btn{margin-left:8px;vertical-align:middle;font-size:14px}
+.chip.aviso{background:none;border-color:var(--orange)}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow);min-width:0}
 .kpi .lbl{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink-2)}
@@ -311,7 +314,7 @@ a{color:var(--accent)}
 
     <div class="card full hidden" id="cardEntidade">
       <h2>Por entidade</h2>
-      <p class="desc">Prefeitura (administração direta) e entidades da administração indireta, como autarquias e empresas públicas. Clique para filtrar.</p>
+      <p class="desc">Prefeitura (administração direta) e entidades da administração indireta, como autarquias e empresas públicas. Mostra sempre todas as entidades, para comparar; clique numa para ver só ela.</p>
       <div class="legend"><span><i style="background:var(--track)"></i>Orçado</span><span><i style="background:var(--emp)"></i>Empenhado</span><span><i style="background:var(--pag)"></i>Pago</span></div>
       <div class="bars" id="barsEntidade"></div>
       <div id="notaEntidade" class="desc" style="margin:10px 0 0;font-size:12.5px"></div>
@@ -389,6 +392,7 @@ a{color:var(--accent)}
     <p class="summary" id="sumC"></p>
     <div id="credCorpo">
       <div class="kpis" id="kpisC"></div>
+      <p class="desc" id="credAviso" style="margin:-4px 0 14px"></p>
       <div class="card full hidden" id="credDet"></div>
       <div class="card full">
         <h2>Maiores credores</h2>
@@ -435,10 +439,10 @@ a{color:var(--accent)}
         </div>
         <div class="grid3">
           <div class="card"><h2>Licitações por mês de publicação</h2><p class="desc">Quantidade; passe o mouse para ver o valor estimado.</p><div class="chart" id="chLicQtd"></div></div>
-          <div class="card"><h2>Valor estimado por entidade</h2><p class="desc">Em milhões de reais. Clique para filtrar.</p><div class="hbars" id="barsLicEnt"></div></div>
-          <div class="card"><h2>Licitações por modalidade</h2><p class="desc">Quantidade de processos. Clique para filtrar.</p><div class="hbars" id="barsLicMod"></div></div>
-          <div class="card"><h2>Situação</h2><p class="desc">Quantidade de processos por grupo de situação. Clique para filtrar.</p><div class="hbars" id="barsLicSit"></div></div>
-          <div class="card"><h2>Secretarias que mais demandam</h2><p class="desc">Prefeitura, valor estimado em milhões; só quando o objeto cita a secretaria. Clique para filtrar.</p><div class="hbars" id="barsLicSec"></div></div>
+          <div class="card"><h2>Valor estimado por entidade</h2><p class="desc">Em milhões de reais. Clique para filtrar; as demais continuam à vista para comparar.</p><div class="hbars" id="barsLicEnt"></div></div>
+          <div class="card"><h2>Licitações por modalidade</h2><p class="desc">Quantidade de processos. Clique para filtrar; as demais continuam à vista para comparar.</p><div class="hbars" id="barsLicMod"></div></div>
+          <div class="card"><h2>Situação</h2><p class="desc">Quantidade de processos por grupo de situação. Clique para filtrar; as demais continuam à vista para comparar.</p><div class="hbars" id="barsLicSit"></div></div>
+          <div class="card"><h2>Secretarias que mais demandam</h2><p class="desc">Prefeitura, valor estimado em milhões; só quando o objeto cita a secretaria. Clique para filtrar; as demais continuam à vista para comparar.</p><div class="hbars" id="barsLicSec"></div></div>
           <div class="card"><h2>Contratação direta por mês</h2><p class="desc">Parte das licitações do mês feita por dispensa ou inexigibilidade, em %.</p><div class="chart" id="chLicDireta"></div></div>
           <div class="card"><h2>Agenda das próximas aberturas</h2><p class="desc">Licitações em andamento que abrem em cada uma das próximas 4 semanas, a partir de hoje.</p><div class="chart" id="chLicAgenda"></div></div>
           <div class="card"><h2>Concentração do valor</h2><p class="desc">Licitações ordenadas pelo valor estimado: quanto do valor total (%) está nas 10 maiores, nas 40 seguintes e em todas as demais.</p><div class="hbars" id="barsLicConc"></div></div>
@@ -479,7 +483,7 @@ a{color:var(--accent)}
         <div class="chart" id="chDiar"></div>
       </div>
       <div class="grid2">
-        <div class="card"><h2>Por órgão</h2><p class="desc">Clique para filtrar.</p><div class="legend"><span><i style="background:var(--emp)"></i>Total</span><span><i style="background:var(--pag)"></i>Passagens</span></div><div class="bars" id="barsDiarOrg"></div></div>
+        <div class="card"><h2>Por órgão</h2><p class="desc">Mostra todos os órgãos, para comparar; clique num para ver só ele.</p><div class="legend"><span><i style="background:var(--emp)"></i>Total</span><span><i style="background:var(--pag)"></i>Passagens</span></div><div class="bars" id="barsDiarOrg"></div></div>
         <div class="card"><h2>Quem mais viajou</h2><p class="desc">Por valor recebido em diárias e passagens. Clique para ver as viagens.</p><div class="legend"><span><i style="background:var(--emp)"></i>Total</span><span><i style="background:var(--pag)"></i>Passagens</span></div><div class="bars" id="barsDiarBen"></div></div>
       </div>
       <div class="card full"><h2>Destinos mais frequentes</h2><p class="desc">Por número de viagens.</p><div class="bars" id="barsDiarDest"></div></div>
@@ -543,6 +547,7 @@ const SIGLAS=new Set("SUS FUNDEB MDE RPPS ICMS IPTU ISS ISSQN ITBI IRRF FPM IPVA
 const MINUSC=new Set("DE DA DO DAS DOS E A O AS OS EM NA NO NAS NOS PARA COM POR À AO AOS SOBRE".split(" "));
 function legivel(t){t=String(t);if(/[a-zà-ÿ]/.test(t)||!/[A-Z]/.test(t))return t;
   return t.split(/(\s+|-|\/)/).map((w,i)=>{if(!w||/^\s+$|^-$|^\/$/.test(w))return w;if(SIGLAS.has(w))return w;if(i>0&&MINUSC.has(w))return w.toLowerCase();if(/\d/.test(w))return w;return w.charAt(0)+w.slice(1).toLowerCase();}).join("");}
+const DIMS_ABA={};let avisoFiltro=null,checarAba=true;
 const st={tab:"desp",la:"painel",ano:null,de:1,ate:12,f:{},tDim:"orgao",busca:"",sort:{k:"pago",d:-1}};
 
 function boot(data){
@@ -611,13 +616,15 @@ function writeHash(){
 
 /* ---------- filtros ---------- */
 function initControls(){
+  document.querySelectorAll(".f[data-tabs]").forEach(e=>{const d=e.querySelector("select").dataset.dim;e.dataset.tabs.split(" ").forEach(t=>(DIMS_ABA[t]=DIMS_ABA[t]||[]).push(d));});
+  document.addEventListener("click",e=>{if(!e.target.closest("[data-limpar]"))return;lst.busca="";$("#lBusca").value="";vst.busca="";$("#vBusca").value="";cst.busca="";$("#cBusca").value="";$("#btnLimpar").click();});
   $("#fAno").innerHTML=anos().map(a=>`<option value="${a}">${a}</option>`).join("");
-  $("#fAno").onchange=e=>{st.ano=+e.target.value;const um=ultimoMes(st.ano);st.de=1;st.ate=um;render();};
+  $("#fAno").onchange=e=>{st.ano=+e.target.value;checarAba=true;const um=ultimoMes(st.ano);st.de=1;st.ate=um;render();};
   $("#fDe").onchange=e=>{st.de=+e.target.value;if(st.de>st.ate)st.ate=st.de;render();};
   $("#fAte").onchange=e=>{st.ate=+e.target.value;if(st.ate<st.de)st.de=st.ate;render();};
   document.querySelectorAll("select[data-dim]").forEach(s=>s.onchange=e=>{const k=s.dataset.dim;if(e.target.value)st.f[k]=e.target.value;else delete st.f[k];render();});
   $("#btnLimpar").onclick=()=>{st.f=entPadrao()?{entidade:entPadrao()}:{};const um=ultimoMes(st.ano);st.de=1;st.ate=um;render();};
-  document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{st.tab=t.dataset.tab;render();});
+  document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{st.tab=t.dataset.tab;checarAba=true;avisoFiltro=null;render();});
   $("#tDim").value=st.tDim;
   $("#tDim").onchange=e=>{st.tDim=e.target.value;renderTable();};
   $("#tBusca").oninput=e=>{st.busca=e.target.value;renderTable();};
@@ -631,7 +638,7 @@ function initControls(){
   $("#vBusca").oninput=e=>{vst.busca=e.target.value;vst.lim=50;render();};
   $("#btnCsvV").onclick=csvDiar;
 }
-function matchF(r,except){for(const k in st.f){if(k===except)continue;if(r[k]!==undefined&&r[k]!==st.f[k])return false;}return true;}
+function matchF(r,except){const da=DIMS_ABA[st.tab];for(const k in st.f){if(k===except||(da&&!da.includes(k)))continue;if(r[k]!==undefined&&r[k]!==st.f[k])return false;}return true;}
 function refreshFilterOptions(){
   const um=ultimoMes(st.ano);
   $("#fAno").value=st.ano;
@@ -663,8 +670,9 @@ function refreshFilterOptions(){
     h+=`<span class="chip">${DIM_NOME[k]}: ${esc(st.f[k])}<button aria-label="Remover filtro ${DIM_NOME[k]}" data-x="${k}">×</button></span>`;}
   if(!st.f.entidade&&entPadrao()&&(st.tab==="desp"||st.tab==="rec")) h+=`<span class="chip" style="padding-right:10px">Somando todas as entidades, os repasses entre elas (como a contribuição da Prefeitura à previdência) aparecem duas vezes.${TEM_INTRA&&st.tab==="desp"?" Veja o total sem repasses nos cartões e em “Repasses entre entidades”.":""}</span>`;
   else if(entPadrao()&&st.f.entidade===entPadrao()&&st.tab!=="cred") h+=`<span class="chip" style="padding-right:10px;background:none">Mostrando só a Prefeitura. Autarquias e demais entidades estão no filtro “Entidade”.</span>`;
+  if(avisoFiltro&&avisoFiltro.tab===st.tab)h+=`<span class="chip aviso">${esc(avisoFiltro.txt)}<button aria-label="Fechar aviso" data-x="__aviso">×</button></span>`;
   $("#chips").innerHTML=h;
-  $("#chips").querySelectorAll("button").forEach(b=>b.onclick=()=>{const k=b.dataset.x;if(k==="per"){st.de=1;st.ate=um;}else delete st.f[k];render();});
+  $("#chips").querySelectorAll("button").forEach(b=>b.onclick=()=>{const k=b.dataset.x;if(k==="__aviso"){avisoFiltro=null;render();return;}if(k==="per"){st.de=1;st.ate=um;}else delete st.f[k];render();});
 }
 
 /* ---------- agregações ---------- */
@@ -689,7 +697,20 @@ function grouped(rows,dim){
 }
 
 /* ---------- render ---------- */
+// Ao trocar de aba (ou de ano), um filtro escolhido em outra aba pode não existir aqui (ex.: uma origem de recurso
+// da despesa em Receitas). Em vez de zerar a página, o filtro é retirado e um aviso explica.
+function soltaFiltros(){
+  const src=st.tab==="desp"?DESP:st.tab==="rec"?REC:st.tab==="lic"?LIC:st.tab==="diar"?DIA:[];
+  if(st.tab!=="cred"&&(!src||!src.length))return false;
+  const tirados=[];
+  (DIMS_ABA[st.tab]||[]).forEach(k=>{if(k==="entidade"||!st.f[k])return;
+    if(!src.some(r=>r.ano===st.ano&&r[k]===st.f[k])){tirados.push(`${DIM_NOME[k]} “${st.f[k]}”`);delete st.f[k];}});
+  if(tirados.length){const v=tirados.length>1;avisoFiltro={tab:st.tab,txt:`${v?"Os filtros":"O filtro"} ${tirados.join(" e ")} ${v?"foram retirados porque não têm":"foi retirado porque não tem"} dados nesta aba em ${st.ano}.`};}
+  return true;
+}
+const semDados=()=>`${periodoTxt()}: nenhum dado encontrado para os filtros escolhidos. <button class="btn" type="button" data-limpar>Limpar filtros</button>`;
 function render(){
+  if(checarAba&&soltaFiltros())checarAba=false;
   writeHash();
   [["#tabD","#secDesp","desp"],["#tabR","#secRec","rec"],["#tabC","#secCred","cred"],["#tabL","#secLic","lic"],["#tabV","#secDiar","diar"]].forEach(([t,sec,k])=>{$(t).setAttribute("aria-selected",st.tab===k);$(sec).classList.toggle("hidden",st.tab!==k);});
   refreshFilterOptions();
@@ -708,19 +729,24 @@ function kpi(lbl,color,val,sub,meter,tip,extra){
 function ehEmpresa(e){return !!e&&EMP.some(r=>r.entidade===e)&&!DESP.some(r=>r.entidade===e);}
 function renderDesp(){
   const emp=ehEmpresa(st.f.entidade);
+  $("#secDesp").classList.remove("sem-dados");
   [...$("#secDesp").children].forEach(el=>{if(el.id==="despEmpresa")el.classList.toggle("hidden",!emp);else if(emp)el.dataset.oculto="1",el.classList.add("hidden");else if(el.dataset.oculto){delete el.dataset.oculto;if(el.id!=="cardEntidade"&&el.id!=="cardEmpresas"&&el.id!=="cardRepasses")el.classList.remove("hidden");}});
   if(emp){renderEmpresa(st.f.entidade);return;}
   const rows=despRows(st.ano,st.ate);
   const dot=dotacao(rows), ex=execSum(rows,st.de);
+  const vazio=dot.atu<=0&&!ex.emp&&!ex.liq&&!ex.pag;
+  $("#secDesp").classList.toggle("sem-dados",vazio);
+  if(vazio){$("#sumD").innerHTML=semDados();return;}
   // comparação com o mesmo período do ano anterior
   let cmp="";
   const prev=DESP.filter(r=>r.ano===st.ano-1&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r));
   if(prev.length){const pp=execSum(prev,st.de).pag;if(pp>0){const v=(ex.pag/pp-1)*100;
     cmp=`<div class="sub"><span class="delta ${v>=0?"up":"down"}">${v>=0?"▲":"▼"} ${nf1.format(Math.abs(v))}%</span> vs. mesmo período de ${st.ano-1}</div>`;}}
-  const parcial=st.de>1?" (no período)":"";
-  $("#sumD").innerHTML=dot.atu>0
-    ? `${periodoTxt()}, ${sujeito()} já <b>pagou ${brl(ex.pag)}</b>${parcial}, o equivalente a <b>${pctS(ex.pag,dot.atu)}</b> do orçamento de <b>${brl(dot.atu)}</b> previsto para o ano. Outros <b>${brl(Math.max(0,ex.emp-ex.pag))}</b> já estão comprometidos (empenhados) e ainda não foram pagos.`
-    : `${periodoTxt()}: nenhum valor encontrado para os filtros escolhidos.`;
+  // período que não começa em janeiro: só o movimento desses meses, sem comparar com o orçamento do ano inteiro
+  const meio=st.de>1,movTxt=`movimento de ${MESES[st.de-1]} a ${MESES[st.ate-1]}`;
+  $("#sumD").innerHTML=meio
+    ? `${periodoTxt()}, ${sujeito()} <b>pagou ${brl(ex.pag)}</b> e assumiu <b>${brl(ex.emp)}</b> em novos compromissos (empenhos). O orçamento previsto para o ano inteiro é de <b>${brl(dot.atu)}</b>.${ex.liq>ex.emp||ex.pag>ex.emp?` O liquidado e o pago podem passar o empenhado porque parte deles se refere a compromissos assumidos antes de ${MESES_L[st.de-1]}.`:""}`
+    : `${periodoTxt()}, ${sujeito()} já <b>pagou ${brl(ex.pag)}</b>, o equivalente a <b>${pctS(ex.pag,dot.atu)}</b> do orçamento de <b>${brl(dot.atu)}</b> previsto para o ano. Outros <b>${brl(Math.max(0,ex.emp-ex.pag))}</b> já estão comprometidos (empenhados) e ainda não foram pagos.`;
   // sem repasses entre entidades (só faz diferença quando mais de uma entidade está somada)
   const iRows=rows.filter(r=>r.intra),consol=TEM_INTRA&&!st.f.entidade&&iRows.length>0;
   const iDot=consol?dotacao(iRows):{atu:0},iEx=consol?execSum(iRows,st.de):{emp:0,pag:0};
@@ -732,9 +758,9 @@ function renderDesp(){
   const ini=dot.ini>0&&Math.abs(dot.atu-dot.ini)>1?`Inicial: ${brl(dot.ini)} (${dot.atu>=dot.ini?"+":""}${pctS(dot.atu-dot.ini,dot.ini)})`:"Orçamento autorizado no ano";
   $("#kpisD").innerHTML=
     kpi("Orçado","var(--orcado)",dot.atu,ini,null,"Dotação atualizada: valor máximo autorizado para gastar no ano, já incluindo créditos adicionais e cortes.",semRep(dot.atu,iDot.atu)+rppsTxt)+
-    kpi("Empenhado","var(--emp)",ex.emp,pctS(ex.emp,dot.atu)+" do orçado",pct(ex.emp,dot.atu),"Valor reservado para contratos e compras. É o primeiro passo do gasto público.",semRep(ex.emp,iEx.emp))+
-    kpi("Liquidado","var(--liq)",ex.liq,pctS(ex.liq,dot.atu)+" do orçado",pct(ex.liq,dot.atu),"Serviço ou produto entregue e conferido. Falta só o pagamento.")+
-    kpi("Pago","var(--pag)",ex.pag,pctS(ex.pag,dot.atu)+" do orçado",pct(ex.pag,dot.atu),"Dinheiro que efetivamente saiu do caixa.",cmp+semRep(ex.pag,iEx.pag));
+    kpi("Empenhado","var(--emp)",ex.emp,meio?movTxt:pctS(ex.emp,dot.atu)+" do orçado",meio?null:pct(ex.emp,dot.atu),"Valor reservado para contratos e compras. É o primeiro passo do gasto público.",semRep(ex.emp,iEx.emp))+
+    kpi("Liquidado","var(--liq)",ex.liq,meio?movTxt:pctS(ex.liq,dot.atu)+" do orçado",meio?null:pct(ex.liq,dot.atu),"Serviço ou produto entregue e conferido. Falta só o pagamento.")+
+    kpi("Pago","var(--pag)",ex.pag,meio?movTxt:pctS(ex.pag,dot.atu)+" do orçado",meio?null:pct(ex.pag,dot.atu),"Dinheiro que efetivamente saiu do caixa.",cmp+semRep(ex.pag,iEx.pag));
   lineChart(rows);
   barList("#barsFuncao",grouped(rows,"funcao"),"funcao",8);
   barList("#barsGrupo",grouped(rows,"grupo"),"grupo",8);
@@ -751,13 +777,15 @@ function renderDesp(){
 function renderRepasses(){
   const card=$("#cardRepasses");
   const rowsE=despRows(st.ano,st.ate,"entidade"),iRows=rowsE.filter(r=>r.intra);
-  if(!TEM_INTRA||!iRows.length){card.classList.add("hidden");return;}
+  // só faz sentido somando as entidades: com uma entidade escolhida, o resto da página mostra só ela
+  if(!TEM_INTRA||!iRows.length||st.f.entidade){card.classList.add("hidden");return;}
+  const outros=["orgao","funcao","grupo","programa","fonte_recurso"].some(k=>st.f[k]);
   card.classList.remove("hidden");
   const tot=dotacao(rowsE),ex=execSum(rowsE,st.de),iDot=dotacao(iRows),iEx=execSum(iRows,st.de);
   $("#kpisRep").innerHTML=
     kpi("Repassado (pago)","var(--pag)",iEx.pag,`${pctS(iEx.pag,ex.pag)} do total pago somando as entidades`,null,"Pagamentos feitos de uma entidade do Município a outra, na modalidade 91 (intraorçamentária).")+
     kpi("Pago, somando tudo","var(--orcado)",ex.pag,"total bruto, com os repasses",null,"Soma simples do que todas as entidades pagaram. Conta duas vezes o dinheiro que passou de uma entidade a outra.")+
-    kpi("Pago, sem repasses","var(--good)",ex.pag-iEx.pag,"gasto real do Município",null,"Total pago somando as entidades, menos os repasses entre elas. É o que de fato saiu do Município.")+
+    kpi("Pago, sem repasses","var(--good)",ex.pag-iEx.pag,outros?"gasto real, com os filtros escolhidos":"gasto real do Município",null,"Total pago somando as entidades, menos os repasses entre elas. É o que de fato saiu do Município.")+
     kpi("Orçado, sem repasses","var(--good)",tot.atu-iDot.atu,`bruto: ${brl(tot.atu)}`,null,"Orçamento de todas as entidades somadas, menos o que está previsto para repasses entre elas.");
   const g=grouped(iRows,"entidade").filter(i=>i.orc>0||i.emp>0);
   barList("#barsRepEnt",g,"entidade",8);
@@ -867,9 +895,13 @@ function csv(){
 
 /* ---------- receitas ---------- */
 function renderRec(){
+  $("#secRec").classList.remove("sem-dados");
   if(ehEmpresa(st.f.entidade)){$("#sumR").innerHTML=`A ${esc(st.f.entidade)} é uma empresa e não tem receita orçamentária no portal. Veja o faturamento e o lucro dela na aba <b>Despesas</b>.`;$("#kpisR").innerHTML="";$("#chRec").innerHTML="";$("#barsOrigem").innerHTML="";$("#cardRepR").classList.add("hidden");[$("#chRec"),$("#barsOrigem")].forEach(el=>el.closest(".card").classList.remove("hidden"));return;}
   const rows=REC.filter(r=>r.ano===st.ano&&r.mes<=st.ate&&matchF(r));
   const rp=repResumo();
+  const vazioR=!rows.length&&!(rp&&!rp.envia);
+  $("#secRec").classList.toggle("sem-dados",vazioR);
+  if(vazioR){$("#sumR").innerHTML=semDados();return;}
   const last=new Map();rows.forEach(r=>{const p=last.get(r._key);if(!p||r.mes>p.mes)last.set(r._key,r);});
   let prev=0;last.forEach(r=>prev+=r.previsto);
   let arr=0;rows.forEach(r=>{if(r.mes>=st.de)arr+=r.arrecadado;});
@@ -1211,7 +1243,7 @@ function renderLic(){
   const busca=r=>!q||semAcento(r.objeto+" "+r.numero+" "+r.secretaria+" "+r.fornecedor).includes(q);
   const base=(except)=>LIC.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r,except)&&busca(r));
   const rows=base();
-  if(!rows.length){$("#licCorpo").classList.add("hidden");$("#sumL").textContent=`${periodoTxt()}: nenhuma licitação encontrada para os filtros escolhidos.`;return;}
+  if(!rows.length){$("#licCorpo").classList.add("hidden");$("#sumL").innerHTML=semDados();return;}
   $("#licCorpo").classList.remove("hidden");
   const S=(a,f)=>a.reduce((t,r)=>t+f(r),0);
   const g=k=>rows.filter(r=>r.sit===k);
@@ -1327,7 +1359,7 @@ const vst={busca:"",lim:50,ts:{k:"saida",d:-1}};let diarLista=[];
 function renderDiar(){
   if(!estadoCarga("diarias","DADOS_DIARIAS",lerDia,"#sumV","#diarCorpo","diárias e passagens"))return;
   const rows=DIA.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r));
-  if(!rows.length){$("#diarCorpo").classList.add("hidden");$("#sumV").textContent=`${periodoTxt()}: nenhuma diária ou passagem encontrada para os filtros escolhidos.`;return;}
+  if(!rows.length){$("#diarCorpo").classList.add("hidden");$("#sumV").innerHTML=semDados();return;}
   $("#diarCorpo").classList.remove("hidden");
   const S=(a,f)=>a.reduce((t,r)=>t+f(r),0),isP=r=>/passag/i.test(r.tipo);
   const tot=S(rows,r=>r.valor),pas=rows.filter(isP),dia=rows.filter(r=>!isP(r)),vP=S(pas,r=>r.valor),vD=S(dia,r=>r.valor),nD=S(dia,r=>r.qtd);
@@ -1397,7 +1429,7 @@ function renderCred(){
   const tot=it.reduce((t,c)=>({emp:t.emp+c.emp,liq:t.liq+c.liq,pag:t.pag+c.pag,qtd:t.qtd+c.qtd}),{emp:0,liq:0,pag:0,qtd:0});
   const ord=[...it].sort((a,b)=>b.emp-a.emp);
   const top10=ord.slice(0,10).reduce((a,c)=>a+c.emp,0);
-  if(!it.length){$("#sumC").textContent=periodoTxt()+": nenhum empenho encontrado.";corpo.classList.add("hidden");return;}
+  if(!it.length){$("#sumC").innerHTML=semDados();corpo.classList.add("hidden");return;}
   $("#sumC").innerHTML=`${periodoTxt()}, ${sujeito()} emitiu <b>${nf0.format(tot.qtd)} empenhos</b> para <b>${nf0.format(it.length)} credores</b>, somando <b>${brl(tot.emp)}</b>. Desse valor, <b>${brl(tot.pag)}</b> já foi pago. Os 10 maiores credores ficaram com <b>${pctS(top10,tot.emp)}</b> do total.`;
   const tile=(lbl,val,sub,tip,color,meter)=>`<div class="card kpi"><div class="lbl">${color?`<i class="sw" style="background:${color}"></i>`:""}${lbl}<span class="help" tabindex="0" data-tip="${esc(tip)}">?</span></div><div class="val">${val}</div><div class="sub">${sub}</div>${meter!=null?`<div class="meter"><i style="width:${Math.min(100,meter)}%;background:${color}"></i></div>`:""}</div>`;
   $("#kpisC").innerHTML=
@@ -1405,6 +1437,7 @@ function renderCred(){
     tile("Empenhado",`<span title="${esc(brlFull(tot.emp))}">${brl(tot.emp)}</span>`,"já descontadas as anulações","Valor comprometido com os credores, menos o que foi anulado.","var(--emp)")+
     tile("Pago",`<span title="${esc(brlFull(tot.pag))}">${brl(tot.pag)}</span>`,pctS(tot.pag,tot.emp)+" do empenhado","Quanto desses empenhos já foi efetivamente pago até hoje.","var(--pag)",pct(tot.pag,tot.emp))+
     tile("Concentração",pctS(top10,tot.emp),"do valor ficou com os 10 maiores","Percentual do valor empenhado que foi para os 10 maiores credores. Quanto maior, mais concentrado o gasto.");
+  $("#credAviso").innerHTML=`Nesta aba, o período conta pelo mês em que o empenho foi feito, e o Pago mostra quanto desses empenhos já foi pago até hoje.${st.de>1?" Por isso os valores podem ser diferentes dos da aba <b>Despesas</b>, que conta cada pagamento no mês em que ele aconteceu.":""}`;
   // ranking
   const top=ord.slice(0,15),max=Math.max(...top.map(c=>c.emp),1);
   $("#barsCred").innerHTML=top.map((c,i)=>`<button class="bar${cst.sel===c.k?" sel":""}" data-i="${i}" title="${esc(c.nome)} — Empenhado ${brlFull(c.emp)} · Pago ${brlFull(c.pag)}">
