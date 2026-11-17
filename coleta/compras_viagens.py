@@ -165,6 +165,9 @@ def coletar_diarias(get, ano: int, entidade: int, nome_entidade: str, orgao_de_e
             "meio_transporte": x.get("meioTransporte") or NAO_INF,
             "documento": f"Empenho {x.get('displayEmpenho')}" if x.get("displayEmpenho") else NAO_INF,
             "empresa": NAO_INF,
+            # para consultar a prestação de contas (coleta/prestacao.py)
+            "entidade_id": entidade,
+            "id_empenho": x.get("idEmpenho"),
         })
     return saida
 
