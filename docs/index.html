@@ -204,6 +204,7 @@ details.mais>summary{cursor:pointer;color:var(--accent);font-size:14.5px;margin-
 .pchead{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between}
 #pcCard,#pcServ{scroll-margin-top:190px}
 .pcnota{font-size:12.5px;color:var(--ink-2);margin:12px 0 0}
+.pctotal{font-size:14px;color:var(--ink-2);margin:12px 0 0;padding:10px 12px;background:var(--surface-2);border-left:3px solid var(--brand)}
 .pcins{font-size:13px;color:var(--ink-2);background:var(--surface-2);border-left:3px solid var(--cinza);padding:8px 10px;margin:12px 0 0}
 td .seta{display:inline-block;width:14px;color:var(--muted);transition:transform .15s}
 tr.aberto td .seta{transform:rotate(90deg)}
@@ -576,9 +577,11 @@ td .clamp.aberto{display:block;-webkit-line-clamp:unset}
       <div class="card full" id="pcCard">
         <div class="pchead"><h2>Prestação de contas das viagens</h2>
           <div class="pcmodo" role="group" aria-label="Como contar os dias"><button type="button" data-pcmodo="c">Dias corridos</button><button type="button" data-pcmodo="u">Dias úteis</button></div></div>
-        <p class="desc">Depois de uma viagem com diária, o servidor deve entregar o relatório de viagem em até 3 dias após o retorno. Aqui se vê quantas viagens cumpriram esse prazo.</p>
+        <p class="desc">Depois de uma viagem a serviço, o servidor deve entregar o relatório de viagem em até 3 dias após o retorno. Aqui cada viagem do período aparece uma vez, num dos grupos abaixo, e a soma dos grupos é o total de viagens.</p>
         <p class="summary" id="pcFrase" style="margin:8px 0 14px"></p>
-        <div class="kpis kpis3" id="kpisPC"></div>
+        <div class="kpis" id="kpisPC"></div>
+        <div class="kpis kpis3" id="kpisPC2" style="margin-top:12px"></div>
+        <p class="pctotal" id="pcTotal"></p>
         <div id="pcRankBox" style="margin-top:16px"><h3 class="h3" id="pcRankTit" style="font-size:15px;margin:0 0 2px"></h3><p class="desc">Percentual de viagens com relatório entregue no prazo, da pior para a melhor. Clique para ver só um.</p><div class="bars" id="barsPC"></div></div>
         <div id="pcIns"></div>
         <p class="pcnota" id="pcNota"></p>
@@ -588,7 +591,7 @@ td .clamp.aberto{display:block;-webkit-line-clamp:unset}
         <div class="tablewrap"><table id="tblPC"></table></div><div id="pcMais" style="margin-top:10px"></div>
         <p class="pcnota">Prazo médio e mediana contam só as viagens com relatório entregue. A mediana mostra o comportamento típico: metade das viagens levou até esse número de dias. Viagens sem relatório aparecem em Pendentes. Cores do prazo médio: verde até 3 dias, amarelo de 4 a 7 e vermelho acima de 7.</p></div>
       <div class="card full"><h2>Todas as viagens</h2><p class="desc">Pesquise por nome, destino ou motivo, ordene pelas colunas e baixe em planilha.</p>
-        <div class="tblbar"><div class="f"><label for="vBusca">Pesquisar</label><input id="vBusca" type="search" placeholder="Nome, destino ou motivo…"></div><div class="f"><label for="vPC">Prestação de contas</label><select id="vPC"><option value="">Todas</option><option value="prazo">Só no prazo</option><option value="atraso">Só atrasadas</option><option value="pend">Só pendentes</option></select></div><button class="btn" id="btnCsvV" type="button">Baixar CSV</button></div>
+        <div class="tblbar"><div class="f"><label for="vBusca">Pesquisar</label><input id="vBusca" type="search" placeholder="Nome, destino ou motivo…"></div><div class="f"><label for="vPC">Prestação de contas</label><select id="vPC"><option value="">Todas</option><option value="prazo">Só no prazo</option><option value="atraso">Só atrasadas</option><option value="pend">Só sem relatório</option><option value="semdata">Só relatório ilegível</option></select></div><button class="btn" id="btnCsvV" type="button">Baixar CSV</button></div>
         <div class="tablewrap"><table id="tblDiar"></table></div><div id="diarMais" style="margin-top:10px"></div></div>
       <p class="desc" id="diarNota" style="margin-top:10px"></p>
     </div>
@@ -1584,10 +1587,11 @@ function pcDias(de,ate,modo){const kc=de+ate+modo;if(PCDC.has(kc))return PCDC.ge
 function pcDias_(de,ate,modo){const a=pcD(de),b=pcD(ate);if(modo!=="u")return Math.round((b-a)/864e5);let n=0;for(let d=pcAdd(a,1);d<=b;d=pcAdd(d,1))if(pcUtil(d))n++;return n;}
 function pcLimite(ret,modo){let d=pcD(ret);if(modo!=="u")return pcISO(pcAdd(d,PC_PRAZO));let n=0;while(n<PC_PRAZO){d=pcAdd(d,1);if(pcUtil(d))n++;}return pcISO(d);}
 // situação de uma viagem: prazo, atraso, pend (sem relatório e prazo vencido), ainda (sem relatório, ainda no prazo),
-// andamento (não voltou), semdata (relatório sem data legível), aguarda (ainda não lido), fora (por estimativa ou cancelada), null (passagem)
+// andamento (não voltou), semdata (relatório sem data legível), aguarda (ainda não lido), periodo (diária por estimativa), cancelada, null (passagem)
 function pcSit(r,modo){
   modo=modo||pst.modo;if(/passag/i.test(r.tipo)||!r.pc)return null;
-  if(r.est||(/totalmente/i.test(r.situacao)&&r.valor<=0))return {s:"fora"};
+  if(/totalmente/i.test(r.situacao)&&r.valor<=0)return {s:"cancelada"};
+  if(r.est)return {s:"periodo"};
   const p=r.pc;
   if(!r.retorno||r.retorno>=PCREF)return {s:"andamento"};
   if(p.data){const d=pcDias(r.retorno,p.data,modo);return {s:d<=PC_PRAZO?"prazo":"atraso",dias:d,data:p.data};}
@@ -1596,11 +1600,9 @@ function pcSit(r,modo){
   if(PCREF<=pcLimite(r.retorno,modo))return {s:"ainda"};
   return {s:"pend",dias:pcDias(r.retorno,PCREF,modo)};
 }
-const pcConta=s=>s==="prazo"||s==="atraso"||s==="pend";
 // entidades em que o portal quase não publica o relatório: menos da metade das viagens encerradas tem data
-function pcInsuf(ent){const k=st.ano+"|"+ent;if(k in PCINS)return PCINS[k];let n=0,c=0;
-  DIA.forEach(r=>{if(r.ano!==st.ano||r.entidade!==ent)return;const x=pcSit(r,"c");if(!x||x.s==="fora"||x.s==="andamento"||x.s==="ainda"||x.s==="aguarda")return;n++;if(x.data)c++;});
-  return PCINS[k]=n>0&&c/n<.5;}
+// Câmara, Previdência e AMR seguem a mesma regra da Prefeitura: todas as entidades entram na conta
+function pcInsuf(){return false;}
 const pcUn=(n,modo)=>`${nf0.format(n)} ${n===1?"dia":"dias"}${(modo||pst.modo)==="u"?(n===1?" útil":" úteis"):""}`;
 const mediana=a=>{if(!a.length)return null;const b=a.slice().sort((x,y)=>x-y),m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2;};
 const pcCor=v=>v==null?"var(--cinza)":v<=3?"var(--good)":v<=7?"var(--amber)":"var(--bad)";
@@ -1608,63 +1610,84 @@ const nfd=v=>v==null?"–":(Number.isInteger(v)?nf0:nf1).format(v);
 function pcLink(r){const l=r.pc&&r.pc.link;return /^https?:\/\//.test(l||"")?` <a href="${esc(l)}" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px" onclick="event.stopPropagation()">relatório</a>`:"";}
 function pcBadge(r,x){x=x||pcSit(r);if(!x)return '<span style="color:var(--muted)">–</span>';
   const pill=(c,t)=>`<span class="pill" style="--c:${c}">${t}</span>`;
-  if(pcInsuf(r.entidade)&&x.s!=="fora"&&x.s!=="andamento")return `<span style="color:var(--muted);font-size:12.5px">dado insuficiente</span>${pcLink(r)}`;
   switch(x.s){
     case "prazo":return pill("var(--good)",`No prazo, ${pcUn(x.dias)}`)+pcLink(r);
     case "atraso":return pill("var(--amber)",`Atrasada, ${pcUn(x.dias)}`)+pcLink(r);
-    case "pend":return pill("var(--cinza)",`Pendente há ${pcUn(x.dias)}`);
+    case "pend":return pill("var(--cinza)",`Sem relatório há ${pcUn(x.dias)}`)+(x.pas?'<div style="font-size:12px;color:var(--muted)">só passagem paga</div>':"");
     case "ainda":return '<span style="color:var(--muted);font-size:12.5px">ainda no prazo</span>';
     case "semdata":return '<span style="color:var(--muted);font-size:12.5px">relatório sem data legível</span>'+pcLink(r);
     case "aguarda":return '<span style="color:var(--muted);font-size:12.5px">em verificação</span>';
     case "andamento":return '<span style="color:var(--muted);font-size:12.5px">viagem não terminou</span>';
-    default:return '<span style="color:var(--muted);font-size:12.5px">diária por período (fora da conta)</span>';}
+    case "cancelada":return '<span style="color:var(--muted);font-size:12.5px">diária cancelada</span>';
+    default:return '<span style="color:var(--muted);font-size:12.5px">diária por período</span>';}
 }
+// Uma viagem = mesma pessoa, mesma saída e mesmo destino (a mesma conta do topo da aba).
+// Cada viagem recebe uma única situação, para que os grupos somem exatamente o total de viagens.
+const PC_ORDEM=["prazo","atraso","semdata","aguarda","pend","ainda","andamento","periodo","cancelada"];
+function pcSitData(r,modo){modo=modo||pst.modo;const ret=r.retorno||r.saida;
+  if(!ret||ret>=PCREF)return {s:"andamento"};
+  if(PCREF<=pcLimite(ret,modo))return {s:"ainda"};
+  return {s:"pend",dias:pcDias(ret,PCREF,modo)};}
+function pcViagens(rows,modo){
+  const g=new Map();
+  rows.filter(r=>!/empresa/i.test(r.forma)).forEach(r=>{const k=r.beneficiario+"|"+r.saida+"|"+r.destino;let t=g.get(k);if(!t){t={k,recs:[]};g.set(k,t);}t.recs.push(r);});
+  return [...g.values()].map(t=>{
+    const ds=t.recs.map(r=>({r,x:pcSit(r,modo)})).filter(o=>o.x);
+    let best=null;
+    ds.forEach(o=>{if(!best){best=o;return;}const a=PC_ORDEM.indexOf(o.x.s),b=PC_ORDEM.indexOf(best.x.s);
+      if(a<b||(a===b&&o.x.dias!=null&&best.x.dias!=null&&o.x.dias<best.x.dias))best=o;});
+    if(best)return {k:t.k,r:best.r,x:best.x,recs:t.recs};
+    // viagem só com passagem (ou diária sem dado de prestação): não há relatório publicado
+    const r=t.recs[0];return {k:t.k,r,x:{...pcSitData(r,modo),pas:true},recs:t.recs};});
+}
+const pcConta=s=>s==="prazo"||s==="atraso"||s==="pend";
+// viagens que já deveriam ter relatório: base de todos os percentuais (inclui as de relatório ilegível)
+const pcDeve=s=>pcConta(s)||s==="semdata"||s==="aguarda";
 function renderPC(rows){
-  const dia=rows.filter(r=>!/passag/i.test(r.tipo)&&r.pc);
-  $("#pcCard").classList.toggle("hidden",!dia.length);$("#pcServ").classList.toggle("hidden",!dia.length);
-  if(!dia.length)return;
+  const vs=pcViagens(rows);
+  $("#pcCard").classList.toggle("hidden",!vs.length);$("#pcServ").classList.toggle("hidden",!vs.length);
+  if(!vs.length)return;
   document.querySelectorAll("[data-pcmodo]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.pcmodo===pst.modo));
   const un=pst.modo==="u"?"dias úteis":"dias corridos";
-  const ents=[...new Set(dia.map(r=>r.entidade))],insuf=ents.filter(pcInsuf),ok=dia.filter(r=>!pcInsuf(r.entidade));
-  const xs=ok.map(r=>({r,x:pcSit(r)})),base=xs.filter(o=>pcConta(o.x.s));
-  const nP=base.filter(o=>o.x.s==="prazo").length,nA=base.filter(o=>o.x.s==="atraso").length,nPe=base.filter(o=>o.x.s==="pend").length,n=base.length;
-  const fora=xs.filter(o=>o.x.s==="fora").length,semd=xs.filter(o=>o.x.s==="semdata").length,ainda=xs.filter(o=>o.x.s==="ainda"||o.x.s==="andamento").length;
-  const med=mediana(base.filter(o=>o.x.dias!=null&&o.x.s!=="pend").map(o=>o.x.dias));
-  if(!n){
-    $("#pcFrase").innerHTML=insuf.length&&!ok.length?`O portal quase não publica o relatório de viagem ${insuf.length>1?"destas entidades":"desta entidade"} (${esc(insuf.join(", "))}). Por isso não dá para medir o prazo: <b>dado insuficiente</b>.`:"Ainda não há viagens encerradas com prazo para medir no período escolhido.";
-    $("#kpisPC").innerHTML="";$("#pcRankBox").classList.add("hidden");
-  }else{
-    const de10=Math.round(nP/n*10);
-    $("#pcFrase").innerHTML=`${abre()}, de cada 10 viagens com diária que já terminaram, <b>${de10}</b> ${de10===1?"teve":"tiveram"} o relatório de viagem entregue em até 3 ${un}.`+
-      (med!=null?` Na metade das viagens, a entrega levou até <b>${pcUn(med)}</b> depois do retorno.`:"")+(nPe?` Outras <b>${nf0.format(nPe)}</b> ainda não têm relatório publicado no portal.`:"");
-    $("#kpisPC").innerHTML=kpiT("No prazo",pctS(nP,n),`${nf0.format(nP)} de ${nf0.format(n)} viagens, em até 3 ${un}`,"Viagens em que o relatório de viagem foi assinado em até 3 dias depois do retorno.","var(--good)",pct(nP,n))+
-      kpiT("Atrasadas",pctS(nA,n),`${nf0.format(nA)} viagens com relatório entregue depois do prazo`,"Viagens em que o relatório foi assinado mais de 3 dias depois do retorno.","var(--amber)",pct(nA,n))+
-      kpiT("Sem prestação publicada",pctS(nPe,n),`${nf0.format(nPe)} viagens já passaram do prazo sem relatório no portal`,"Viagens que terminaram há mais de 3 dias e ainda não têm o relatório de viagem publicado no portal. Pode ser atraso do servidor ou demora na publicação.","var(--cinza)",pct(nPe,n));
+  const c=s=>vs.filter(v=>v.x.s===s).length;
+  const nP=c("prazo"),nA=c("atraso"),nPe=c("pend"),nPas=vs.filter(v=>v.x.s==="pend"&&v.x.pas).length,nI=c("semdata")+c("aguarda"),
+    nAnd=c("ainda")+c("andamento"),nPer=c("periodo"),nCan=c("cancelada"),N=vs.length,n=nP+nA+nPe+nI;
+  const med=mediana(vs.filter(v=>v.x.s==="prazo"||v.x.s==="atraso").map(v=>v.x.dias));
+  $("#pcRankBox").classList.toggle("hidden",!n);
+  if(!n){$("#pcFrase").innerHTML="Ainda não há viagens encerradas com prazo vencido no período escolhido.";}
+  else{const de10=Math.round(nP/n*10);
+    $("#pcFrase").innerHTML=`${abre()}, de cada 10 viagens que já deveriam ter relatório, <b>${de10}</b> ${de10===1?"teve":"tiveram"} o relatório entregue em até 3 ${un}.`+
+      (med!=null?` Quando o relatório foi entregue, metade levou até <b>${pcUn(med)}</b> depois do retorno.`:"")+(nPe?` Outras <b>${nf0.format(nPe)}</b> viagens não têm relatório publicado no portal.`:"");}
+  $("#kpisPC").innerHTML=kpiT("No prazo",pctS(nP,n),`${nf0.format(nP)} viagens, relatório em até 3 ${un}`,"Viagens em que o relatório de viagem foi assinado em até 3 dias depois do retorno.","var(--good)",pct(nP,n))+
+    kpiT("Atrasadas",pctS(nA,n),`${nf0.format(nA)} viagens, relatório entregue depois do prazo`,"Viagens em que o relatório foi assinado mais de 3 dias depois do retorno.","var(--amber)",pct(nA,n))+
+    kpiT("Sem relatório",pctS(nPe,n),`${nf0.format(nPe)} viagens já passaram do prazo sem relatório no portal${nPas?`, das quais ${nf0.format(nPas)} só com passagem paga`:""}`,"Viagens que terminaram há mais de 3 dias e não têm relatório de viagem publicado no portal. Inclui as viagens em que só a passagem foi paga. Pode ser atraso do servidor ou demora na publicação.","var(--cinza)",pct(nPe,n))+
+    kpiT("Relatório ilegível",pctS(nI,n),`${nf0.format(nI)} viagens com relatório publicado, mas sem data legível`,"O portal publica o relatório, mas o PDF é escaneado e a data da assinatura não pôde ser lida. Por isso não dá para saber se foi no prazo.","var(--muted)",pct(nI,n));
+  $("#kpisPC2").innerHTML=kpiT("Ainda no prazo",nf0.format(nAnd),"viagens que não terminaram ou voltaram há até 3 dias","Viagens que ainda não terminaram ou cujo prazo de 3 dias ainda não venceu.")+
+    kpiT("Diárias por período",nf0.format(nPer),"estimativa de diárias para vários meses","Diárias pagas por estimativa para um período longo (por exemplo, motoristas que viajam toda semana). O portal quase não publica relatório para elas, e não encontramos a regra que diga se e quando ele é exigido; por isso ficam num grupo à parte.")+
+    kpiT("Canceladas",nf0.format(nCan),"diárias canceladas por inteiro","Diárias anuladas por inteiro (valor zero): a viagem não aconteceu, então não há relatório a entregar.");
+  $("#pcTotal").innerHTML=`<b>Conta fechada:</b> ${nf0.format(nP)} no prazo + ${nf0.format(nA)} atrasadas + ${nf0.format(nPe)} sem relatório + ${nf0.format(nI)} ilegíveis + ${nf0.format(nAnd)} ainda no prazo + ${nf0.format(nPer)} por período + ${nf0.format(nCan)} canceladas = <b>${nf0.format(N)} viagens</b>, o mesmo total do início da aba. Os percentuais acima são sobre as ${nf0.format(n)} viagens que já deveriam ter relatório.`;
+  if(n){
     // ranking: por órgão quando há uma entidade escolhida; senão, por entidade
     const porOrg=!!st.f.entidade,ch=porOrg?(r=>r.orgao):(r=>r.entidade);
-    const todos=DIA.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r,porOrg?"orgao":"entidade")&&!/passag/i.test(r.tipo)&&r.pc);
-    const g=new Map();todos.forEach(r=>{const k=ch(r);let t=g.get(k);if(!t){t={nome:k,ent:r.entidade,n:0,p:0,d:[]};g.set(k,t);}const x=pcSit(r);if(!pcConta(x.s))return;t.n++;if(x.s==="prazo")t.p++;if(x.s!=="pend")t.d.push(x.dias);});
-    const its=[...g.values()].filter(t=>t.n>0||pcInsuf(t.ent)).map(t=>{const ins=pcInsuf(t.ent),m=mediana(t.d);
-      return {nome:t.nome,ins,v:ins?0:pct(t.p,t.n),o:ins?999:pct(t.p,t.n),txt:ins?"dado insuficiente":`<b>${nf0.format(pct(t.p,t.n))}%</b> no prazo · mediana ${m==null?"–":pcUn(m)} · ${nf0.format(t.n)} ${t.n===1?"viagem":"viagens"}`};}).sort((a,b)=>a.o-b.o||a.nome.localeCompare(b.nome,"pt-BR"));
+    const todos=pcViagens(DIA.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r,porOrg?"orgao":"entidade")));
+    const g=new Map();todos.forEach(v=>{const k=ch(v.r);let t=g.get(k);if(!t){t={nome:k,n:0,p:0,d:[]};g.set(k,t);}if(!pcDeve(v.x.s))return;t.n++;if(v.x.s==="prazo")t.p++;if(v.x.dias!=null&&v.x.s!=="pend")t.d.push(v.x.dias);});
+    const its=[...g.values()].filter(t=>t.n>0).map(t=>{const m=mediana(t.d);
+      return {nome:t.nome,v:pct(t.p,t.n),o:pct(t.p,t.n),txt:`<b>${nf0.format(pct(t.p,t.n))}%</b> no prazo · mediana ${m==null?"–":pcUn(m)} · ${nf0.format(t.n)} ${t.n===1?"viagem":"viagens"}`};}).sort((a,b)=>a.o-b.o||a.nome.localeCompare(b.nome,"pt-BR"));
     $("#pcRankBox").classList.toggle("hidden",!its.length);
     $("#pcRankTit").textContent=porOrg?"Por órgão":"Por entidade";
     const sel=porOrg?st.f.orgao:st.f.entidade;
     listaBarras("#barsPC",its,{max:100,limite:12,sel,onClick:i=>{const k=porOrg?"orgao":"entidade";if(st.f[k]===i.nome)delete st.f[k];else st.f[k]=i.nome;render();}});
   }
-  $("#pcIns").innerHTML=insuf.length&&ok.length?`<div class="pcins"><b>Dado insuficiente:</b> ${esc(insuf.join(", "))} quase não ${insuf.length>1?"publicam":"publica"} o relatório de viagem no portal (menos da metade das viagens tem relatório com data). ${insuf.length>1?"Essas entidades ficam":"Essa entidade fica"} fora da conta para não mostrar um percentual enganoso.</div>`:"";
-  $("#pcNota").innerHTML=`<b>Como é medido:</b> a data da entrega é a da primeira assinatura eletrônica (SEI) do relatório de viagem feita no dia do retorno ou depois, lida do PDF publicado no portal. Não é um registro oficial de entrega, e atrasos na publicação podem afetar o resultado. Dias úteis descontam fins de semana, feriados nacionais, Carnaval, Sexta-feira Santa, Corpus Christi e o aniversário de Maringá (10/5). Situação até ${dataBR(PCREF)}.`+
-    (fora?` ${nf0.format(fora)} diárias por período (por exemplo, motoristas que viajam o mês inteiro) ou canceladas ficam fora da conta.`:"")+
-    (semd?` ${nf0.format(semd)} relatórios publicados sem data legível (PDF escaneado) também ficam fora.`:"")+
-    (ainda?` ${nf0.format(ainda)} viagens ainda não terminaram ou estão dentro do prazo.`:"")+
-    " Passagens não entram: a prestação de contas é das diárias.";
-  renderPCServ(ok);
+  $("#pcIns").innerHTML="";
+  $("#pcNota").innerHTML=`<b>Como é medido:</b> cada viagem conta uma vez, mesmo quando a diária foi paga em mais de uma parte. A data da entrega é a da primeira assinatura eletrônica (SEI) do relatório de viagem feita no dia do retorno ou depois, lida do PDF publicado no portal. Não é um registro oficial de entrega, e atrasos na publicação podem afetar o resultado. Viagens em que só a passagem foi paga contam como sem relatório. Dias úteis descontam fins de semana, feriados nacionais, Carnaval, Sexta-feira Santa, Corpus Christi e o aniversário de Maringá (10/5). Situação até ${dataBR(PCREF)}.`;
+  renderPCServ(vs);
 }
-function renderPCServ(dia){
+function renderPCServ(vs){
   const g=new Map();
-  dia.forEach(r=>{const x=pcSit(r);if(!x||!pcConta(x.s)&&x.s!=="semdata")return;const k=r.beneficiario+"|"+r.entidade;let t=g.get(k);
+  vs.forEach(({r,x})=>{if(!pcDeve(x.s))return;const k=r.beneficiario+"|"+r.entidade;let t=g.get(k);
     if(!t){t={id:k,nome:r.beneficiario,cargo:r.cargo,ent:r.entidade,orgs:new Map(),v:[]};g.set(k,t);}t.v.push({r,x});t.orgs.set(r.orgao,(t.orgs.get(r.orgao)||0)+1);});
   let L=[...g.values()].map(t=>{const d=t.v.filter(o=>o.x.s==="prazo"||o.x.s==="atraso").map(o=>o.x.dias);
-    return {...t,orgao:[...t.orgs.entries()].sort((a,b)=>b[1]-a[1])[0][0],n:t.v.filter(o=>pcConta(o.x.s)).length,ent_:d.length,media:d.length?d.reduce((a,b)=>a+b,0)/d.length:null,med:mediana(d),
+    return {...t,orgao:[...t.orgs.entries()].sort((a,b)=>b[1]-a[1])[0][0],n:t.v.filter(o=>pcDeve(o.x.s)).length,ent_:d.length,media:d.length?d.reduce((a,b)=>a+b,0)/d.length:null,med:mediana(d),
       prazo:t.v.filter(o=>o.x.s==="prazo").length,pend:t.v.filter(o=>o.x.s==="pend").length};}).filter(t=>t.n>0);
   const q=semAcento(pst.busca.trim());if(q)L=L.filter(t=>semAcento(t.nome+" "+t.cargo).includes(q));
   const cols=[{k:"nome",t:"Servidor"},{k:"orgao",t:"Órgão"},{k:"n",t:"Viagens",num:1},{k:"media",t:"Prazo médio",num:1},{k:"med",t:"Mediana",num:1},{k:"prazo",t:"No prazo",num:1},{k:"pend",t:"Pendentes",num:1}];
@@ -1689,8 +1712,9 @@ function csvPC(){const un=pst.modo==="u"?"úteis":"corridos";
   baixarCSV(`prestacao_contas_por_servidor_${st.ano}.csv`,["Servidor","Cargo","Órgão","Entidade","Viagens",`Prazo médio (dias ${un})`,`Mediana (dias ${un})`,"Relatórios no prazo","Relatórios entregues","Pendentes"],
     pcLista.map(t=>[t.nome,t.cargo,t.orgao,t.ent,t.n,t.media==null?"":Math.round(t.media*10)/10,t.med==null?"":t.med,t.prazo,t.ent_,t.pend]));}
 // resumo para o atalho da aba Resumo
-function pcResumo(rows){let n=0,p=0;rows.forEach(r=>{if(pcInsuf(r.entidade))return;const x=pcSit(r);if(!x||!pcConta(x.s))return;n++;if(x.s==="prazo")p++;});return {n,p};}
-const vst={busca:"",lim:50,ts:{k:"saida",d:-1},pc:""};let diarLista=[];
+function pcResumo(rows){let n=0,p=0;pcViagens(rows).forEach(v=>{if(!pcDeve(v.x.s))return;n++;if(v.x.s==="prazo")p++;});return {n,p};}
+const vst={busca:"",lim:50,ts:{k:"saida",d:-1},pc:""};let diarLista=[],diarPC=new Map();
+const pcViagem=r=>/empresa/i.test(r.forma)?null:diarPC.get(r.beneficiario+"|"+r.saida+"|"+r.destino)||null;
 function renderDiar(){
   if(!estadoCarga("diarias","DADOS_DIARIAS",lerDia,"#sumV","#diarCorpo","diárias e passagens"))return;
   const rows=DIA.filter(r=>r.ano===st.ano&&r.mes>=st.de&&r.mes<=st.ate&&matchF(r));
@@ -1716,20 +1740,22 @@ function renderDiar(){
   const dest=agrupa(pesRows.filter(r=>!/^não informado/i.test(r.destino)),r=>r.destino,(t,r)=>{t.v=(t.v||0)+r.valor;}).sort((a,b)=>b.n-a.n);
   listaBarras("#barsDiarDest",dest.map(t=>({nome:t.nome,v:t.n,txt:`<b>${nf0.format(t.n)}</b> registros · ${brl(t.v)}`})),{limite:10});
   renderPC(rows);
+  // a coluna Prestação mostra a situação da viagem inteira (a mesma usada na conta acima)
+  diarPC=new Map(pcViagens(rows).map(v=>[v.k,v.x]));
   const q=semAcento(vst.busca.trim());
   let lista=q?rows.filter(r=>semAcento(r.beneficiario+" "+r.destino+" "+r.motivo+" "+r.cargo).includes(q)):rows;
-  if(vst.pc)lista=lista.filter(r=>{const x=pcSit(r);return x&&x.s===vst.pc&&!pcInsuf(r.entidade);});
+  if(vst.pc)lista=lista.filter(r=>{const x=pcViagem(r);return x&&(x.s===vst.pc||vst.pc==="semdata"&&x.s==="aguarda");});
   diarLista=tabela("#tblDiar",[{k:"saida",t:"Saída",f:r=>dataBR(r.saida)},{k:"beneficiario",t:"Quem viajou",f:r=>`${esc(r.beneficiario)}<div style="font-size:12px;color:var(--muted)">${esc(r.cargo)}</div>`,wrap:1},
     {k:"destino",t:"Destino",f:r=>esc(r.destino)},{k:"motivo",t:"Motivo",f:r=>`<div class="clamp" title="Clique para ler o motivo inteiro">${esc(r.motivo)}</div>`,wrap:1},{k:"tipo",t:"Tipo",f:r=>esc(r.tipo)+(isP(r)?(isEmp(r)?'<div style="font-size:12px;color:var(--muted)">empresa contratada</div>':""):` (${nf1.format(r.qtd).replace(",0","")})`)},
-    {k:"valor",t:"Valor",f:r=>brl(r.valor),num:1},{k:"pcs",t:"Prestação",f:r=>pcBadge(r),sort:r=>{const x=pcSit(r);return x&&x.dias!=null?(x.s==="pend"?1e4:0)+x.dias:-1;},num:1},{k:"orgao",t:"Órgão",f:r=>esc(r.orgao),wrap:1}],lista,vst.ts,{lim:vst.lim});
+    {k:"valor",t:"Valor",f:r=>brl(r.valor),num:1},{k:"pcs",t:"Prestação",f:r=>pcBadge(r,pcViagem(r)),sort:r=>{const x=pcViagem(r);return x&&x.dias!=null?(x.s==="pend"?1e4:0)+x.dias:-1;},num:1},{k:"orgao",t:"Órgão",f:r=>esc(r.orgao),wrap:1}],lista,vst.ts,{lim:vst.lim});
   $("#diarMais").innerHTML=lista.length>vst.lim?`<span class="desc" style="margin-right:10px">Mostrando ${nf0.format(vst.lim)} de ${nf0.format(lista.length)}.</span><button class="btn" id="btnMaisV" type="button">Mostrar mais 50</button>`:`<span class="desc">${nf0.format(lista.length)} registros.</span>`;
   const bm=$("#btnMaisV");if(bm)bm.onclick=()=>{vst.lim+=50;render();};
   notaFonte("#diarNota",DIAMETA,"Diárias e passagens");
   if(DIAMETA.exemplo){$("#diarNota").innerHTML="<b>Atenção: dados de exemplo, com nomes fictícios.</b> "+$("#diarNota").innerHTML;}
 }
-function csvDiar(){const SIT={prazo:"No prazo",atraso:"Atrasada",pend:"Pendente",ainda:"Ainda no prazo",semdata:"Relatório sem data legível",aguarda:"Em verificação",andamento:"Viagem não terminou",fora:"Diária por período"};
+function csvDiar(){const SIT={prazo:"No prazo",atraso:"Atrasada",pend:"Pendente",ainda:"Ainda no prazo",semdata:"Relatório sem data legível",aguarda:"Em verificação",andamento:"Viagem não terminou",periodo:"Diária por período",cancelada:"Diária cancelada"};
   baixarCSV(`diarias_passagens_maringa_${st.ano}.csv`,["Saída","Retorno","Quem viajou","Cargo","Órgão","Entidade","Destino","Motivo","Tipo","Quantidade","Valor","Relatório assinado em",`Dias até o relatório (${pst.modo==="u"?"úteis":"corridos"})`,"Prestação de contas","Link do relatório"],
-  diarLista.map(r=>{const x=pcSit(r);return [r.saida,r.retorno,r.beneficiario,r.cargo,r.orgao,r.entidade,r.destino,r.motivo,r.tipo,r.qtd,r.valor,x&&x.data||"",x&&x.dias!=null?String(x.dias):"",x?(pcInsuf(r.entidade)&&x.s!=="fora"&&x.s!=="andamento"?"Dado insuficiente":SIT[x.s]):"",r.pc&&r.pc.link||""];}));}
+  diarLista.map(r=>{const x=pcViagem(r);return [r.saida,r.retorno,r.beneficiario,r.cargo,r.orgao,r.entidade,r.destino,r.motivo,r.tipo,r.qtd,r.valor,x&&x.data||"",x&&x.dias!=null?String(x.dias):"",x?(x.pas&&x.s==="pend"?"Sem relatório (só passagem)":SIT[x.s]):"",r.pc&&r.pc.link||""];}));}
 
 /* ---------- credores (carregados só quando a aba é aberta) ---------- */
 let CRED=null, credCarregando=false, credErro=false;
