@@ -96,6 +96,7 @@ entra sozinha, com o nome oficial):
 | `avisos` | lista de diferenças pequenas encontradas na validação |
 | `linhas_csv` | contagem de linhas dos CSVs |
 | `empresas_fonte` | nota de rodapé sobre a origem dos números de `empresas` |
+| `repasses_fonte` | nota sobre a origem e as regras de `repasses` |
 
 ### `despesas` (em `execucao.js`), agregada para o painel
 
@@ -130,6 +131,22 @@ deducoes, arrecadado`
 - `arrecadado` = **líquido de deduções** (ex. retenção para o FUNDEB), comparável a `previsto`.
   `arrecadado_bruto` e `deducoes` (negativo) mostram a composição.
 - `fonte_recurso` vem como "Não informado": a API detalhada da receita não informa a fonte por rubrica.
+
+### `repasses` (em `execucao.js` e `repasses.csv`)
+
+Repasses financeiros da Prefeitura às outras entidades (duodécimo da Câmara, repasses às autarquias,
+aportes à Maringá Previdência). Não são receita orçamentária de quem recebe (são "transferências
+financeiras"), por isso não aparecem em `receitas`. Módulo `coleta/repasses.py`; `--sem-repasses` desliga.
+
+`ano, mes, entidade, entidade_id, origem, previsto, previsto_mes, recebido, devolvido, enviado_prefeitura`
+
+- `previsto` = previsão anual da Prefeitura para a entidade (posição; igual em todos os meses).
+- `previsto_mes` = cronograma do mês, só quando a soma do cronograma fecha com `previsto` (em 2025 fica vazio).
+- `recebido` = movimento do mês **registrado por quem recebe**; `devolvido` = o que a entidade devolveu à
+  Prefeitura no mês (ex.: sobra do duodécimo da Câmara em dezembro).
+- `enviado_prefeitura` = o mesmo movimento visto pela Prefeitura, só para conferência. Em 2026 bate com
+  `recebido`; em 2025 a Prefeitura e as autarquias só registraram de agosto em diante (a Câmara registrou o ano
+  todo), o que vira aviso em `meta.avisos` e nota no painel.
 
 ### `receitas.csv` (detalhado)
 
@@ -220,6 +237,7 @@ Todos exigem os cabeçalhos HTTP `entidade: <id>` e `exercicio: <ano>` (nos exem
 | entidades | `/api/entidades/lista?fields=id,nome,cnpj,tipo` |
 | exercícios | `/api/exercicios/entidade/1` |
 | despesa | `/despesapornivel/detalhada?entidade=1&exercicio=A&execucao=true&dataInicial=A-01-01&dataFinal=A-MM-DD` |
+| repasses | `/api/repasses?tipo=E&entidade=1&exercicio=A&mesInicial=01&mesFinal=12` (previsto anual) e `/api/repasses/mes?tipo=R\|E&entidade=X&exercicio=A&mesInicial=01&mesFinal=12&entidadeDestinoOrigem=Y` (por mês) |
 | receita | `/api/receitas/detalhada?entidade=1&exercicio=A&dataInicial=...&dataFinal=...` |
 | empenhos | `/empenhos/lista?search=id.exercicio=='A' and id.entidade=='1' and data>='...' and data<='...'&entidade=1&page=N&size=2000` |
 | última atualização | `/api/ultimas-atualizacoes/last-update-despesas` e `-receitas` |

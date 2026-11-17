@@ -147,6 +147,7 @@ footer{color:var(--muted);font-size:13px;padding:24px 0 40px}
 .subtab{white-space:nowrap;flex:none;font:inherit;font-size:14px;background:none;border:0;border-bottom:2px solid transparent;padding:7px 12px;color:var(--ink-2);cursor:pointer;margin-bottom:-1px}
 .subtab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
 .kpis6{grid-template-columns:repeat(6,minmax(0,1fr))}
+.kpis2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .kpis6 .kpi .val{font-size:23px}
 .kpi .val.ok{color:var(--good)} .kpi .val.bad{color:var(--bad)} .kpi .val.warn{color:var(--amber)}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
@@ -309,6 +310,15 @@ footer,.desc,.banner{overflow-wrap:anywhere}
   <section id="secRec" class="hidden">
     <p class="summary" id="sumR"></p>
     <div class="kpis" id="kpisR"></div>
+    <div class="card full hidden" id="cardRepR">
+      <h2 id="repRTit">Repasses da Prefeitura</h2>
+      <p class="desc" id="repRDesc"></p>
+      <div class="kpis kpis2" id="kpisRepR"></div>
+      <div id="repRPara" class="hidden" style="margin-top:12px"><h3 class="h3">Para quem</h3>
+        <div class="legend"><span><i style="background:var(--track)"></i>Previsto no ano</span><span><i style="background:var(--arr)"></i>Repassado</span></div>
+        <div class="bars" id="barsRepR"></div></div>
+      <div class="desc" id="notaRepR" style="margin:10px 0 0;font-size:12.5px"></div>
+    </div>
     <div class="card full">
       <h2>Arrecadação mês a mês</h2>
       <p class="desc">Quanto entrou nos cofres em cada mês, separado pelo tipo de receita. O número em cima de cada coluna é o total do mês, e a linha tracejada é a média mensal prevista.</p>
@@ -477,7 +487,7 @@ const pct=(a,b)=>b>0?a/b*100:0;
 const pctS=(a,b)=>b>0?nf1.format(a/b*100)+"%":"–";
 const num=v=>{const n=typeof v==="number"?v:parseFloat(String(v).replace(",","."));return isFinite(n)?n:0;};
 
-let D=null, DESP=[], REC=[], EMP=[], PARCIAL=null, TEM_INTRA=false;
+let D=null, DESP=[], REC=[], EMP=[], REP=[], PARCIAL=null, TEM_INTRA=false;
 const SIGLAS=new Set("SUS FUNDEB MDE RPPS ICMS IPTU ISS ISSQN ITBI IRRF FPM IPVA SAMU CMEI UBS UPA LTDA ME EPP EIRELI SA S/A S.A. S.A CNPJ CPF PR BR CIA ONG APAE CEU SESC SENAC SESI SENAI SEBRAE FNDE FNAS FNS PNAE PDDE COSIP CIP TI II III IV VI VII VIII IX XI XII".split(" "));
 const MINUSC=new Set("DE DA DO DAS DOS E A O AS OS EM NA NO NAS NOS PARA COM POR À AO AOS SOBRE".split(" "));
 function legivel(t){t=String(t);if(/[a-zà-ÿ]/.test(t)||!/[A-Z]/.test(t))return t;
@@ -498,6 +508,9 @@ function boot(data){
   REC=(D.receitas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};RDIMS.forEach(k=>o[k]=txt(r[k]));o.previsto=num(r.previsto);o.arrecadado=num(r.arrecadado);o.bruto=r.arrecadado_bruto==null?null:num(r.arrecadado_bruto);o.deducoes=num(r.deducoes);
     o.intra=r.intra_orcamentaria===true||/intra/i.test(String(r.categoria||""));
     o._key=RDIMS.map(k=>o[k]).join("\u0001")+(o.intra?"\u0001i":"");return o;});
+  // repasses financeiros da Prefeitura às outras entidades (duodécimo da Câmara, autarquias, previdência)
+  REP=(D.repasses||[]).map(r=>({ano:+r.ano,mes:+r.mes,entidade:txt(r.entidade),previsto:num(r.previsto),
+    previsto_mes:r.previsto_mes==null||r.previsto_mes===""?null:num(r.previsto_mes),recebido:num(r.recebido),devolvido:num(r.devolvido)}));
   if(!REC.length) $("#tabR").classList.add("hidden");
   const m=D.meta||{};
   let ml=[];
@@ -582,6 +595,7 @@ function refreshFilterOptions(){
     const tot=new Map();
     src.forEach(r=>{if(r.ano!==st.ano||r[k]===undefined)return;if(!matchF(r,k))return;tot.set(r[k],(tot.get(r[k])||0)+peso(r));});
     if(k==="entidade"&&(st.tab==="desp"||st.tab==="rec")) EMP.forEach(r=>{if(r.ano===st.ano&&!tot.has(r.entidade))tot.set(r.entidade,0);});
+    if(k==="entidade"&&st.tab==="rec") REP.forEach(r=>{if(r.ano===st.ano&&!tot.has(r.entidade))tot.set(r.entidade,0);});
     const opts=[...tot.keys()].sort((a,b)=>a.localeCompare(b,"pt-BR"));
     if(st.f[k]&&!tot.has(st.f[k])) opts.unshift(st.f[k]);
     s.innerHTML=`<option value="">${k==="entidade"?"Todas (consolidado)":"Todos"}</option>`+opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("");
@@ -802,8 +816,9 @@ function csv(){
 
 /* ---------- receitas ---------- */
 function renderRec(){
-  if(ehEmpresa(st.f.entidade)){$("#sumR").innerHTML=`A ${esc(st.f.entidade)} é uma empresa e não tem receita orçamentária no portal. Veja o faturamento e o lucro dela na aba <b>Despesas</b>.`;$("#kpisR").innerHTML="";$("#chRec").innerHTML="";$("#barsOrigem").innerHTML="";return;}
+  if(ehEmpresa(st.f.entidade)){$("#sumR").innerHTML=`A ${esc(st.f.entidade)} é uma empresa e não tem receita orçamentária no portal. Veja o faturamento e o lucro dela na aba <b>Despesas</b>.`;$("#kpisR").innerHTML="";$("#chRec").innerHTML="";$("#barsOrigem").innerHTML="";$("#cardRepR").classList.add("hidden");[$("#chRec"),$("#barsOrigem")].forEach(el=>el.closest(".card").classList.remove("hidden"));return;}
   const rows=REC.filter(r=>r.ano===st.ano&&r.mes<=st.ate&&matchF(r));
+  const rp=repResumo();
   const last=new Map();rows.forEach(r=>{const p=last.get(r._key);if(!p||r.mes>p.mes)last.set(r._key,r);});
   let prev=0;last.forEach(r=>prev+=r.previsto);
   let arr=0;rows.forEach(r=>{if(r.mes>=st.de)arr+=r.arrecadado;});
@@ -811,7 +826,12 @@ function renderRec(){
   if(PARCIAL&&PARCIAL.ano===st.ano&&PARCIAL.mes===st.ate){const ref=new Date((D.meta||{}).portal_atualizado_receitas||(D.meta||{}).atualizado_em||Date.now());
     const dias=new Date(st.ano,st.ate,0).getDate();if(!isNaN(ref)&&ref.getFullYear()===st.ano&&ref.getMonth()+1===st.ate)nm=nm-1+Math.min(1,ref.getDate()/dias);}
   const esperado=prev*nm/12;
-  $("#sumR").innerHTML=prev>0?`${periodoTxt()}, ${sujeito()} <b>arrecadou ${brl(arr)}</b>, o que corresponde a <b>${pctS(arr,prev)}</b> dos <b>${brl(prev)}</b> previstos para o ano. Se a arrecadação fosse igual todo mês, o esperado para o período seria ${brl(esperado)}.`:`${periodoTxt()}: nenhuma receita encontrada.`;
+  $("#sumR").innerHTML=prev>0?`${periodoTxt()}, ${sujeito()} <b>arrecadou ${brl(arr)}</b>, o que corresponde a <b>${pctS(arr,prev)}</b> dos <b>${brl(prev)}</b> previstos para o ano. Se a arrecadação fosse igual todo mês, o esperado para o período seria ${brl(esperado)}.`
+    :Math.abs(arr)>0?`${periodoTxt()}, ${sujeito()} <b>arrecadou ${brl(arr)}</b> de receita própria. O portal não informa previsão de receita para esta entidade.`
+    :rp&&!rp.envia?`${periodoTxt()}, ${sujeito()} não teve receita própria registrada no portal.`:`${periodoTxt()}: nenhuma receita encontrada.`;
+  if(rp&&!rp.envia&&(rp.prev>0||rp.rec>0)){const tot=arr+rp.rec;
+    $("#sumR").innerHTML+=` ${Math.abs(arr)>0||prev>0?"Além disso, recebeu":"O dinheiro dela vem do repasse da Prefeitura:"} <b>${brl(rp.rec)}</b> ${Math.abs(arr)>0||prev>0?"em repasses da Prefeitura":"recebidos"}, <b>${pctS(rp.rec,rp.prev)}</b> dos <b>${brl(rp.prev)}</b> previstos para o ano.${tot>0&&Math.abs(arr)>0?` Os repasses foram <b>${pctS(rp.rec,tot)}</b> de todo o dinheiro que entrou na entidade no período (${brl(tot)}).`:""}`;}
+  else if(rp&&rp.envia&&rp.rec>0&&st.f.entidade)$("#sumR").innerHTML+=` A Prefeitura também repassou <b>${brl(rp.rec)}</b> às outras entidades do Município (<b>${pctS(rp.rec,rp.prev)}</b> do previsto para o ano). Esse dinheiro não é descontado da receita acima; veja o quadro “Repasses da Prefeitura”.`;
   if(!st.f.entidade){const ia=rows.reduce((t,r)=>t+(r.intra&&r.mes>=st.de?r.arrecadado:0),0);
     if(ia>0)$("#sumR").innerHTML+=` Desse valor, <b>${brl(ia)}</b> são repasses entre entidades do próprio Município (receitas intraorçamentárias); sem eles, a arrecadação foi de <b>${brl(arr-ia)}</b>.`;}
   // bruto e deduções, para conferir com as telas do portal que mostram o valor bruto
@@ -824,6 +844,12 @@ function renderRec(){
     kpi("Arrecadado","var(--arr)",arr,pctS(arr,prev)+" do previsto",pct(arr,prev),"Receita líquida: dinheiro que efetivamente ficou para o Município no período, já descontadas as deduções (como a parte que vai para o FUNDEB). Algumas telas do portal mostram o valor bruto, antes das deduções.",brutoTxt)+
     kpi("Esperado no período","var(--orcado)",esperado,`${Number.isInteger(nm)?nm:nf1.format(nm)} ${nm>1?"meses":"mês"} × média mensal prevista`,null,"Previsão anual dividida por 12 e multiplicada pelo número de meses do período. É só uma referência.")+
     kpi(dif>=0?"Acima do esperado":"Abaixo do esperado",dif>=0?"var(--good)":"var(--bad)",Math.abs(dif),`<span class="delta ${dif>=0?"up":"down"}">${dif>=0?"▲":"▼"} ${pctS(Math.abs(dif),esperado)}</span> em relação à média`,null,"Diferença entre o arrecadado e o esperado pela média mensal.");
+  // autarquias: o portal não traz previsão de receita, então os cartões de previsto/esperado ficariam zerados
+  if(prev<=0&&Math.abs(arr)>0)$("#kpisR").innerHTML=kpi("Receita própria arrecadada","var(--arr)",arr,"o portal não informa previsão de receita para esta entidade",null,"Receita líquida que a própria entidade arrecadou no período (taxas, rendimentos, convênios etc.). Não inclui os repasses da Prefeitura, que aparecem logo abaixo.",brutoTxt);
+  const semRec=!rows.length&&rp&&!rp.envia;
+  if(semRec)$("#kpisR").innerHTML="";
+  [$("#chRec"),$("#barsOrigem")].forEach(el=>el.closest(".card").classList.toggle("hidden",!!semRec));
+  renderRepR(rp);
   // colunas mensais empilhadas por origem (tipo de receita)
   const box=$("#chRec");const months=[];for(let m=st.de;m<=st.ate;m++)months.push(m);
   const og=new Map();rows.forEach(r=>{if(r.mes<st.de)return;const k=semAcento(r.origem);let o=og.get(k);if(!o){o={tot:0,nomes:new Map()};og.set(k,o);}o.tot+=r.arrecadado;o.nomes.set(r.origem,(o.nomes.get(r.origem)||0)+Math.abs(r.arrecadado)+1e-9);});
@@ -866,6 +892,56 @@ function renderRec(){
     <div class="track"><i class="o" style="width:${i.p/max*100}%"></i><i class="a" style="width:${i.a/max*100}%;top:3px;bottom:3px"></i></div></div>`).join(""):'<div class="empty">Sem dados.</div>';
 }
 
+
+/* ---------- repasses da Prefeitura às outras entidades (D.repasses) ---------- */
+// Não são receita orçamentária de quem recebe (são "transferências financeiras"), por isso ficam à parte.
+// Com a Prefeitura ou "Todas" no filtro, mostra o que a Prefeitura envia; com outra entidade, o que ela recebe.
+function repResumo(){
+  if(!REP.length)return null;
+  const ent=st.f.entidade,envia=!ent||/^prefeitura/i.test(ent);
+  const rows=REP.filter(r=>r.ano===st.ano&&r.mes<=st.ate&&(envia||r.entidade===ent));
+  if(!rows.length)return null;
+  const por=new Map();
+  rows.forEach(r=>{let o=por.get(r.entidade);if(!o){o={n:r.entidade,prev:0,ult:0,rec:0,dev:0,crono:0,semCrono:false,primeiro:0};por.set(r.entidade,o);}
+    if(r.mes>=o.ult){o.ult=r.mes;o.prev=r.previsto;}
+    if(r.recebido&&(!o.primeiro||r.mes<o.primeiro))o.primeiro=r.mes;
+    if(r.mes>=st.de){o.rec+=r.recebido;o.dev+=r.devolvido;if(r.previsto_mes==null)o.semCrono=true;else o.crono+=r.previsto_mes;}});
+  const it=[...por.values()].filter(o=>o.prev>0||o.rec>0).sort((a,b)=>b.prev-a.prev||b.rec-a.rec);
+  if(!it.length)return null;
+  const s=k=>it.reduce((t,o)=>t+o[k],0);
+  return {envia,ent,it,prev:s("prev"),rec:s("rec"),dev:s("dev"),crono:it.some(o=>o.semCrono)?null:s("crono"),
+    incompletos:it.filter(o=>o.primeiro>st.de&&o.prev>0)};
+}
+function renderRepR(rp){
+  const card=$("#cardRepR");
+  if(!rp){card.classList.add("hidden");return;}
+  card.classList.remove("hidden");
+  const camara=!rp.envia&&/c[âa]mara/i.test(rp.ent);
+  const ateTxt=MESES_L[st.ate-1]+(st.de>1?` (desde ${MESES_L[st.de-1]})`:""),parcial=PARCIAL&&PARCIAL.ano===st.ano&&PARCIAL.mes===st.ate;
+  if(rp.envia){
+    $("#repRTit").textContent=st.f.entidade?"Repasses da Prefeitura às outras entidades":"Repasses entre entidades do Município";
+    $("#repRDesc").innerHTML="Dinheiro que a Prefeitura transfere à Câmara (o duodécimo), às autarquias e à Maringá Previdência para custear as despesas delas. No orçamento isso não é receita de quem recebe, e sim uma transferência financeira: por isso não entra nos cartões acima e aparece aqui à parte. Clique numa entidade para ver o orçamento dela.";
+  }else{
+    $("#repRTit").textContent="Repasses recebidos da Prefeitura";
+    $("#repRDesc").innerHTML=camara
+      ?"A Câmara não arrecada impostos: ela recebe da Prefeitura, todo mês, uma parcela fixa do orçamento dela, o <b>duodécimo</b> (1/12 do valor do ano). A sobra, se houver, é devolvida no fim do ano."
+      :`O orçamento de uma autarquia funciona diferente do da Prefeitura: a receita própria dela costuma ser pequena, e a maior parte do dinheiro que ela gasta vem de <b>repasses da Prefeitura</b>. Estes cartões mostram quanto a Prefeitura previu repassar a esta entidade no ano e quanto já repassou. Como é uma transferência financeira, e não receita orçamentária, esse valor não entra nos cartões acima.`;
+  }
+  let ext="";
+  if(rp.crono!=null&&rp.crono>0)ext+=`<div class="sub" style="margin-top:4px">Pelo cronograma mensal, até ${ateTxt}: ${brl(rp.crono)}${parcial?" (o mês atual ainda está em andamento)":""}. ${rp.envia?"Repassado":"Recebido"}: <b>${pctS(rp.rec,rp.crono)}</b> disso.</div>`;
+  if(rp.dev>0)ext+=`<div class="sub" style="margin-top:4px">Devolvido à Prefeitura no período: ${brl(rp.dev)}</div>`;
+  $("#kpisRepR").innerHTML=
+    kpi("Repasse previsto","var(--orcado)",rp.prev,rp.envia?"para o ano, somando as entidades":"para o ano",null,rp.envia?"Quanto a Prefeitura prevê transferir no ano às outras entidades do Município, segundo o módulo de repasses do portal.":"Quanto a Prefeitura prevê transferir a esta entidade no ano, segundo o módulo de repasses do portal.")+
+    kpi(rp.envia?"Repasse enviado":"Repasse recebido","var(--arr)",rp.rec,pctS(rp.rec,rp.prev)+" do previsto para o ano",pct(rp.rec,rp.prev),rp.envia?"Quanto já foi transferido no período, como registrado pelas entidades que recebem.":"Quanto a entidade registrou como recebido da Prefeitura no período.",ext);
+  const para=$("#repRPara");para.classList.toggle("hidden",!rp.envia||rp.it.length<2);
+  if(rp.envia){const max=Math.max(...rp.it.map(o=>Math.max(o.prev,o.rec)),1);
+    $("#barsRepR").innerHTML=rp.it.map(o=>`<button class="bar" data-v="${esc(o.n)}" title="${esc(o.n)} — previsto ${brlFull(o.prev)} · repassado ${brlFull(o.rec)}">
+      <div class="top"><span class="nm">${esc(o.n)}</span><span class="vv"><b>${brl(o.rec)}</b> de ${brl(o.prev)} · ${pctS(o.rec,o.prev)}</span></div>
+      <div class="track"><i class="o" style="width:${o.prev/max*100}%"></i><i class="a" style="width:${o.rec/max*100}%;top:3px;bottom:3px"></i></div></button>`).join("");
+    $("#barsRepR").querySelectorAll(".bar").forEach(b=>b.onclick=()=>{st.f.entidade=b.dataset.v;render();});}
+  const inc=rp.incompletos;
+  $("#notaRepR").innerHTML=inc.length?`Atenção: no portal, os repasses de ${st.ano} ${inc.length===1&&!rp.envia?"a esta entidade":"a "+inc.map(o=>esc(o.n)).join(", ")} só estão registrados a partir de ${MESES_L[Math.min(...inc.map(o=>o.primeiro))-1]}. Os meses anteriores aparecem como zero, então o valor recebido no ano está incompleto.`:"";
+}
 
 /* ---------- entidades fora do portal (meta.fora_do_portal) ---------- */
 function foraDoAno(){

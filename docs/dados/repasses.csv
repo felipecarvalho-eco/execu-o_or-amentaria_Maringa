@@ -1,0 +1,116 @@
+ano,mes,entidade,entidade_id,origem,previsto,previsto_mes,recebido,devolvido,enviado_prefeitura
+2025,1,Maringá Previdência,3,Prefeitura (administração direta),230094000.0,,0.0,0.0,0.0
+2025,2,Maringá Previdência,3,Prefeitura (administração direta),230094000.0,,0.0,0.0,0.0
+2025,3,Maringá Previdência,3,Prefeitura (administração direta),230094000.0,,0.0,0.0,0.0
+2025,4,Maringá Previdência,3,Prefeitura (administração direta),230094000.0,,0.0,0.0,0.0
+2025,5,Maringá Previdência,3,Prefeitura (administração direta),230094000.0,,0.0,0.0,0.0
+2025,6,Maringá Previdência,3,Prefeitura (administração direta),230094000.0,,0.0,0.0,0.0
+2025,7,Maringá Previdência,3,Prefeitura (administração direta),230094000.0,,0.0,0.0,0.0
+2025,8,Maringá Previdência,3,Prefeitura (administração direta),230094000.0,,19550000.0,0.0,19550000.0
+2025,9,Maringá Previdência,3,Prefeitura (administração direta),230094000.0,,19650000.0,0.0,19650000.0
+2025,10,Maringá Previdência,3,Prefeitura (administração direta),230094000.0,,18150000.0,0.0,18150000.0
+2025,11,Maringá Previdência,3,Prefeitura (administração direta),230094000.0,,17650000.0,0.0,17650000.0
+2025,12,Maringá Previdência,3,Prefeitura (administração direta),230094000.0,,14520609.06,0.0,14520609.06
+2025,1,IAM - Instituto Ambiental,4,Prefeitura (administração direta),17409520.0,,0.0,0.0,0.0
+2025,2,IAM - Instituto Ambiental,4,Prefeitura (administração direta),17409520.0,,0.0,0.0,0.0
+2025,3,IAM - Instituto Ambiental,4,Prefeitura (administração direta),17409520.0,,0.0,0.0,0.0
+2025,4,IAM - Instituto Ambiental,4,Prefeitura (administração direta),17409520.0,,0.0,0.0,0.0
+2025,5,IAM - Instituto Ambiental,4,Prefeitura (administração direta),17409520.0,,0.0,0.0,0.0
+2025,6,IAM - Instituto Ambiental,4,Prefeitura (administração direta),17409520.0,,0.0,0.0,0.0
+2025,7,IAM - Instituto Ambiental,4,Prefeitura (administração direta),17409520.0,,0.0,0.0,0.0
+2025,8,IAM - Instituto Ambiental,4,Prefeitura (administração direta),17409520.0,,700000.0,0.0,700000.0
+2025,9,IAM - Instituto Ambiental,4,Prefeitura (administração direta),17409520.0,,700000.0,0.0,700000.0
+2025,10,IAM - Instituto Ambiental,4,Prefeitura (administração direta),17409520.0,,700000.0,0.0,700000.0
+2025,11,IAM - Instituto Ambiental,4,Prefeitura (administração direta),17409520.0,,700000.0,0.0,700000.0
+2025,12,IAM - Instituto Ambiental,4,Prefeitura (administração direta),17409520.0,,9636659.21,0.0,9636659.21
+2025,1,Câmara Municipal,6,Prefeitura (administração direta),58577593.0,,4881466.08,0.0,0.0
+2025,2,Câmara Municipal,6,Prefeitura (administração direta),58577593.0,,4881466.08,0.0,0.0
+2025,3,Câmara Municipal,6,Prefeitura (administração direta),58577593.0,,4881466.08,0.0,0.0
+2025,4,Câmara Municipal,6,Prefeitura (administração direta),58577593.0,,4881466.08,0.0,0.0
+2025,5,Câmara Municipal,6,Prefeitura (administração direta),58577593.0,,4881466.08,0.0,0.0
+2025,6,Câmara Municipal,6,Prefeitura (administração direta),58577593.0,,4881466.08,0.0,0.0
+2025,7,Câmara Municipal,6,Prefeitura (administração direta),58577593.0,,4881466.08,0.0,0.0
+2025,8,Câmara Municipal,6,Prefeitura (administração direta),58577593.0,,4881466.08,0.0,4881466.08
+2025,9,Câmara Municipal,6,Prefeitura (administração direta),58577593.0,,4881466.08,0.0,4881466.08
+2025,10,Câmara Municipal,6,Prefeitura (administração direta),58577593.0,,4881466.08,0.0,4881466.08
+2025,11,Câmara Municipal,6,Prefeitura (administração direta),58577593.0,,4881466.08,0.0,4881466.08
+2025,12,Câmara Municipal,6,Prefeitura (administração direta),58577593.0,,4881466.12,10604992.53,4881466.12
+2025,1,AMR - Agência de Regulação,9,Prefeitura (administração direta),2144525.0,,0.0,0.0,0.0
+2025,2,AMR - Agência de Regulação,9,Prefeitura (administração direta),2144525.0,,0.0,0.0,0.0
+2025,3,AMR - Agência de Regulação,9,Prefeitura (administração direta),2144525.0,,0.0,0.0,0.0
+2025,4,AMR - Agência de Regulação,9,Prefeitura (administração direta),2144525.0,,0.0,0.0,0.0
+2025,5,AMR - Agência de Regulação,9,Prefeitura (administração direta),2144525.0,,0.0,0.0,0.0
+2025,6,AMR - Agência de Regulação,9,Prefeitura (administração direta),2144525.0,,0.0,0.0,0.0
+2025,7,AMR - Agência de Regulação,9,Prefeitura (administração direta),2144525.0,,0.0,0.0,0.0
+2025,8,AMR - Agência de Regulação,9,Prefeitura (administração direta),2144525.0,,132000.0,0.0,132000.0
+2025,9,AMR - Agência de Regulação,9,Prefeitura (administração direta),2144525.0,,115000.0,0.0,115000.0
+2025,10,AMR - Agência de Regulação,9,Prefeitura (administração direta),2144525.0,,137000.0,0.0,137000.0
+2025,11,AMR - Agência de Regulação,9,Prefeitura (administração direta),2144525.0,,126500.0,0.0,126500.0
+2025,12,AMR - Agência de Regulação,9,Prefeitura (administração direta),2144525.0,,191000.0,0.0,191000.0
+2025,1,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),6523942.0,,0.0,0.0,0.0
+2025,2,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),6523942.0,,0.0,0.0,0.0
+2025,3,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),6523942.0,,0.0,0.0,0.0
+2025,4,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),6523942.0,,0.0,0.0,0.0
+2025,5,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),6523942.0,,0.0,0.0,0.0
+2025,6,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),6523942.0,,0.0,0.0,0.0
+2025,7,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),6523942.0,,0.0,0.0,0.0
+2025,8,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),6523942.0,,350000.0,0.0,350000.0
+2025,9,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),6523942.0,,350000.0,0.0,350000.0
+2025,10,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),6523942.0,,350000.0,0.0,350000.0
+2025,11,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),6523942.0,,350000.0,0.0,350000.0
+2025,12,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),6523942.0,,800000.0,0.0,800000.0
+2026,1,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,10500000.0,0.0,10500000.0
+2026,2,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,9750000.0,0.0,9750000.0
+2026,3,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,12650000.0,0.0,12650000.0
+2026,4,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,6800000.0,0.0,6800000.0
+2026,5,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,9700000.0,0.0,9700000.0
+2026,6,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,9700000.0,0.0,9700000.0
+2026,7,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,10550000.0,0.0,10550000.0
+2026,8,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,10450000.0,0.0,10450000.0
+2026,9,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,10450000.0,0.0,10450000.0
+2026,10,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,8350000.0,0.0,8350000.0
+2026,11,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,0.0,0.0,0.0
+2026,1,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,750000.0,0.0,750000.0
+2026,2,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,730000.0,0.0,730000.0
+2026,3,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,750000.0,0.0,750000.0
+2026,4,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,750000.0,0.0,750000.0
+2026,5,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,750000.0,0.0,750000.0
+2026,6,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,850000.0,0.0,850000.0
+2026,7,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,750000.0,0.0,750000.0
+2026,8,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,750000.0,0.0,750000.0
+2026,9,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,750000.0,0.0,750000.0
+2026,10,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,750000.0,0.0,750000.0
+2026,11,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,0.0,0.0,0.0
+2026,1,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,6013167.25,0.0,6013167.25
+2026,2,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,6013167.25,0.0,6013167.25
+2026,3,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,6013167.25,0.0,6013167.25
+2026,4,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,6013167.25,0.0,6013167.25
+2026,5,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,6013167.25,0.0,6013167.25
+2026,6,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,6013167.25,0.0,6013167.25
+2026,7,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,6013167.25,0.0,6013167.25
+2026,8,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,6013167.25,0.0,6013167.25
+2026,9,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,6013167.25,0.0,6013167.25
+2026,10,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,6013167.25,0.0,6013167.25
+2026,11,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,0.0,0.0,0.0
+2026,1,AMR - Agência de Regulação,9,Prefeitura (administração direta),2176035.0,181336.0,109000.0,0.0,109000.0
+2026,2,AMR - Agência de Regulação,9,Prefeitura (administração direta),2176035.0,181336.0,125000.0,0.0,125000.0
+2026,3,AMR - Agência de Regulação,9,Prefeitura (administração direta),2176035.0,181336.0,100000.0,0.0,100000.0
+2026,4,AMR - Agência de Regulação,9,Prefeitura (administração direta),2176035.0,181336.0,195000.0,0.0,195000.0
+2026,5,AMR - Agência de Regulação,9,Prefeitura (administração direta),2176035.0,181336.0,120000.0,0.0,120000.0
+2026,6,AMR - Agência de Regulação,9,Prefeitura (administração direta),2176035.0,181336.0,130000.0,0.0,130000.0
+2026,7,AMR - Agência de Regulação,9,Prefeitura (administração direta),2176035.0,181336.0,148000.0,0.0,148000.0
+2026,8,AMR - Agência de Regulação,9,Prefeitura (administração direta),2176035.0,181336.0,180000.0,0.0,180000.0
+2026,9,AMR - Agência de Regulação,9,Prefeitura (administração direta),2176035.0,181336.0,140000.0,0.0,140000.0
+2026,10,AMR - Agência de Regulação,9,Prefeitura (administração direta),2176035.0,181336.0,140000.0,0.0,140000.0
+2026,11,AMR - Agência de Regulação,9,Prefeitura (administração direta),2176035.0,181336.0,0.0,0.0,0.0
+2026,1,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),5785173.0,482098.0,350000.0,0.0,350000.0
+2026,2,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),5785173.0,482098.0,400000.0,0.0,400000.0
+2026,3,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),5785173.0,482098.0,500000.0,0.0,500000.0
+2026,4,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),5785173.0,482098.0,350000.0,0.0,350000.0
+2026,5,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),5785173.0,482098.0,450000.0,0.0,450000.0
+2026,6,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),5785173.0,482098.0,600000.0,0.0,600000.0
+2026,7,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),5785173.0,482098.0,400000.0,0.0,400000.0
+2026,8,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),5785173.0,482098.0,500000.0,0.0,500000.0
+2026,9,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),5785173.0,482098.0,600000.0,0.0,600000.0
+2026,10,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),5785173.0,482098.0,550000.0,0.0,550000.0
+2026,11,IPPLAM - Instituto de Planejamento,15,Prefeitura (administração direta),5785173.0,482098.0,0.0,0.0,0.0

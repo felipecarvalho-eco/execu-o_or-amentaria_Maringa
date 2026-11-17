@@ -17,6 +17,7 @@ coleta falhar):
                    ação/categoria/grupo/modalidade/elemento/fonte
   receitas.csv     receita por mês x natureza da receita
   credores.csv     empenhos agregados por credor e mês de emissão
+  repasses.csv     repasses da Prefeitura a cada entidade, por mês (previsto x recebido)
   empenhos.csv     lista de empenhos, um por linha (só com --com-empenhos)
   execucao.json    objeto lido pelo painel (meta + despesas agregadas + receitas)
   execucao.js      o mesmo objeto como `window.DADOS_EXECUCAO = {...};`
@@ -45,6 +46,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import sbmg  # noqa: E402  (balancetes do aeroporto)
 import compras_viagens as cv  # noqa: E402  (licitações, diárias e passagens)
+import repasses as rp  # noqa: E402  (repasses da Prefeitura às outras entidades)
 
 # A mesma API é servida em dois endereços oficiais: o domínio da Prefeitura e o do fornecedor (Elotech).
 # A coleta usa o primeiro que responder. PORTAL_API (variável de ambiente) força um endereço.
@@ -446,6 +448,8 @@ def main() -> int:
                     help="primeiro ano de licitações, diárias e passagens (padrão: 2026)")
     ap.add_argument("--sem-compras", action="store_true", help="não coleta licitações, diárias e passagens")
     ap.add_argument("--sem-sbmg", action="store_true", help="não lê os balancetes do aeroporto (SBMG)")
+    ap.add_argument("--sem-repasses", action="store_true",
+                    help="não coleta os repasses da Prefeitura às outras entidades")
     ap.add_argument("--sem-credores", action="store_true", help="não baixa empenhos/credores")
     ap.add_argument("--com-empenhos", action="store_true",
                     help="grava também empenhos.csv (um empenho por linha, ~20 MB por ano)")
@@ -493,6 +497,18 @@ def main() -> int:
 
     if not despesas or not receitas:
         raise RuntimeError("Coleta vazia: nada será gravado")
+
+    # ---- repasses da Prefeitura às outras entidades (duodécimo, repasses às autarquias, aportes ao RPPS)
+    repasses = []
+    if not args.sem_repasses and any(e["id"] == ENTIDADE_PRINCIPAL for e in entidades):
+        destinos = {e["id"]: NOMES_CURTOS.get(e["id"], e["nome"].title()) for e in entidades
+                    if e["id"] not in (ENTIDADE_PRINCIPAL, sbmg.ENTIDADE_SBMG)}
+        try:
+            repasses = rp.coletar(lambda path, ex, params, entidade: get(path, ex, params, entidade=entidade, tentativas=3),
+                                  {a: meses_do_ano(a, hoje) for a in anos}, destinos, AVISOS, log)
+        except RuntimeError as e:
+            log(f"  aviso: repasses não coletados ({e})")
+            AVISOS.append("Repasses da Prefeitura às outras entidades não puderam ser coletados nesta atualização")
 
     def ult(path):
         try:
@@ -564,11 +580,16 @@ def main() -> int:
             "Credores: agrupados pelo mês de emissão do empenho; liquidado/pago dos credores são a posição "
             "atual de cada empenho (não do mês). Não inclui restos a pagar de exercícios anteriores."),
         "avisos": AVISOS,
-        "linhas_csv": {"despesas": len(despesas), "receitas": len(receitas), "credores": len(credores)},
+        "repasses_fonte": ("Repasses financeiros (transferências financeiras) da Prefeitura às outras entidades: "
+                           "módulo Repasses do portal. previsto = previsão anual da Prefeitura; previsto_mes = "
+                           "cronograma do mês (quando publicado); recebido/devolvido = movimento do mês, como "
+                           "registrado pela entidade que recebe. Não é receita orçamentária de quem recebe."),
+        "linhas_csv": {"despesas": len(despesas), "receitas": len(receitas), "credores": len(credores),
+                       "repasses": len(repasses)},
     }
 
     obj = {"meta": meta, "despesas": despesas_painel(despesas), "receitas": receitas_painel(receitas),
-           "empresas": empresas}
+           "empresas": empresas, "repasses": repasses}
     js = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
     js_cred = json.dumps({"meta": meta, "credores": credores}, ensure_ascii=False, separators=(",", ":"))
 
@@ -577,6 +598,8 @@ def main() -> int:
     escrever_atomico(saida / "receitas.csv", csv_texto(sem_id(receitas)))
     if empresas:
         escrever_atomico(saida / "empresas.csv", csv_texto(empresas))
+    if repasses:
+        escrever_atomico(saida / "repasses.csv", csv_texto(repasses))
     if not args.sem_credores:
         escrever_atomico(saida / "credores.csv", csv_texto(credores))
         if args.com_empenhos:
