@@ -228,6 +228,7 @@ th{text-transform:uppercase;letter-spacing:.05em;font-size:12px;font-weight:500;
 a{color:var(--accent)}
 @media (max-width:760px){header.top{flex-direction:column-reverse;gap:14px}.logo{padding:8px 10px}.logo img{width:180px}}
 @media (max-width:520px){header.top h1{font-size:20px;letter-spacing:.04em}.head-txt{padding-left:16px}.head-txt::before{width:4px}.summary{font-size:16px}}
+.filters .tabs{margin:0 0 12px}
 </style>
 </head>
 <body>
@@ -245,6 +246,13 @@ a{color:var(--accent)}
 
 <div class="filters" id="filters">
   <div class="wrap">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tabD" aria-selected="true" data-tab="desp">Despesas</button>
+      <button class="tab" role="tab" id="tabR" aria-selected="false" data-tab="rec">Receitas</button>
+      <button class="tab" role="tab" id="tabC" aria-selected="false" data-tab="cred">Credores</button>
+      <button class="tab" role="tab" id="tabL" aria-selected="false" data-tab="lic">Licitações</button>
+      <button class="tab" role="tab" id="tabV" aria-selected="false" data-tab="diar">Diárias e Passagens</button>
+    </div>
     <div class="frow">
       <div class="f"><label for="fAno">Ano</label><select id="fAno"></select></div>
       <div class="f"><label for="fDe">De</label><select id="fDe"></select></div>
@@ -266,13 +274,6 @@ a{color:var(--accent)}
 </div>
 
 <main class="wrap">
-  <div class="tabs" role="tablist">
-    <button class="tab" role="tab" id="tabD" aria-selected="true" data-tab="desp">Despesas</button>
-    <button class="tab" role="tab" id="tabR" aria-selected="false" data-tab="rec">Receitas</button>
-    <button class="tab" role="tab" id="tabC" aria-selected="false" data-tab="cred">Credores</button>
-    <button class="tab" role="tab" id="tabL" aria-selected="false" data-tab="lic">Licitações</button>
-    <button class="tab" role="tab" id="tabV" aria-selected="false" data-tab="diar">Diárias e Passagens</button>
-  </div>
 
   <!-- DESPESAS -->
   <section id="secDesp">
