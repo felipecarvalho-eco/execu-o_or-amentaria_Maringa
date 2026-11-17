@@ -659,25 +659,39 @@ const ACENTO=Object.fromEntries("saude:saúde publica:pública publicas:pública
 function acentua(t){return String(t).replace(/[A-Za-z]+/g,w=>{const l=w.toLowerCase();
   const r=ACENTO[l]||(l.length>4&&l.endsWith("coes")?l.slice(0,-4)+"ções":l.length>3&&l.endsWith("cao")?l.slice(0,-3)+"ção":null);
   if(!r)return w;if(w.length>1&&w===w.toUpperCase())return r.toUpperCase();return w[0]===w[0].toUpperCase()?r[0].toUpperCase()+r.slice(1):r;});}
+// Nomes oficiais das entidades (nome completo e sigla) e a ordem fixa em que aparecem no painel.
+// curto: forma usada em gráficos estreitos.
+const ENTS=[[/^prefeitura/i,"Prefeitura Municipal de Maringá","Prefeitura"],
+  [/ipplam/i,"Instituto de Pesquisa e Planejamento Urbano de Maringá (IPPLAM)","IPPLAM"],
+  [/^iam\b|instituto ambiental/i,"Instituto Ambiental de Maringá (IAM)","IAM"],
+  [/^amr\b|ag[êe]ncia (maringaense )?de regula/i,"Agência Maringaense de Regulação (AMR)","AMR"],
+  [/previd[êe]ncia/i,"Maringá Previdência","Maringá Previdência"],
+  [/^c[âa]mara/i,"Câmara Municipal de Maringá (CMM)","Câmara (CMM)"],
+  [/sbmg|terminais a[ée]reos/i,"Terminais Aéreos de Maringá (SBMG)","SBMG"],
+  [/inpacta/i,"Instituto de Projetos Avançados (INPACTA)","INPACTA"]];
+const entIdx=v=>{const i=ENTS.findIndex(e=>e[0].test(String(v||"")));return i<0?99:i;};
+const nomeEnt=v=>{const i=entIdx(v);return i<99?ENTS[i][1]:v;};
+const entCurto=v=>{const i=entIdx(v);return i<99?ENTS[i][2]:v;};
+const ordEnt=(a,b)=>entIdx(a)-entIdx(b)||String(a).localeCompare(String(b),"pt-BR");
 const DIMS_ABA={};let avisoFiltro=null,checarAba=true,maisF=false;
 const st={entRes:"",tab:"res",la:"painel",ano:null,de:1,ate:12,f:{},tDim:"orgao",busca:"",sort:{k:"pago",d:-1}};
 
 function boot(data){
   D=data||{meta:{},despesas:[],receitas:[]};
   const txt=v=>(v==null||v==="")?"Não informado":acentua(legivel(v));
-  DESP=(D.despesas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};DIMS.forEach(k=>o[k]=txt(r[k]));
+  DESP=(D.despesas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};DIMS.forEach(k=>o[k]=txt(r[k]));o.entidade=nomeEnt(o.entidade);
     ["dotacao_inicial","dotacao_atualizada","empenhado","liquidado","pago"].forEach(k=>o[k]=num(r[k]));
     // repasse intraorçamentário: modalidade de aplicação 91 (operação entre órgãos e entidades do próprio Município)
     const mod=String(r.modalidade_aplicacao||"");o.intra=/^\s*91\b/.test(mod)||/intra/i.test(mod);
     o._key=DIMS.map(k=>o[k]).join("\u0001")+"\u0001"+mod;return o;});
   TEM_INTRA=DESP.some(r=>r.intra);
-  EMP=(D.empresas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes,entidade:txt(r.entidade),fonte:String(r.fonte||"")};
+  EMP=(D.empresas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes,entidade:nomeEnt(txt(r.entidade)),fonte:String(r.fonte||"")};
     ["receita_liquida","custo_servicos","despesas_operacionais","resultado_financeiro","ir_csll","outros_resultados","lucro_liquido","caixa","ativo_total","emprestimos_curto_prazo","emprestimos_longo_prazo","patrimonio_liquido"].forEach(k=>o[k]=r[k]==null||r[k]===""?null:num(r[k]));return o;});
-  REC=(D.receitas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};RDIMS.forEach(k=>o[k]=txt(r[k]));o.previsto=num(r.previsto);o.arrecadado=num(r.arrecadado);o.bruto=r.arrecadado_bruto==null?null:num(r.arrecadado_bruto);o.deducoes=num(r.deducoes);
+  REC=(D.receitas||[]).map(r=>{const o={ano:+r.ano,mes:+r.mes};RDIMS.forEach(k=>o[k]=txt(r[k]));o.entidade=nomeEnt(o.entidade);o.previsto=num(r.previsto);o.arrecadado=num(r.arrecadado);o.bruto=r.arrecadado_bruto==null?null:num(r.arrecadado_bruto);o.deducoes=num(r.deducoes);
     o.intra=r.intra_orcamentaria===true||/intra/i.test(String(r.categoria||""));
     o._key=RDIMS.map(k=>o[k]).join("\u0001")+(o.intra?"\u0001i":"");return o;});
   // repasses financeiros da Prefeitura às outras entidades (duodécimo da Câmara, autarquias, previdência)
-  REP=(D.repasses||[]).map(r=>({ano:+r.ano,mes:+r.mes,entidade:txt(r.entidade),previsto:num(r.previsto),
+  REP=(D.repasses||[]).map(r=>({ano:+r.ano,mes:+r.mes,entidade:nomeEnt(txt(r.entidade)),previsto:num(r.previsto),
     previsto_mes:r.previsto_mes==null||r.previsto_mes===""?null:num(r.previsto_mes),recebido:num(r.recebido),devolvido:num(r.devolvido)}));
   if(!REC.length) $("#tabR").classList.add("hidden");
   const m=D.meta||{};
@@ -708,9 +722,11 @@ function readHash(){
   st.ate=p.has("ate")?Math.max(1,Math.min(um,+p.get("ate"))):um;
   if(st.de>st.ate) st.de=1;
   const aba=p.get("aba");st.tab=aba==="rec"&&REC.length?"rec":["desp","cred","lic","diar"].includes(aba)?aba:"res";
-  if(p.get("er"))st.entRes=p.get("er");
+  if(p.get("er"))st.entRes=nomeEnt(p.get("er"));
   if(["lista","acomp","hist"].includes(p.get("la")))st.la=p.get("la");
   FDIMS.forEach(k=>{if(p.get(k)) st.f[k]=p.get(k);});
+  // links antigos usam os nomes anteriores das entidades (ex.: "Prefeitura (administração direta)")
+  if(st.f.entidade&&st.f.entidade!=="todas")st.f.entidade=nomeEnt(st.f.entidade);
   // Entidade: por padrão mostra só a Prefeitura, porque somar todas conta duas vezes os repasses entre entidades
   if(st.f.entidade==="todas") delete st.f.entidade; else if(!st.f.entidade&&entPadrao()) st.f.entidade=entPadrao();
 }
@@ -773,7 +789,7 @@ function refreshFilterOptions(){
     src.forEach(r=>{if(r.ano!==st.ano||r[k]===undefined)return;if(!matchF(r,k))return;tot.set(r[k],(tot.get(r[k])||0)+peso(r));});
     if(k==="entidade"&&(st.tab==="desp"||st.tab==="rec")) EMP.forEach(r=>{if(r.ano===st.ano&&!tot.has(r.entidade))tot.set(r.entidade,0);});
     if(k==="entidade"&&st.tab==="rec") REP.forEach(r=>{if(r.ano===st.ano&&!tot.has(r.entidade))tot.set(r.entidade,0);});
-    const opts=[...tot.keys()].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    const opts=[...tot.keys()].sort(k==="entidade"?ordEnt:(a,b)=>a.localeCompare(b,"pt-BR"));
     if(st.f[k]&&!tot.has(st.f[k])) opts.unshift(st.f[k]);
     s.innerHTML=`<option value="">${k==="entidade"?"Todas as entidades":"Todos"}</option>`+opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("");
     const cur=k==="entidade"&&st.tab==="res"?st.entRes:st.f[k];s.value=cur||"";s.classList.toggle("on",!!cur);
@@ -1003,7 +1019,7 @@ function renderRepasses(){
 const expanded={};
 function barList(sel,items,dim,limit){
   const el=$(sel);
-  items=items.filter(i=>i.orc>0||i.emp>0).sort((a,b)=>(b.orc||b.emp)-(a.orc||a.emp));
+  items=items.filter(i=>i.orc>0||i.emp>0).sort(dim==="entidade"?(a,b)=>ordEnt(a.nome,b.nome):(a,b)=>(b.orc||b.emp)-(a.orc||a.emp));
   if(!items.length){el.innerHTML='<div class="empty">Sem dados para os filtros escolhidos.</div>';return;}
   const max=Math.max(...items.map(i=>Math.max(i.orc,i.emp)))||1;
   const show=expanded[sel]?items:items.slice(0,limit);
@@ -1234,7 +1250,7 @@ function renderRepR(rp){
 
 /* ---------- entidades fora do portal (meta.fora_do_portal) ---------- */
 function foraDoAno(){
-  const lista=Array.isArray((D.meta||{}).fora_do_portal)?D.meta.fora_do_portal:[];
+  const lista=(Array.isArray((D.meta||{}).fora_do_portal)?D.meta.fora_do_portal:[]).map(e=>({...e,nome:nomeEnt(e.nome)}));
   return lista.map(e=>({e,r:(e.repasses_por_ano||[]).find(x=>+x.ano===st.ano)})).filter(x=>x.r);
 }
 // Entidades sem execução no portal (ex.: INPACTA) entram no cartão "Por entidade", no mesmo modelo, com nota de rodapé.
@@ -1323,13 +1339,13 @@ const MES_NUM={janeiro:1,fevereiro:2,"março":3,marco:3,abril:4,maio:5,junho:6,j
 function mesNum(v,data){if(+v>=1&&+v<=12)return +v;const t=MES_NUM[String(v||"").toLowerCase()];if(t)return t;return data?+String(data).slice(5,7)||0:0;}
 const txtv=v=>(v==null||v==="")?"Não informado":acentua(legivel(v));
 function lerLic(d){d=d||{};LICMETA=d.meta||{};
-  LIC=(d.licitacoes||[]).map(r=>({id:String(r.id||""),ano:+r.ano||+String(r.publicacao||"").slice(0,4)||0,mes:mesNum(r.mes,r.publicacao),entidade:txtv(r.entidade),secretaria:txtv(r.secretaria),
+  LIC=(d.licitacoes||[]).map(r=>({id:String(r.id||""),ano:+r.ano||+String(r.publicacao||"").slice(0,4)||0,mes:mesNum(r.mes,r.publicacao),entidade:nomeEnt(txtv(r.entidade)),secretaria:txtv(r.secretaria),
     numero:String(r.numero||""),modalidade:txtv(r.modalidade),objeto:String(r.objeto||""),est:num(r.valor_estimado),con:num(r.valor_contratado),situacao:txtv(r.situacao),
     sit:txtv(r.grupo||r.situacao),publicacao:String(r.publicacao||""),abertura:String(r.abertura||""),fornecedor:r.fornecedor?String(r.fornecedor):"",link:/^https?:\/\//.test(r.link||"")?r.link:""}));
-  LICM=(d.mudancas||[]).map(r=>({atualizacao:String(r.atualizacao||""),id:String(r.id||""),entidade:txtv(r.entidade),numero:String(r.numero||""),modalidade:txtv(r.modalidade),objeto:String(r.objeto||""),
+  LICM=(d.mudancas||[]).map(r=>({atualizacao:String(r.atualizacao||""),id:String(r.id||""),entidade:nomeEnt(txtv(r.entidade)),numero:String(r.numero||""),modalidade:txtv(r.modalidade),objeto:String(r.objeto||""),
     est:num(r.valor_estimado),con:num(r.valor_contratado),tipo:String(r.tipo||""),de:String(r.de||""),para:String(r.para||"")}));}
 function lerDia(d){d=d||{};DIAMETA=d.meta||{};
-  DIA=(d.diarias||[]).map(r=>({ano:+r.ano||+String(r.data_saida||"").slice(0,4)||0,mes:mesNum(r.mes,r.data_saida),entidade:txtv(r.entidade),orgao:txtv(r.orgao),tipo:txtv(r.tipo),
+  DIA=(d.diarias||[]).map(r=>({ano:+r.ano||+String(r.data_saida||"").slice(0,4)||0,mes:mesNum(r.mes,r.data_saida),entidade:nomeEnt(txtv(r.entidade)),orgao:txtv(r.orgao),tipo:txtv(r.tipo),
     beneficiario:txtv(r.beneficiario),cargo:txtv(r.cargo),forma:r.forma?String(r.forma):(/passag/i.test(r.tipo||"")?"Adiantamento ao servidor":"Diária"),destino:txtv(r.destino),motivo:String(r.motivo||""),saida:String(r.data_saida||""),retorno:String(r.data_retorno||""),
     qtd:num(r.quantidade),valor:num(r.valor),situacao:String(r.situacao||""),est:!!r.estimativa,pc:r.prestacao&&typeof r.prestacao==="object"?r.prestacao:null}));
   PCREF=String(DIAMETA.atualizado_em||"").slice(0,10)||hojeISO();PCINS={};}
@@ -1513,8 +1529,8 @@ function renderLic(){
   // barras horizontais
   const filtra=dim=>i=>{if(st.f[dim]===i.nome)delete st.f[dim];else st.f[dim]=i.nome;render();};
   const ag=(rs,ch)=>agrupa(rs,ch,(t,r)=>{t.est=(t.est||0)+r.est;});
-  const ents=ag(base("entidade"),r=>r.entidade).sort((a,b)=>b.est-a.est);
-  hbarras("#barsLicEnt",ents.map(t=>({nome:t.nome,curto:t.nome.replace(/ \(administração direta\)/,"").replace(/ - .*/,""),v:t.est,txt:brl(t.est),tip:`${t.nome}: ${nf0.format(t.n)} licitações, ${brl(t.est)}`})),{onClick:filtra("entidade"),sel:st.f.entidade});
+  const ents=ag(base("entidade"),r=>r.entidade).sort((a,b)=>ordEnt(a.nome,b.nome));
+  hbarras("#barsLicEnt",ents.map(t=>({nome:t.nome,curto:entCurto(t.nome),v:t.est,txt:brl(t.est),tip:`${t.nome}: ${nf0.format(t.n)} licitações, ${brl(t.est)}`})),{onClick:filtra("entidade"),sel:st.f.entidade});
   const mods=ag(base("modalidade"),r=>r.modalidade).sort((a,b)=>b.n-a.n);
   hbarras("#barsLicMod",mods.map(t=>({nome:t.nome,v:t.n,txt:nf0.format(t.n),tip:`${t.nome}: ${nf0.format(t.n)} licitações, ${brl(t.est)}`})),{onClick:filtra("modalidade"),sel:st.f.modalidade});
   const bs=base("sit");
@@ -1527,7 +1543,7 @@ function renderLic(){
   const ds=agrupa(dir.filter(secInfo),r=>r.secretaria.split(";").pop().trim(),(t,r)=>{t.est=(t.est||0)+r.est;}).sort((a,b)=>b.n-a.n).slice(0,10);
   hbarras("#barsLicDirSec",ds.map(t=>({nome:t.nome,curto:secCurta(t.nome),v:t.n,txt:nf0.format(t.n),tip:`${t.nome}: ${nf0.format(t.n)} contratações diretas, ${brl(t.est)}`})));
   // tabelas
-  const C={entidade:{k:"entidade",t:"Entidade",f:r=>esc(r.entidade.replace(/ \(administração direta\)/,""))},
+  const C={entidade:{k:"entidade",t:"Entidade",f:r=>esc(r.entidade)},
     secretaria:{k:"secretaria",t:"Secretaria",f:r=>secInfo(r)?`<span title="${esc(r.secretaria)}">${esc(secCurta(r.secretaria))}</span>`:""},
     numero:{k:"numero",t:"Número",sort:r=>parseInt(r.numero,10)||0},modalidade:{k:"modalidade",t:"Modalidade"},
     objeto:{k:"objeto",t:"Objeto",f:r=>esc(r.objeto)+(r.link?` <a href="${esc(r.link)}" target="_blank" rel="noopener" style="color:var(--accent)" onclick="event.stopPropagation()">↗</a>`:""),wrap:1},
@@ -1737,7 +1753,7 @@ const cst={busca:"",sort:{k:"emp",d:-1},lim:50,sel:null};
 let credLista=[];
 function carregarCredores(){
   if(CRED||credCarregando||credErro)return; credCarregando=true;
-  const ok=d=>{CRED=((d&&d.credores)||[]).map(r=>({ano:+r.ano,mes:+r.mes,doc:String(r.credor_documento||""),nome:legivel(r.credor||"Não informado"),entidade:(r.entidade==null||r.entidade==="")?"Não informado":acentua(legivel(r.entidade)),
+  const ok=d=>{CRED=((d&&d.credores)||[]).map(r=>({ano:+r.ano,mes:+r.mes,doc:String(r.credor_documento||""),nome:legivel(r.credor||"Não informado"),entidade:(r.entidade==null||r.entidade==="")?"Não informado":nomeEnt(acentua(legivel(r.entidade))),
       qtd:+r.qtd_empenhos||0,emp:num(r.empenhado),anu:num(r.anulado),liq:num(r.liquidado),pag:num(r.pago)}));
     credCarregando=false;if(st.tab==="cred")render();};
   const falha=()=>{credCarregando=false;credErro=true;if(st.tab==="cred")renderCred();};
