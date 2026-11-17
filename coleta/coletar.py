@@ -48,6 +48,7 @@ import sbmg  # noqa: E402  (balancetes do aeroporto)
 import compras_viagens as cv  # noqa: E402  (licitações, diárias e passagens)
 import gastos as gs  # noqa: E402  (cada empenho com secretaria, elemento e licitação)
 import repasses as rp  # noqa: E402  (repasses da Prefeitura às outras entidades)
+import prestacao as pc  # noqa: E402  (data da prestação de contas das diárias, lida dos PDFs)
 
 # A mesma API é servida em dois endereços oficiais: o domínio da Prefeitura e o do fornecedor (Elotech).
 # A coleta usa o primeiro que responder. PORTAL_API (variável de ambiente) força um endereço.
@@ -437,6 +438,19 @@ def csv_texto(linhas: list[dict]) -> str:
     return buf.getvalue()
 
 
+def viagens_csv(viagens: list[dict]) -> list[dict]:
+    """Mesmas colunas em todas as linhas; a prestação de contas vira colunas próprias."""
+    saida = []
+    for v in viagens:
+        p = v.get("prestacao") or {}
+        x = {k: val for k, val in v.items() if k not in ("prestacao", "entidade_id", "id_empenho", "estimativa")}
+        x.update({"estimativa": bool(v.get("estimativa")), "prestacao_data": p.get("data") or "",
+                  "prestacao_arquivos": p.get("arquivos", "") if v.get("tipo") == "Diária" else "",
+                  "prestacao_link": p.get("link") or ""})
+        saida.append(x)
+    return saida
+
+
 def main() -> int:
     hoje = dt.date.today()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -447,7 +461,13 @@ def main() -> int:
                     help="ids das entidades (padrão: todas as do portal; 1 = Prefeitura)")
     ap.add_argument("--desde", type=int, default=2026,
                     help="primeiro ano de licitações, diárias e passagens (padrão: 2026)")
+    ap.add_argument("--viagens-desde", type=int, default=None,
+                    help="primeiro ano de diárias e passagens (padrão: o primeiro de --anos)")
     ap.add_argument("--sem-compras", action="store_true", help="não coleta licitações, diárias e passagens")
+    ap.add_argument("--sem-prestacao", action="store_true",
+                    help="não lê os PDFs da prestação de contas das diárias (reaproveita os da coleta anterior)")
+    ap.add_argument("--prestacao-max-minutos", type=float, default=20,
+                    help="tempo máximo lendo PDFs novos da prestação de contas (0 = sem limite; padrão 20)")
     ap.add_argument("--sem-sbmg", action="store_true", help="não lê os balancetes do aeroporto (SBMG)")
     ap.add_argument("--sem-repasses", action="store_true",
                     help="não coleta os repasses da Prefeitura às outras entidades")
@@ -526,14 +546,19 @@ def main() -> int:
     # ---- licitações, diárias e passagens (a partir de --desde, padrão 2026)
     licitacoes, viagens = [], []
     anos_cv = [a for a in anos if a >= args.desde]
+    viagens_desde = args.viagens_desde if args.viagens_desde is not None else min(anos)
+    anos_via = [a for a in anos if a >= viagens_desde]
     if not args.sem_compras:
         for ent in entidades:
             ENTIDADE = ent["id"]
             nome = NOMES_CURTOS.get(ENTIDADE, ent["nome"].title())
             orgaos = {d["orgao_codigo"]: d["orgao"] for d in despesas if d["entidade_id"] == ENTIDADE}
-            for ano in anos_cv:
+            for ano in sorted(set(anos_cv) | set(anos_via)):
                 log(f"Licitações e viagens {ENTIDADE}/{ano}")
-                licitacoes += cv.coletar_licitacoes(get, ano, ENTIDADE, nome)
+                if ano in anos_cv:
+                    licitacoes += cv.coletar_licitacoes(get, ano, ENTIDADE, nome)
+                if ano not in anos_via:
+                    continue
                 mapa = cv.mapa_orgao_empenhos(get, ano, ENTIDADE, orgaos, AVISOS, nome) if orgaos else {}
                 orgao_de = (lambda ex, num, m=mapa, a=ano: m.get(num) if ex == a else None)
                 viagens += cv.coletar_diarias(get, ano, ENTIDADE, nome, orgao_de)
@@ -542,9 +567,19 @@ def main() -> int:
         ENTIDADE = ENTIDADE_PRINCIPAL
         unicos = {}
         for v in viagens:
-            if v["ano"] >= args.desde:
+            if v["ano"] >= viagens_desde:
                 unicos[v["id"]] = v
         viagens = sorted(unicos.values(), key=lambda v: (v["data_saida"] or "", v["id"]))
+        # prestação de contas das diárias: reaproveita o que a coleta anterior já leu dos PDFs
+        try:
+            prev_v = json.loads((saida / "diarias.json").read_text(encoding="utf-8"))
+            ant_pc = {v["id"]: v["prestacao"] for v in prev_v.get("diarias") or [] if v.get("prestacao")}
+        except (OSError, ValueError):
+            ant_pc = {}
+        pc.completar(lambda path, ex, ent: get(path, ex, entidade=ent, tentativas=3),
+                     lambda path: get(path, hoje.year, tentativas=3, binario=True),
+                     viagens, ant_pc, API, AVISOS, log,
+                     max_minutos=-1 if args.sem_prestacao else args.prestacao_max_minutos, hoje=hoje)
         licitacoes.sort(key=lambda l: (l["publicacao"] or "", l["id"]), reverse=True)
         if not licitacoes:
             raise RuntimeError("Nenhuma licitação coletada")
@@ -642,7 +677,11 @@ def main() -> int:
                                         "cita a secretaria. mudancas compara cada coleta com a anterior."),
                         "resumo_situacao": cv.resumo(licitacoes, "grupo")},
                "licitacoes": licitacoes, "mudancas": mudancas}
-        via = {"meta": {**meta_cv, "anos": anos_cv,
+        via = {"meta": {**meta_cv, "anos": anos_via,
+                        "prestacao_fonte": ("Prestação de contas das diárias: data da primeira assinatura eletrônica "
+                                            "(SEI) do relatório de viagem feita no dia do retorno ou depois, lida do "
+                                            "PDF publicado no portal. Não é um registro oficial de entrega. "
+                                            "estimativa=true: diária que cobre um período (não uma viagem só)."),
                         "observacoes": ("Diárias: valor líquido (empenhado menos anulações), por data de saída; "
                                         "o órgão vem do empenho que pagou a diária. Passagens de duas formas (campo forma): "
                                         "'Adiantamento ao servidor' (valor adiantado para o servidor comprar a "
@@ -659,7 +698,7 @@ def main() -> int:
         escrever_atomico(saida / "licitacoes.csv", csv_texto(licitacoes))
         escrever_atomico(saida / "diarias.json", js_via)
         escrever_atomico(saida / "diarias.js", "window.DADOS_DIARIAS = " + js_via + ";\n")
-        escrever_atomico(saida / "diarias.csv", csv_texto(viagens))
+        escrever_atomico(saida / "diarias.csv", csv_texto(viagens_csv(viagens)))
     if gastos is not None:
         meta_g = {k: meta[k] for k in ("municipio", "fonte", "api", "atualizado_em", "avisos")}
         gas = {"meta": {**meta_g, "anos": [a for a in anos if a >= args.desde], "versao_cache": gs.VERSAO_CACHE,

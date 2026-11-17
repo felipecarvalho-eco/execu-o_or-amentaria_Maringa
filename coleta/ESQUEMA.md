@@ -204,7 +204,7 @@ valor_contratado, situacao, grupo, publicacao, abertura, processo, link`
   `tipo` = "Nova", "Mudou de situação" ou "Mudou valor contratado". Guarda as 500 mais recentes.
 - Na primeira coleta não há com o que comparar, então a lista começa vazia.
 
-### `diarias` (diárias e passagens, de 2026 em diante)
+### `diarias` (diárias e passagens, desde o primeiro ano de `--anos`; `--viagens-desde` muda)
 
 `id, ano, mes, entidade, orgao, tipo, forma, beneficiario, cargo, destino, motivo, objetivo, data_saida, data_retorno,
 quantidade, valor, valor_empenhado, situacao, meio_transporte, documento, empresa`
@@ -214,6 +214,15 @@ quantidade, valor, valor_empenhado, situacao, meio_transporte, documento, empres
   `valor_empenhado` = valor original. `orgao` vem do empenho que pagou a diária (a API de diárias não traz a
   secretaria). `quantidade` = número de diárias. `documento` = número do empenho.
 - `forma` = "Diária", "Adiantamento ao servidor" ou "Empresa contratada".
+- **Prestação de contas (só diárias, `coleta/prestacao.py`):** `prestacao` = `{data, arquivos, link}`.
+  `data` = primeira assinatura eletrônica (SEI) do relatório de viagem feita no dia do retorno ou depois,
+  lida do PDF publicado no portal (`null` se não há relatório ou a data não é legível); `arquivos` = quantos
+  arquivos de prestação o portal publica; `link` = PDF do relatório. Opcionais: `lidos` (arquivos já lidos sem
+  data, não são baixados de novo) e `nao_lido` (o tempo da coleta acabou; completa na próxima). A coleta
+  reaproveita as datas já lidas e só consulta o portal para as diárias sem data. `estimativa` = true para
+  diárias que cobrem um período (mais de 20 dias ou "estimativa" no motivo), que ficam fora da conta do prazo.
+  `entidade_id` e `id_empenho` servem para a consulta. No CSV viram `prestacao_data`, `prestacao_arquivos`,
+  `prestacao_link` e `estimativa`. O painel calcula no prazo / atrasada / pendente (regra de 3 dias).
 - **Passagens, forma "Adiantamento ao servidor"** (`/api/passagens`): `valor` = adiantamento para o servidor
   comprar a passagem; `empresa` = companhia; o portal não informa o órgão (`orgao` = "Não informado");
   `quantidade` = 1.
@@ -286,6 +295,7 @@ Todos exigem os cabeçalhos HTTP `entidade: <id>` e `exercicio: <ano>` (nos exem
 | passagens por empresa | `/empenhos/lista?...&programatica.elemento=339033` |
 | detalhe do empenho | `/empenhos/detalhe?entidade=E&exercicio=A&empenho=N` |
 | elemento do empenho (folha) | `/empenhos/lista?...&programatica.elemento=<6 dígitos>` |
+| arquivos da prestação de contas | `/api/diarias-prestacao-conta/arquivos?idEmpenho=<idEmpenho>` |
 | órgão do empenho | `/empenhos/lista?...&programatica.orgao=<código do órgão>` |
 
 A API devolve valores do intervalo de datas pedido (inclusive créditos adicionais). Por isso o script pede
