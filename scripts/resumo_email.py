@@ -117,32 +117,114 @@ def data_br(iso):
         return str(iso or "")
 
 
-AZUL = "#1f4e79"
-AZUL_CLARO = "#eaf1f8"
-ZEBRA = "#f7f9fb"
-BORDA = "#dfe5ec"
+# Identidade visual: a mesma do painel (docs/index.html, brandbook do IPPLAM). Os nomes seguem os
+# tokens CSS do painel. E-mail não aceita variáveis CSS e o Gmail ignora boa parte de <style>, por
+# isso as cores ficam aqui, todo estilo vai inline e o layout usa tabelas.
+COR = {
+    "pagina": "#f2f2f2", "superficie": "#ffffff", "superficie2": "#f2f2f2",
+    "tinta": "#1d1d1d", "tinta2": "#4f4a46", "mudo": "#77706b",
+    "titulo": "#145d66", "marca": "#3aa4aa", "laranja": "#f6a63a",
+    "grade": "#e6e2de", "borda": "#ddd8d3", "trilha": "#ebe8e5",
+    "orcado": "#a9a19b", "emp": "#a8dadd", "liq": "#3aa4aa", "pag": "#145d66", "arr": "#3aa4aa",
+    "link": "#1f7c83", "bom": "#1b7a3d", "aviso_fundo": "#fdf1de", "aviso_tinta": "#5c3d00",
+}
 FONTE = "font-family:Arial,Helvetica,sans-serif;"
+# Jost aparece no Apple Mail e no iPhone; o Gmail não carrega fontes externas e usa Arial no lugar.
+JOST = "font-family:Jost,Arial,Helvetica,sans-serif;"
+CAIXA_ALTA = "text-transform:uppercase;letter-spacing:.06em;"
+NR = "white-space:nowrap;"
 
 
-def barra(p, cor):
-    largura = max(0, min(100, round(p)))
-    return (f"<table role='presentation' cellpadding='0' cellspacing='0' width='100' style='width:100px;border-collapse:collapse'>"
-            f"<tr><td style='background:{cor};height:8px;width:{largura}px;font-size:0;line-height:0'>&nbsp;</td>"
-            f"<td style='background:#e6e9ee;height:8px;font-size:0;line-height:0'>&nbsp;</td></tr></table>")
+def brl_curto(v):
+    """Como o painel: R$ 2,97 bi / R$ 517,9 mi / R$ 12,3 mil."""
+    a = abs(v)
+    if a >= 1e9:
+        s, suf = f"{v / 1e9:,.2f}", " bi"
+    elif a >= 1e6:
+        s, suf = f"{v / 1e6:,.1f}", " mi"
+    elif a >= 1e3:
+        s, suf = f"{v / 1e3:,.1f}", " mil"
+    else:
+        s, suf = f"{v:,.0f}", ""
+    return "R$&nbsp;" + s.replace(",", "X").replace(".", ",").replace("X", ".") + suf
+
+
+def medidor(p, cor, altura=6):
+    """Barra de progresso como a do painel: trilha cinza-clara e preenchimento sem cantos arredondados."""
+    p = max(0, min(100, round(p)))
+    cel = f"height:{altura}px;font-size:0;line-height:0;"
+    if p >= 100:
+        partes = f"<td width='100%' style='{cel}background:{cor}'>&nbsp;</td>"
+    elif p <= 0:
+        partes = f"<td width='100%' style='{cel}background:{COR['trilha']}'>&nbsp;</td>"
+    else:
+        partes = (f"<td width='{p}%' style='{cel}background:{cor}'>&nbsp;</td>"
+                  f"<td width='{100 - p}%' style='{cel}background:{COR['trilha']}'>&nbsp;</td>")
+    return (f"<table role='presentation' cellpadding='0' cellspacing='0' width='100%' "
+            f"style='width:100%;border-collapse:collapse'><tr>{partes}</tr></table>")
+
+
+def cartao(conteudo, padding="16px"):
+    return (f"<table role='presentation' cellpadding='0' cellspacing='0' width='100%' "
+            f"style='width:100%;border-collapse:separate;background:{COR['superficie']};"
+            f"border:1px solid {COR['borda']};border-radius:4px'>"
+            f"<tr><td style='padding:{padding}'>{conteudo}</td></tr></table>")
+
+
+def titulo_cartao(texto, desc=""):
+    d = (f"<div style='{FONTE}font-size:14px;line-height:1.4;color:{COR['tinta2']};margin:2px 0 12px'>{desc}</div>"
+         if desc else "<div style='height:10px;line-height:10px;font-size:0'>&nbsp;</div>")
+    return (f"<div style='{JOST}{CAIXA_ALTA}font-size:15px;font-weight:600;color:{COR['titulo']};"
+            f"letter-spacing:.07em'>{texto}</div>{d}")
+
+
+def grade(blocos, largura=321):
+    """Cartões lado a lado que viram uma coluna no celular, sem media query (o Gmail nem sempre lê).
+    Cada bloco tem largura máxima fixa; quando a tela não comporta dois, o seguinte desce."""
+    itens = "".join(
+        f"<div style='display:inline-block;vertical-align:top;width:100%;max-width:{largura}px;"
+        f"padding:0 5px 10px;box-sizing:border-box;font-size:16px;line-height:1.4'>{b}</div>" for b in blocos)
+    return f"<div style='font-size:0;line-height:0;text-align:left'>{itens}</div>"
+
+
+def bloco(conteudo, depois=10, antes=0):
+    """Conteúdo de largura total, com o mesmo recuo lateral dos cartões da grade."""
+    return f"<div style='padding:{antes}px 5px {depois}px'>{conteudo}</div>"
+
+
+def kpi(rotulo, cor, valor, completo, sub, p=None, cor_barra=None):
+    sw = (f"<span style='display:inline-block;width:10px;height:10px;background:{cor};"
+          f"border-radius:3px;margin-right:6px'></span>")
+    barra = medidor(p, cor_barra or cor) if p is not None else ""
+    return cartao(
+        f"<div style='{JOST}{CAIXA_ALTA}font-size:12.5px;font-weight:500;color:{COR['tinta2']};line-height:1.35;{NR}'>{sw}{rotulo}</div>"
+        f"<div style='{JOST}font-size:26px;font-weight:500;color:{COR['tinta']};line-height:1.25;margin:4px 0 0;{NR}'>{valor}</div>"
+        f"<div style='{FONTE}font-size:12px;color:{COR['mudo']};line-height:1.4;{NR}'>{completo}</div>"
+        f"<div style='{FONTE}font-size:14px;color:{COR['tinta2']};line-height:1.4;margin:6px 0 {12 if barra else 0}px;{NR}'>{sub}</div>"
+        f"{barra}")
 
 
 def tabela(titulo_cols, linhas_html):
     cab = "".join(
-        f"<th style='{FONTE}background:{AZUL};color:#ffffff;font-size:12px;font-weight:bold;text-align:{al};"
-        f"padding:9px 10px;white-space:nowrap'>{t}</th>" for t, al in titulo_cols)
+        f"<th style='{JOST}{CAIXA_ALTA}background:{COR['superficie2']};color:{COR['tinta']};font-size:12px;"
+        f"font-weight:500;letter-spacing:.05em;text-align:{al};padding:9px 10px;{NR}"
+        f"border-bottom:1px solid {COR['grade']}'>{t}</th>" for t, al in titulo_cols)
     return (f"<table role='presentation' cellpadding='0' cellspacing='0' width='100%' "
-            f"style='border-collapse:collapse;border:1px solid {BORDA};width:100%'><tr>{cab}</tr>{linhas_html}</table>")
+            f"style='border-collapse:separate;border-spacing:0;border:1px solid {COR['borda']};border-radius:3px;"
+            f"width:100%;background:{COR['superficie']}'><tr>{cab}</tr>{linhas_html}</table>")
 
 
 def celula(conteudo, i, al="left", extra=""):
-    fundo = ZEBRA if i % 2 else "#ffffff"
-    return (f"<td style='{FONTE}font-size:13px;color:#222;background:{fundo};border-top:1px solid {BORDA};"
-            f"padding:8px 10px;text-align:{al};vertical-align:middle;{extra}'>{conteudo}</td>")
+    borda = f"border-top:1px solid {COR['grade']};" if i else ""
+    return (f"<td style='{FONTE}font-size:14px;color:{COR['tinta']};background:{COR['superficie']};{borda}"
+            f"padding:9px 10px;text-align:{al};vertical-align:top;{extra}'>{conteudo}</td>")
+
+
+def mais(v):
+    return f"<span style='color:{COR['bom']};{NR}'>+{brl_curto(v)}</span>"
+
+
+TRACO = f"<span style='color:{COR['orcado']}'>—</span>"
 
 
 def data_curta(iso):
@@ -158,8 +240,17 @@ def resumir_texto(texto, limite=90):
     return t if len(t) <= limite else t[:limite].rsplit(" ", 1)[0] + "…"
 
 
+def contador(rotulo, valor, cor):
+    """Cartão pequeno de contagem (licitações), no estilo dos indicadores do painel."""
+    return cartao(
+        f"<div style='{JOST}{CAIXA_ALTA}font-size:11.5px;font-weight:500;color:{COR['tinta2']};line-height:1.35;"
+        f"border-left:3px solid {cor};padding-left:7px;height:34px'>{rotulo}</div>"
+        f"<div style='{JOST}font-size:24px;font-weight:500;color:{COR['tinta']};line-height:1.2;margin-top:6px'>{valor}</div>",
+        padding="12px 14px")
+
+
 def secao_licitacoes(lic):
-    """Tabelas curtas: o que mudou na semana e as próximas aberturas."""
+    """Contagens da semana e as próximas aberturas."""
     if not lic or not lic.get("licitacoes"):
         return ""
     itens = lic["licitacoes"]
@@ -170,13 +261,11 @@ def secao_licitacoes(lic):
     novas = {m["id"] for m in semana if m.get("tipo") == "Nova"}
     homolog = {m["id"] for m in semana if m.get("tipo") == "Mudou de situação" and m.get("para") == "Homologada"}
     andamento = sum(1 for l in itens if l.get("grupo") == "Em andamento")
-    nr = "white-space:nowrap;"
-    cont = [("Processos publicados no ano", f"{len(itens):,}".replace(",", ".")),
-            ("Em andamento agora", str(andamento)),
-            ("Novos na semana", str(len(novas))),
-            ("Homologados na semana", str(len(homolog)))]
-    lin = "".join("<tr>" + celula(n, i) + celula(f"<b>{v}</b>", i, "right", nr) + "</tr>" for i, (n, v) in enumerate(cont))
-    t1 = tabela([("Licitações e contratações diretas", "left"), ("Quantidade", "right")], lin)
+    cont = [("Publicados no ano", f"{len(itens):,}".replace(",", "."), COR["orcado"]),
+            ("Em andamento", str(andamento), COR["marca"]),
+            ("Novos na semana", str(len(novas)), COR["laranja"]),
+            ("Homologados na semana", str(len(homolog)), COR["titulo"])]
+    t1 = grade([contador(n, v, c) for n, v, c in cont], largura=160)
 
     hoje_d = dt.date.today().isoformat()
     prox = sorted((l for l in itens if (l.get("abertura") or "") >= hoje_d and l.get("grupo") == "Em andamento"),
@@ -185,13 +274,16 @@ def secao_licitacoes(lic):
     if prox:
         lin2 = []
         for i, l in enumerate(prox):
-            obj = (f"<a href='{html.escape(l.get('link') or '')}' style='color:#1f4e79;text-decoration:none'>"
+            obj = (f"<a href='{html.escape(l.get('link') or '')}' style='color:{COR['link']};text-decoration:none'>"
                    f"<b>{html.escape(l.get('modalidade') or '')} {html.escape(l.get('numero') or '')}</b></a>"
-                   f"<div style='font-size:12px;color:#555'>{html.escape(resumir_texto(l.get('objeto')))}</div>")
-            lin2.append("<tr>" + celula(data_curta(l["abertura"]), i, extra=nr + "font-weight:bold;")
-                        + celula(obj, i) + celula(brl(l.get("valor_estimado") or 0), i, "right", nr) + "</tr>")
-        t2 = (f"<div style='height:12px'></div>"
-              + tabela([("Abertura", "left"), ("Processo", "left"), ("Valor estimado", "right")], "".join(lin2)))
+                   f"<div style='font-size:13px;line-height:1.4;color:{COR['tinta2']};margin-top:2px'>"
+                   f"{html.escape(resumir_texto(l.get('objeto')))}</div>"
+                   f"<div style='font-size:13px;color:{COR['mudo']};margin-top:2px'>Valor estimado: "
+                   f"<b style='color:{COR['tinta']}'>{brl(l.get('valor_estimado') or 0)}</b></div>")
+            lin2.append("<tr>" + celula(f"<b>{data_curta(l['abertura'])}</b>", i, extra=NR + "width:1%;")
+                        + celula(obj, i) + "</tr>")
+        t2 = bloco(cartao(titulo_cartao("Próximas aberturas", "Processos em andamento com abertura marcada.")
+                          + tabela([("Abertura", "left"), ("Processo", "left")], "".join(lin2))))
     return t1 + t2
 
 
@@ -202,27 +294,29 @@ def secao_diarias(via, via_ant):
     soma = lambda lst, tipo: (sum(1 for v in lst if v["ano"] == ano and v["tipo"] == tipo),
                               sum(v.get("valor") or 0 for v in lst if v["ano"] == ano and v["tipo"] == tipo))
     ant = (via_ant or {}).get("diarias") or []
-    nr = "white-space:nowrap;"
-    lin, tot = [], [0, 0.0, 0.0]
-    for i, tipo in enumerate(["Diária", "Passagem"]):
+    cards = []
+    for tipo, rot, cor in (("Diária", "Diárias", COR["marca"]), ("Passagem", "Passagens", COR["titulo"])):
         n, v = soma(via["diarias"], tipo)
-        sem = ""
+        sub = f"{n:,}".replace(",", ".") + " registros no ano"
         if ant:
             dif = v - soma(ant, tipo)[1]
             if dif > 0.005:
-                sem = f"<span style='color:#2e7d32'>+{brl(dif)}</span>"
-                tot[2] += dif
-        tot[0] += n
-        tot[1] += v
-        rot = "Diárias" if tipo == "Diária" else "Passagens"
-        lin.append("<tr>" + celula(f"<b>{rot}</b>", i) + celula(f"{n:,}".replace(",", "."), i, "right", nr)
-                   + celula(brl(v), i, "right", nr) + celula(sem or "<span style='color:#bbb'>—</span>", i, "right", nr) + "</tr>")
-    i = 2
-    lin.append("<tr>" + celula("<b>Total</b>", i) + celula(f"<b>{tot[0]:,}</b>".replace(",", "."), i, "right", nr)
-               + celula(f"<b>{brl(tot[1])}</b>", i, "right", nr)
-               + celula(f"<b style='color:#2e7d32'>+{brl(tot[2])}</b>" if tot[2] else "<span style='color:#bbb'>—</span>", i, "right", nr) + "</tr>")
-    return tabela([(f"Diárias e passagens {ano}", "left"), ("Registros", "right"), ("Valor no ano", "right"),
-                   ("Na semana", "right")], "".join(lin))
+                sub += f" · {mais(dif)}"
+        cards.append(kpi(f"{rot} {ano}", cor, brl_curto(v), brl(v), sub))
+    return grade(cards)
+
+
+def eyebrow(texto, tamanho=12):
+    """Rótulo com traço laranja à esquerda, como o 'Dados públicos · Maringá · Paraná' do painel."""
+    return (f"<table role='presentation' cellpadding='0' cellspacing='0'><tr>"
+            f"<td style='width:22px;padding-right:8px;vertical-align:middle'>"
+            f"<div style='height:2px;line-height:2px;font-size:0;background:{COR['laranja']}'>&nbsp;</div></td>"
+            f"<td style='{JOST}{CAIXA_ALTA}font-size:{tamanho}px;font-weight:600;color:{COR['tinta2']};"
+            f"letter-spacing:.16em'>{texto}</td></tr></table>")
+
+
+def titulo_secao(texto):
+    return bloco(eyebrow(texto, 13), depois=10, antes=14)
 
 
 def montar(dados, anterior, link, lic=None, via=None, via_ant=None, avisos_coleta=""):
@@ -233,76 +327,93 @@ def montar(dados, anterior, link, lic=None, via=None, via_ant=None, avisos_colet
                 "<p>A coleta não trouxe despesas nesta semana.</p>")
     ta = totais(anterior) if anterior else None
     ref = f"{MESES[t['mes'] - 1]}/{t['ano']}"
-    nr = "white-space:nowrap;"
 
-    # Tabela 1: resumo
-    itens = [("Dotação atualizada", t["dotacao"], None, None, None),
-             ("Empenhado", t["empenhado"], t["dotacao"], "empenhado", "#2e75b6"),
-             ("Liquidado", t["liquidado"], t["dotacao"], "liquidado", "#5b9bd5"),
-             ("Pago", t["pago"], t["dotacao"], "pago", "#2e7d32")]
-    if "arrecadado" in t:
-        itens.append(("Receita arrecadada", t["arrecadado"], t["previsto"], None, "#c55a11"))
-    linhas = []
-    for i, (nome, v, base, campo, cor) in enumerate(itens):
-        semana = ""
-        if ta and campo and ta.get("ano") == t["ano"]:
-            dif = v - ta.get(campo, 0)
+    def semana(campo):
+        if ta and ta.get("ano") == t["ano"]:
+            dif = t[campo] - ta.get(campo, 0)
             if dif > 0.005:
-                semana = f"<span style='color:#2e7d32'>+{brl(dif)}</span>"
-        if base:
-            rot = "do previsto" if nome.startswith("Receita") else "da dotação"
-            p = pct_num(v, base)
-            perc = (f"<table role='presentation' cellpadding='0' cellspacing='0'><tr>"
-                    f"<td style='{FONTE}font-size:13px;{nr}padding-right:8px;width:48px;text-align:right'><b>{pct(v, base)}</b></td>"
-                    f"<td>{barra(p, cor)}</td></tr></table>"
-                    f"<div style='{FONTE}font-size:11px;color:#777'>{rot}</div>")
-        else:
-            perc = "<span style='color:#999'>—</span>"
-        linhas.append("<tr>" + celula(f"<b>{nome}</b>", i, extra=nr) + celula(brl(v), i, "right", nr + "font-weight:bold;")
-                      + celula(perc, i) + celula(semana or "<span style='color:#bbb'>—</span>", i, "right", nr) + "</tr>")
-    t1 = tabela([("Indicador", "left"), ("Valor acumulado", "right"), ("Execução", "left"), ("Na semana", "right")],
-                "".join(linhas))
+                return f" · {mais(dif)}"
+        return ""
 
-    # Tabela 2: órgãos
-    lin_o = []
+    # Indicadores com as mesmas cores do painel: orçado (cinza), empenhado, liquidado e pago (tons de turquesa)
+    cards = [kpi("Dotação atualizada", COR["orcado"], brl_curto(t["dotacao"]), brl(t["dotacao"]),
+                 "orçamento autorizado no ano", 100)]
+    for rot, campo, cor in (("Empenhado", "empenhado", COR["emp"]), ("Liquidado", "liquidado", COR["liq"]),
+                            ("Pago", "pago", COR["pag"])):
+        cards.append(kpi(rot, cor, brl_curto(t[campo]), brl(t[campo]),
+                         f"{pct(t[campo], t['dotacao'])} da dotação{semana(campo)}", pct_num(t[campo], t["dotacao"])))
+    if "arrecadado" in t:
+        cards.append(kpi("Receita prevista", COR["orcado"], brl_curto(t["previsto"]), brl(t["previsto"]),
+                         "previsão atualizada para o ano", 100))
+        cards.append(kpi("Receita arrecadada", COR["arr"], brl_curto(t["arrecadado"]), brl(t["arrecadado"]),
+                         f"{pct(t['arrecadado'], t['previsto'])} do previsto", pct_num(t["arrecadado"], t["previsto"])))
+    nota_semana = (bloco(f"<div style='{FONTE}font-size:13px;color:{COR['mudo']}'>Em verde, quanto cada valor "
+                         f"cresceu desde o e-mail da semana passada.</div>") if "+R$" in "".join(cards) else "")
+    s_kpis = grade(cards) + nota_semana
+
+    # Órgãos: barras como as do painel, preenchidas pela parte da dotação já empenhada
+    barras = []
     for i, (o, (dot, e)) in enumerate(t["orgaos"]):
-        p = pct_num(e, dot)
-        exec_ = (f"<table role='presentation' cellpadding='0' cellspacing='0'><tr>"
-                 f"<td style='{FONTE}font-size:13px;{nr}padding-right:8px;width:48px;text-align:right'>{pct(e, dot)}</td>"
-                 f"<td>{barra(p, '#2e75b6')}</td></tr></table>")
-        lin_o.append("<tr>" + celula(f"<span style='color:#999'>{i + 1}.</span>&nbsp;{html.escape(nome_bonito(o))}", i)
-                     + celula(brl(e), i, "right", nr) + celula(exec_, i, extra=nr) + "</tr>")
-    t2 = tabela([("Órgão", "left"), ("Empenhado", "right"), ("% da dotação", "left")], "".join(lin_o))
+        barras.append(
+            f"<table role='presentation' cellpadding='0' cellspacing='0' width='100%' style='width:100%;margin-top:{0 if i == 0 else 12}px'><tr>"
+            f"<td style='{FONTE}font-size:14px;color:{COR['tinta']};line-height:1.35;padding:0 10px 5px 0'>{html.escape(nome_bonito(o))}</td>"
+            f"<td style='{FONTE}font-size:13px;color:{COR['tinta2']};text-align:right;vertical-align:top;{NR}padding-bottom:5px'>"
+            f"<b style='color:{COR['tinta']};font-size:14px'>{brl_curto(e)}</b> · {pct(e, dot)}</td></tr>"
+            f"<tr><td colspan='2'>{medidor(pct_num(e, dot), COR['liq'], 8)}</td></tr></table>")
+    s_org = bloco(cartao(titulo_cartao("Órgãos com maior valor empenhado",
+                                       "Valor empenhado no ano e quanto ele representa da dotação de cada órgão.")
+                         + "".join(barras)))
 
+    estilo_aviso = (f"{FONTE}background:{COR['aviso_fundo']};color:{COR['aviso_tinta']};border-left:4px solid {COR['laranja']};"
+                    f"border-radius:3px;padding:10px 14px;font-size:14px;margin:12px 0 0")
     aviso = ""
     if meta.get("exemplo"):
-        aviso = "<p style='background:#fff3cd;padding:8px;border-radius:4px'>Atenção: dados de exemplo, não reais.</p>"
+        aviso += f"<p style='{estilo_aviso}'>Atenção: dados de exemplo, não reais.</p>"
+    if avisos_coleta:
+        aviso += f"<p style='{estilo_aviso}'>{html.escape(avisos_coleta)}</p>"
     s_lic = secao_licitacoes(lic)
     s_via = secao_diarias(via, via_ant)
-    if avisos_coleta:
-        aviso += f"<p style='{FONTE}background:#fff3cd;padding:8px;border-radius:4px;font-size:13px'>{html.escape(avisos_coleta)}</p>"
-    titulo = lambda x: f"<h3 style='{FONTE}color:{AZUL};font-size:15px;margin:26px 0 8px'>{x}</h3>"
     fonte = html.escape(str(meta.get("fonte", "Portal da Transparência de Maringá")))
-    corpo = f"""<div style="background:#f0f3f7;padding:20px 0">
-<table role="presentation" align="center" cellpadding="0" cellspacing="0" width="680" style="width:680px;max-width:100%;background:#ffffff;border-collapse:collapse;border:1px solid {BORDA}">
-<tr><td style="background:{AZUL};padding:18px 24px">
-  <div style="{FONTE}color:#ffffff;font-size:20px;font-weight:bold">Prefeitura de Maringá</div>
-  <div style="{FONTE}color:#cfe0f1;font-size:14px;margin-top:2px">Painel de Transparência · dados até {ref}</div>
-</td></tr>
-<tr><td style="padding:18px 24px 24px">
-  <p style="{FONTE}font-size:13px;color:#555;margin:0 0 4px">Valores acumulados de 1º de janeiro até {MESES_LONGOS[t['mes'] - 1]} de {t['ano']}.</p>
-  <p style="{FONTE}font-size:12px;color:#888;margin:0 0 6px">Dados atualizados em {data_br(meta.get('atualizado_em'))}.</p>
-  {aviso}
-  {titulo("Resumo do ano")}
-  {t1}
-  {titulo("Órgãos com maior valor empenhado")}
-  {t2}
-  {(titulo("Licitações") + s_lic) if s_lic else ""}
-  {(titulo("Diárias e passagens") + s_via) if s_via else ""}
-  <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:24px"><tr>
-    <td style="background:#1565c0;border-radius:4px"><a href="{html.escape(link)}" style="{FONTE}display:inline-block;color:#ffffff;font-size:14px;font-weight:bold;padding:11px 20px;text-decoration:none">Abrir o painel completo</a></td>
+    base = link if link.endswith("/") else link + "/"
+    # Logo acima do título (como o painel no celular): ao lado do título ele espremia o texto em telas estreitas
+    logo = (f"<a href='{html.escape(link)}' style='display:inline-block;margin:0 0 12px'><img src='{html.escape(base)}img/logo-ipplam.jpg' "
+            f"width='120' alt='IPPLAM - Instituto de Pesquisa e Planejamento Urbano de Maringá' "
+            f"style='display:block;width:120px;height:auto;border:1px solid {COR['borda']};padding:5px 6px;background:#ffffff'></a>"
+            if link else "")
+    botao = (f"<table role='presentation' cellpadding='0' cellspacing='0' style='margin-top:8px'><tr>"
+             f"<td style='background:{COR['titulo']};border-radius:3px'><a href='{html.escape(link)}' "
+             f"style='{JOST}{CAIXA_ALTA}display:inline-block;color:#ffffff;font-size:14px;font-weight:600;"
+             f"padding:12px 22px;text-decoration:none'>Abrir o painel completo</a></td></tr></table>")
+    rodape = (f"<p style='{FONTE}color:{COR['mudo']};font-size:12px;line-height:1.5;margin:16px 0 0;"
+              f"border-top:1px solid {COR['borda']};padding-top:12px'>Fonte: {fonte}<br>"
+              f"E-mail automático enviado toda segunda-feira pelo Painel de Transparência.</p>")
+    corpo = f"""<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<div style="background:{COR['pagina']};padding:16px 0;margin:0">
+<table role="presentation" align="center" cellpadding="0" cellspacing="0" width="660" style="width:660px;max-width:100%;border-collapse:collapse">
+<tr><td style="padding:8px 14px 16px">
+  {logo}
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%"><tr>
+    <td style="border-left:6px solid {COR['marca']};padding:2px 0 2px 16px;vertical-align:top">
+      {eyebrow("Dados públicos · Maringá · Paraná", 11.5)}
+      <div style="{JOST}{CAIXA_ALTA}font-size:22px;line-height:1.2;font-weight:600;color:{COR['titulo']};margin:6px 0 4px">Prefeitura de Maringá - Painel de Transparência</div>
+      <div style="{FONTE}font-size:15px;line-height:1.45;color:{COR['tinta2']}">Resumo semanal: valores acumulados de 1º de janeiro até {MESES_LONGOS[t['mes'] - 1]} de {t['ano']}.</div>
+      <div style="{FONTE}font-size:13px;color:{COR['mudo']};margin-top:4px">Dados atualizados em {data_br(meta.get('atualizado_em'))}.</div>
+    </td>
   </tr></table>
-  <p style="{FONTE}color:#999;font-size:11px;margin-top:20px">Fonte: {fonte}<br>E-mail automático enviado toda segunda-feira pelo Painel de Transparência.</p>
+  {aviso}
+</td></tr>
+<tr><td style="background:{COR['titulo']};border-radius:3px 3px 0 0;padding:6px 6px 0">
+  <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+    <td style="background:{COR['pagina']};border-top:3px solid {COR['laranja']};border-radius:2px 2px 0 0;padding:8px 14px;{JOST}{CAIXA_ALTA}font-size:13px;font-weight:600;color:{COR['titulo']};line-height:1.2">Resumo até {ref}</td>
+  </tr></table>
+</td></tr>
+<tr><td style="padding:6px 9px 8px">
+  {titulo_secao("Orçamento do ano")}
+  {s_kpis}
+  {s_org}
+  {(titulo_secao("Licitações") + s_lic) if s_lic else ""}
+  {(titulo_secao("Diárias e passagens") + s_via) if s_via else ""}
+  {bloco(botao + rodape)}
 </td></tr></table></div>"""
     assunto = f"Prefeitura de Maringá - Painel de Transparência até {ref}"
     return assunto, corpo

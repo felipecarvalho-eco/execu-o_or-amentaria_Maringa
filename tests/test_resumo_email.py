@@ -54,5 +54,19 @@ class TotaisReceita(unittest.TestCase):
         self.assertAlmostEqual(t["arrecadado"], 90)
 
 
+class Visual(unittest.TestCase):
+    def test_valor_curto_como_no_painel(self):
+        self.assertEqual(r.brl_curto(4374305820.45), "R$&nbsp;4,37 bi")
+        self.assertEqual(r.brl_curto(517_900_000), "R$&nbsp;517,9 mi")
+        self.assertEqual(r.brl_curto(793854.38), "R$&nbsp;793,9 mil")
+
+    def test_email_usa_cores_do_painel_e_aspas_validas(self):
+        dados = {"meta": {}, "despesas": [desp(mes=1, dotacao_atualizada=1000, empenhado=300)]}
+        _, corpo = r.montar(dados, None, "https://exemplo/")
+        self.assertIn("#145d66", corpo)
+        self.assertNotIn("#1f4e79", corpo)  # azul antigo
+        self.assertNotIn("font-family:'", corpo)  # aspas simples quebrariam style='...'
+
+
 if __name__ == "__main__":
     unittest.main()
