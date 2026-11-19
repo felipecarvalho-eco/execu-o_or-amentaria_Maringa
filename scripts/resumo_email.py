@@ -19,6 +19,16 @@ def carregar(caminho):
     return json.loads(texto)
 
 
+# Dotação e previsão são saldos: vale a linha do último mês de cada combinação. A combinação
+# precisa ser a mesma da coleta (DIM_DESPESA_PAINEL / DIM_RECEITA_PAINEL em coleta/coletar.py)
+# e do painel; se faltar uma dimensão (ex.: modalidade de aplicação), linhas diferentes caem na
+# mesma chave, uma apaga a outra e a dotação fica menor do que a real. Campos ausentes nas
+# bases antigas viram None e não alteram o resultado.
+CHAVE_DESPESA = ("entidade", "orgao", "funcao", "subfuncao", "programa", "categoria", "grupo",
+                 "modalidade_aplicacao", "elemento", "fonte_recurso")
+CHAVE_RECEITA = ("entidade", "categoria", "origem", "fonte_recurso", "intra_orcamentaria")
+
+
 def totais(dados):
     desp = dados.get("despesas") or []
     if not desp:
@@ -26,8 +36,7 @@ def totais(dados):
     ano = max(d["ano"] for d in desp)
     linhas = [d for d in desp if d["ano"] == ano]
     mes = max(d["mes"] for d in linhas)
-    chave = lambda d: tuple(d.get(k) for k in ("orgao", "funcao", "subfuncao", "programa",
-                                                "categoria", "grupo", "elemento", "fonte_recurso"))
+    chave = lambda d: tuple(d.get(k) for k in CHAVE_DESPESA)
     ultima = {}
     for d in sorted(linhas, key=lambda d: d["mes"]):
         ultima[chave(d)] = d  # dotação = posição do último mês de cada combinação
@@ -45,7 +54,7 @@ def totais(dados):
     if rec:
         ult_r = {}
         for r in sorted(rec, key=lambda r: r["mes"]):
-            ult_r[(r.get("categoria"), r.get("origem"), r.get("fonte_recurso"))] = r
+            ult_r[tuple(r.get(k) for k in CHAVE_RECEITA)] = r
         t["previsto"] = sum(r.get("previsto") or 0 for r in ult_r.values())
         t["arrecadado"] = sum(r.get("arrecadado") or 0 for r in rec)
     return t
