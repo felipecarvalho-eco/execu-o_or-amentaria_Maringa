@@ -1,16 +1,13 @@
-name: Atualizar painel semanalmente
+name: Atualizar painel semanalmente (TESTE de e-mail, branch teste-email)
 
 on:
-  schedule:
-    # Toda segunda-feira às 06:00 (Brasília, UTC-3) = 09:00 UTC
-    - cron: "0 9 * * 1"
   workflow_dispatch: {}   # botão "Run workflow" para rodar manualmente
 
 permissions:
   contents: write
 
 concurrency:
-  group: atualizar-painel
+  group: teste-email
   cancel-in-progress: false
 
 jobs:
@@ -21,59 +18,18 @@ jobs:
       EMAIL_USUARIO: ${{ secrets.EMAIL_USUARIO }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Instalar dependências
+      # TESTE: não coleta nem grava nada; usa os dados já publicados e compara com a versão anterior deles
+      - name: Dados anteriores (para a coluna da semana)
         run: |
-          if [ -f coleta/requirements.txt ]; then pip install -r coleta/requirements.txt; else pip install requests; fi
-
-      # OCR dos relatórios de viagem escaneados (prestação de contas das diárias)
-      - name: Instalar OCR (tesseract em português e poppler)
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-por poppler-utils
-
-      - name: Guardar dados da semana anterior (para comparar no e-mail)
-        run: |
-          cp docs/dados/execucao.js /tmp/anterior.js 2>/dev/null || true
-          cp docs/dados/diarias.js /tmp/diarias_anterior.js 2>/dev/null || true
-
-      # O script só sobrescreve os arquivos se a coleta e a validação derem certo.
-      # Se licitações/diárias falharem, tenta de novo só com o orçamento, para não perder a semana.
-      - name: Baixar dados do Portal da Transparência (orçamento, licitações, diárias e passagens)
-        id: coleta
-        run: |
-          if python coleta/coletar.py --saida docs/dados; then
-            echo "aviso=" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::Coleta completa falhou; tentando só o orçamento."
-            python coleta/coletar.py --saida docs/dados --sem-compras
-            echo "aviso=Nesta semana não foi possível atualizar licitações, diárias e passagens; essas partes mostram os dados da semana anterior." >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Validar dados gerados
-        run: |
-          test -s docs/dados/execucao.js
-          grep -q "window.DADOS_EXECUCAO" docs/dados/execucao.js
-          if grep -Eq '"exemplo"[[:space:]]*:[[:space:]]*true' docs/dados/execucao.js; then
-            echo "::error::execucao.js ainda contém meta.exemplo=true"; exit 1
-          fi
-
-      # Com o GitHub Pages servindo a pasta docs/ da main, o commit já publica o painel.
-      - name: Salvar dados atualizados (publica o painel)
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/dados
-          if git diff --cached --quiet; then
-            echo "Sem mudanças nos dados nesta semana."
-          else
-            git commit -m "Atualiza dados semanais: orçamento, licitações, diárias e passagens ($(date -u +%Y-%m-%d))"
-            git push
-          fi
+          A=$(git log -2 --format=%H -- docs/dados/execucao.js | tail -1); git show $A:docs/dados/execucao.js > /tmp/anterior.js
+          D=$(git log -2 --format=%H -- docs/dados/diarias.js | tail -1); git show $D:docs/dados/diarias.js > /tmp/diarias_anterior.js
 
       - name: Montar resumo para o e-mail
         id: resumo
@@ -96,7 +52,7 @@ jobs:
           password: ${{ secrets.EMAIL_SENHA_APP }}
           from: Prefeitura de Maringá - Painel de Transparência <${{ secrets.EMAIL_USUARIO }}>
           to: ${{ secrets.EMAIL_DESTINO }}
-          subject: ${{ steps.resumo.outputs.assunto }}
+          subject: "[TESTE] ${{ steps.resumo.outputs.assunto }}"
           html_body: file://resumo.html
           convert_markdown: false
 
