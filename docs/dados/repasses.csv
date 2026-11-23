@@ -69,7 +69,7 @@ ano,mes,entidade,entidade_id,origem,previsto,previsto_mes,recebido,devolvido,env
 2026,8,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,10450000.0,0.0,10450000.0
 2026,9,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,10450000.0,0.0,10450000.0
 2026,10,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,8350000.0,0.0,8350000.0
-2026,11,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,0.0,0.0,0.0
+2026,11,Maringá Previdência,3,Prefeitura (administração direta),227142000.0,18928500.0,131920.0,0.0,131920.0
 2026,1,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,750000.0,0.0,750000.0
 2026,2,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,730000.0,0.0,730000.0
 2026,3,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,750000.0,0.0,750000.0
@@ -80,7 +80,7 @@ ano,mes,entidade,entidade_id,origem,previsto,previsto_mes,recebido,devolvido,env
 2026,8,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,750000.0,0.0,750000.0
 2026,9,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,750000.0,0.0,750000.0
 2026,10,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,750000.0,0.0,750000.0
-2026,11,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,0.0,0.0,0.0
+2026,11,IAM - Instituto Ambiental,4,Prefeitura (administração direta),20312179.0,1692681.0,0.0,0.0,1100000.0
 2026,1,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,6013167.25,0.0,6013167.25
 2026,2,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,6013167.25,0.0,6013167.25
 2026,3,Câmara Municipal,6,Prefeitura (administração direta),72158007.0,6013167.0,6013167.25,0.0,6013167.25
