@@ -2,8 +2,10 @@ name: Atualizar painel semanalmente
 
 on:
   schedule:
-    # Toda segunda-feira às 06:00 (Brasília, UTC-3) = 09:00 UTC
-    - cron: "0 9 * * 1"
+    # Toda segunda-feira às 05:17 (Brasília, UTC-3) = 08:17 UTC.
+    # Fora da hora cheia de propósito: o GitHub atrasa ou descarta agendamentos
+    # marcados para a hora cheia, quando muitos repositórios rodam ao mesmo tempo.
+    - cron: "17 8 * * 1"
   workflow_dispatch: {}   # botão "Run workflow" para rodar manualmente
 
 permissions:
