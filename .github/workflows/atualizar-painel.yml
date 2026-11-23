@@ -74,6 +74,8 @@ jobs:
             echo "Sem mudanças nos dados nesta semana."
           else
             git commit -m "Atualiza dados semanais: orçamento, licitações, diárias e passagens ($(date -u +%Y-%m-%d))"
+            # Se alguém mesclou algo na main durante a coleta, junta antes de enviar.
+            git pull --rebase origin "${{ github.ref_name }}"
             git push
           fi
 
