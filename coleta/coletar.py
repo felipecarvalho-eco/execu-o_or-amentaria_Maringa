@@ -23,6 +23,8 @@ coleta falhar):
   execucao.js      o mesmo objeto como `window.DADOS_EXECUCAO = {...};`
   credores.json    meta + credores (separado para não pesar o painel)
   credores.js      o mesmo objeto como `window.DADOS_CREDORES = {...};`
+  atas.js/.json    atas de registro de preços vigentes, com os itens (aba Atas vigentes)
+  atas.csv         um item de ata por linha
 
 O esquema está documentado em coleta/ESQUEMA.md.
 Sai com código != 0 em qualquer falha ou se a validação dos totais não bater.
@@ -49,6 +51,7 @@ import compras_viagens as cv  # noqa: E402  (licitações, diárias e passagens)
 import gastos as gs  # noqa: E402  (cada empenho com secretaria, elemento e licitação)
 import repasses as rp  # noqa: E402  (repasses da Prefeitura às outras entidades)
 import prestacao as pc  # noqa: E402  (data da prestação de contas das diárias, lida dos PDFs)
+import atas as at  # noqa: E402  (atas de registro de preços vigentes, com os itens)
 
 # A mesma API é servida em dois endereços oficiais: o domínio da Prefeitura e o do fornecedor (Elotech).
 # A coleta usa o primeiro que responder. PORTAL_API (variável de ambiente) força um endereço.
@@ -478,6 +481,7 @@ def main() -> int:
                     help="tempo máximo baixando detalhes novos de empenhos (0 = sem limite; padrão 30)")
     ap.add_argument("--com-gastos-csv", action="store_true", help="grava também gastos.csv (~35 MB)")
     ap.add_argument("--gastos-threads", type=int, default=4, help="consultas simultâneas ao detalhe (padrão 4)")
+    ap.add_argument("--sem-atas", action="store_true", help="não coleta as atas de registro de preços vigentes")
     ap.add_argument("--com-empenhos", action="store_true",
                     help="grava também empenhos.csv (um empenho por linha, ~20 MB por ano)")
     args = ap.parse_args()
@@ -595,6 +599,26 @@ def main() -> int:
         gastos = gs.coletar(get, empenhos, despesas, licitacoes, [a for a in anos if a >= args.desde],
                             gs.cache_de(prev_g), AVISOS, log, threads=args.gastos_threads,
                             max_minutos=args.gastos_max_minutos)
+    # ---- atas de registro de preços vigentes (o uso no ano vem dos empenhos do gastos.js)
+    atas = None
+    if not args.sem_atas:
+        base_uso = gastos
+        if base_uso is None:
+            try:
+                t = (saida / "gastos.js").read_text(encoding="utf-8")
+                base_uso = gs.linhas_de(json.loads(t[t.index("{"): t.rindex("}") + 1]))
+            except (OSError, ValueError, KeyError):
+                base_uso = None
+        try:
+            atas = at.coletar(lambda path, ex, params, entidade: get(path, ex, params, entidade=entidade, tentativas=3),
+                              {e["id"]: NOMES_CURTOS.get(e["id"], e["nome"].title()) for e in entidades},
+                              hoje.year, base_uso, AVISOS, log)
+            if not atas:
+                raise RuntimeError("nenhuma ata vigente encontrada")
+        except RuntimeError as e:
+            log(f"  aviso: atas não coletadas ({e})")
+            AVISOS.append("Atas de registro de preços não puderam ser atualizadas nesta semana; a aba mostra a lista anterior")
+            atas = None
     empresas = [] if args.sem_sbmg else sbmg.coletar(
         lambda path, ex, params, entidade: get(path, ex, params, entidade=entidade),
         lambda path, ex, entidade: get(path, ex, entidade=entidade, binario=True),
@@ -719,6 +743,21 @@ def main() -> int:
         escrever_atomico(saida / "gastos.js", "window.DADOS_GASTOS = " + js_g + ";\n")
         if args.com_gastos_csv:
             escrever_atomico(saida / "gastos.csv", csv_texto(gastos))
+    if atas is not None:
+        meta_a = {k: meta[k] for k in ("municipio", "fonte", "api", "atualizado_em", "avisos")}
+        obj_a = {"meta": {**meta_a, "ano_empenhos": hoje.year, "colunas_itens": at.COLUNAS_ITENS,
+                          "observacoes": ("Atas de registro de preços vigentes (módulo Contratos / Atas do portal, "
+                                          "Tipo ato = Ata de Registro de Preços). Uma linha por ata e fornecedor. "
+                                          "vigencia = fim da vigência já com aditivos. itens: lote, ordem, descrição, "
+                                          "unidade, quantidade registrada, valor unitário e valor total. O portal não "
+                                          "publica o saldo: empenhado_ano é uma estimativa, a soma dos empenhos do ano "
+                                          "(de qualquer entidade) que citam a ata e o mesmo fornecedor. categoria é "
+                                          "lida do objeto da ata.")},
+                 "atas": atas}
+        js_a = json.dumps(obj_a, ensure_ascii=False, separators=(",", ":"))
+        escrever_atomico(saida / "atas.json", js_a)
+        escrever_atomico(saida / "atas.js", "window.DADOS_ATAS = " + js_a + ";\n")
+        escrever_atomico(saida / "atas.csv", csv_texto(at.itens_csv(atas)))
     escrever_atomico(saida / "execucao.json", js)
     escrever_atomico(saida / "execucao.js", "window.DADOS_EXECUCAO = " + js + ";\n")
     log(f"OK: {len(despesas)} linhas de despesa, {len(receitas)} de receita, {len(credores)} de credores -> {saida}")

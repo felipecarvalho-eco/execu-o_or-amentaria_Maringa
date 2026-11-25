@@ -30,11 +30,12 @@ receitas: {ano, mes, entidade, categoria, origem, fonte_recurso, previsto, arrec
 - `empresas` (opcional): balancetes mensais de empresas do Município (ex.: SBMG), `{entidade, ano, mes, receita_liquida, custo_servicos, despesas_operacionais, resultado_financeiro, ir_csll, outros_resultados, lucro_liquido, caixa, ativo_total, emprestimos_curto_prazo, emprestimos_longo_prazo, patrimonio_liquido, fonte}`; os seis primeiros são do mês e os demais, posição no fim do mês. A empresa aparece no filtro Entidade com uma visão própria; `meta.empresas_fonte` é a nota de rodapé.
 - `docs/dados/licitacoes.js` (aba Licitações): `window.DADOS_LICITACOES = {meta, licitacoes:[{id, ano, mes, entidade, secretaria, numero, modalidade, objeto, valor_estimado, valor_contratado, situacao, grupo, publicacao, abertura, fornecedor?, link?}], mudancas:[{atualizacao, id, entidade, numero, modalidade, objeto, valor_estimado, valor_contratado, tipo, de, para}]}`. `grupo` = Homologada, Em andamento, Sem sucesso ou Suspensa; contratação direta = modalidade Dispensa/Inexigibilidade.
 - `docs/dados/diarias.js` (aba Diárias e Passagens): `window.DADOS_DIARIAS = {meta, diarias:[{ano, mes, entidade, orgao, tipo (Diária|Passagem), beneficiario, cargo, destino, motivo, data_saida, data_retorno, quantidade, valor}]}`.
+- `docs/dados/atas.js` (aba Atas vigentes, carregado só ao abrir a aba): `window.DADOS_ATAS = {meta, atas:[{id, entidade, ata, fornecedor, cnpj, objeto, categoria, tipo, licitacao, inicio, vigencia, valor, empenhado_ano, empenhado_por_entidade, link, itens:[[lote, ordem, descricao, unidade, quantidade, valor_unitario, valor]]}]}`. O portal não publica o saldo; `empenhado_ano` é uma estimativa pelos empenhos do ano que citam a ata.
 - `meta.exemplo = true` mostra um aviso de dados de exemplo.
 
 ## Coleta de dados
 
-Os dados em `docs/dados/` são baixados do Portal da Transparência (Prefeitura, Câmara, Maringá Previdência, autarquias e SBMG), incluindo licitações, diárias e passagens, por `coleta/coletar.py`
+Os dados em `docs/dados/` são baixados do Portal da Transparência (Prefeitura, Câmara, Maringá Previdência, autarquias e SBMG), incluindo licitações, atas de registro de preços, diárias e passagens, por `coleta/coletar.py`
 (esquema completo e endpoints em [`coleta/ESQUEMA.md`](coleta/ESQUEMA.md)):
 
 ```bash
