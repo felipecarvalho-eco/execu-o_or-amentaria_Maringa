@@ -45,7 +45,7 @@ jobs:
 
       # O script só sobrescreve os arquivos se a coleta e a validação derem certo.
       # Se licitações/diárias falharem, tenta de novo só com o orçamento, para não perder a semana.
-      - name: Baixar dados do Portal da Transparência (orçamento, licitações, diárias e passagens)
+      - name: Baixar dados do Portal da Transparência (orçamento, licitações, atas, diárias e passagens)
         id: coleta
         run: |
           if python coleta/coletar.py --saida docs/dados; then
@@ -73,7 +73,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Sem mudanças nos dados nesta semana."
           else
-            git commit -m "Atualiza dados semanais: orçamento, licitações, diárias e passagens ($(date -u +%Y-%m-%d))"
+            git commit -m "Atualiza dados semanais: orçamento, licitações, atas, diárias e passagens ($(date -u +%Y-%m-%d))"
             # Se alguém mesclou algo na main durante a coleta, junta antes de enviar.
             git pull --rebase origin "${{ github.ref_name }}"
             git push

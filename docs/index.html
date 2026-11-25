@@ -304,6 +304,19 @@ td .clamp.aberto{display:block;-webkit-line-clamp:unset}
 .glossary{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 20px}
 @media (max-width:1100px){.glossary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:520px){.glossary{grid-template-columns:1fr}}
+/* aba Atas vigentes: sem filtros de período e entidade no topo (as atas não dependem do período) */
+.so-abas .frow,.so-abas .chips{display:none}
+.atbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.atbar .f{flex:1 1 180px;min-width:0}.atbar .f.busca{flex:3 1 320px}
+.atbar input{width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:7px 10px}
+.atbar select{width:100%}
+#tblAtaItens td:first-child{min-width:260px}
+#tblAtas td:nth-child(2){min-width:260px}#tblAtas th:first-child,#tblAtas td:first-child{min-width:0}
+.ata-ip{display:inline-block;margin-left:6px;padding:0 6px;border-radius:999px;font-size:11.5px;background:color-mix(in srgb,var(--orange) 18%,transparent);border:1px solid color-mix(in srgb,var(--orange) 55%,transparent);white-space:nowrap;color:var(--ink)}
+tr.ata-ipr td{background:color-mix(in srgb,var(--liq) 7%,transparent)}
+.tl{text-align:left!important;white-space:normal!important}
+.venc{white-space:nowrap}.venc.perto{color:var(--orange);font-weight:600}
+@media (max-width:640px){#tblAtaItens td:first-child,#tblAtas td:nth-child(2){min-width:200px}}
 </style>
 </head>
 <body>
@@ -312,7 +325,7 @@ td .clamp.aberto{display:block;-webkit-line-clamp:unset}
     <div class="head-txt">
       <div class="eyebrow">Dados públicos · Maringá · Paraná</div>
       <h1>Prefeitura de Maringá - Painel de Transparência</h1>
-      <p>Acompanhamento do dinheiro público do Município: orçamento, receitas, credores, licitações e diárias e passagens, com dados do Portal da Transparência.</p>
+      <p>Acompanhamento do dinheiro público do Município: orçamento, receitas, credores, licitações, atas de registro de preços e diárias e passagens, com dados do Portal da Transparência.</p>
       <div class="meta-line" id="metaLine">Carregando dados…</div>
     </div>
     <div class="logo"><img src="img/logo-ipplam.jpg" width="200" height="74" alt="IPPLAM - Instituto de Pesquisa e Planejamento Urbano de Maringá"></div>
@@ -328,6 +341,7 @@ td .clamp.aberto{display:block;-webkit-line-clamp:unset}
       <button class="tab" role="tab" id="tabC" aria-selected="false" data-tab="cred">Credores</button>
       <button class="tab" role="tab" id="tabL" aria-selected="false" data-tab="lic">Licitações</button>
       <button class="tab" role="tab" id="tabV" aria-selected="false" data-tab="diar">Diárias e Passagens</button>
+      <button class="tab" role="tab" id="tabA" aria-selected="false" data-tab="atas">Atas vigentes</button>
     </div>
     <div class="frow">
       <div class="f"><label for="fAno">Ano</label><select id="fAno"></select></div>
@@ -567,6 +581,48 @@ td .clamp.aberto{display:block;-webkit-line-clamp:unset}
     </div>
   </section>
 
+  <!-- ATAS DE REGISTRO DE PREÇOS VIGENTES -->
+  <section id="secAtas" class="hidden">
+    <p class="summary" id="sumA"></p>
+    <div id="atasCorpo">
+      <div class="kpis" id="kpisA"></div>
+      <div class="card full">
+        <h2>O que dá para comprar pelas atas</h2>
+        <p class="desc">Atas de registro de preços em vigor: cada uma já tem fornecedor, preço e quantidade definidos em licitação. Procure um item pelo nome (ex.: toner, café, coffee break) ou filtre por tipo de compra e prazo.</p>
+        <div class="atbar">
+          <div class="f busca"><label for="aBusca">Procurar item, objeto ou fornecedor</label><input id="aBusca" type="search" placeholder="ex.: toner, papel A4, sonorização"></div>
+          <div class="f"><label for="aCat">Tipo de compra</label><select id="aCat"></select></div>
+          <div class="f"><label for="aVenc">Vence em</label><select id="aVenc"><option value="">Qualquer prazo</option><option value="30">Até 30 dias</option><option value="60">Até 60 dias</option><option value="90">Até 90 dias</option><option value="180">Até 6 meses</option></select></div>
+          <div class="f" id="aEntF"><label for="aEnt">Entidade dona da ata</label><select id="aEnt"></select></div>
+          <button class="btn" id="aLimpar" type="button">Limpar</button>
+        </div>
+      </div>
+      <div class="subtabs" role="tablist" aria-label="Partes da aba Atas">
+        <button class="subtab" role="tab" data-aa="itens">Itens</button>
+        <button class="subtab" role="tab" data-aa="atas">Atas</button>
+        <button class="subtab" role="tab" data-aa="tipos">Por tipo e vencimento</button>
+      </div>
+      <div class="card full hidden" id="ataDet"></div>
+      <div data-apart="itens">
+        <div class="card full"><h2>Itens disponíveis</h2><p class="desc">Um item por linha, com a quantidade registrada na ata e o preço unitário. Clique no título de uma coluna para ordenar e numa linha para ver a ata inteira.</p>
+          <div class="tblbar"><span class="desc" id="aItensCont" style="margin:0"></span><button class="btn" id="btnCsvA" type="button">Baixar CSV</button></div>
+          <div class="tablewrap"><table id="tblAtaItens"></table></div><div id="aItensMais" style="margin-top:10px"></div></div>
+      </div>
+      <div data-apart="atas">
+        <div class="card full"><h2>Atas</h2><p class="desc">Uma linha por ata e fornecedor. A barra mostra quanto do valor da ata já foi empenhado neste ano (estimativa). Em destaque, as atas que o IPPLAM já usou.</p>
+          <div class="tblbar"><span class="desc" id="aAtasCont" style="margin:0"></span></div>
+          <div class="tablewrap"><table id="tblAtas"></table></div><div id="aAtasMais" style="margin-top:10px"></div></div>
+      </div>
+      <div data-apart="tipos">
+        <div class="grid2">
+          <div class="card"><h2>Valor das atas por tipo de compra</h2><p class="desc">Soma do valor registrado nas atas. Clique para filtrar.</p><div class="hbars" id="barsAtaCat"></div></div>
+          <div class="card"><h2>Atas que vencem por mês</h2><p class="desc">Quantidade de atas pelo mês em que a vigência termina, nos próximos 12 meses.</p><div class="chart" id="chAtaVenc"></div></div>
+        </div>
+      </div>
+      <p class="desc" id="ataNota" style="margin-top:10px"></p>
+    </div>
+  </section>
+
   <!-- DIÁRIAS E PASSAGENS -->
   <section id="secDiar" class="hidden">
     <p class="summary" id="sumV"></p>
@@ -732,7 +788,7 @@ function readHash(){
   st.de=p.has("de")?Math.max(1,Math.min(12,+p.get("de"))):1;
   st.ate=p.has("ate")?Math.max(1,Math.min(um,+p.get("ate"))):um;
   if(st.de>st.ate) st.de=1;
-  const aba=p.get("aba");st.tab=aba==="rec"&&REC.length?"rec":["desp","cred","lic","diar"].includes(aba)?aba:"res";
+  const aba=p.get("aba");st.tab=aba==="rec"&&REC.length?"rec":["desp","cred","lic","diar","atas"].includes(aba)?aba:"res";
   if(p.get("er"))st.entRes=nomeEnt(p.get("er"));
   if(["lista","acomp","hist"].includes(p.get("la")))st.la=p.get("la");
   FDIMS.forEach(k=>{if(p.get(k)) st.f[k]=p.get(k);});
@@ -774,7 +830,14 @@ function initControls(){
   $("#cBusca").oninput=e=>{cst.busca=e.target.value;cst.lim=50;if(CRED)renderCred();};
   $("#btnCsvC").onclick=csvCred;
   $("#lBusca").oninput=e=>{lst.busca=e.target.value;lst.lim=100;render();};
-  document.querySelectorAll(".subtab").forEach(b=>b.onclick=()=>{st.la=b.dataset.la;render();});
+  document.querySelectorAll(".subtab[data-la]").forEach(b=>b.onclick=()=>{st.la=b.dataset.la;render();});
+  document.querySelectorAll(".subtab[data-aa]").forEach(b=>b.onclick=()=>{ast.parte=b.dataset.aa;ast.lim=50;render();});
+  $("#aBusca").oninput=e=>{ast.busca=e.target.value;ast.lim=50;render();};
+  $("#aCat").onchange=e=>{ast.cat=e.target.value;ast.lim=50;render();};
+  $("#aVenc").onchange=e=>{ast.venc=e.target.value;ast.lim=50;render();};
+  $("#aEnt").onchange=e=>{ast.ent=e.target.value;ast.lim=50;render();};
+  $("#aLimpar").onclick=()=>{ast.busca="";ast.cat="";ast.venc="";ast.ent="";ast.sel=null;$("#aBusca").value="";ast.lim=50;render();};
+  $("#btnCsvA").onclick=csvAtas;
   $("#lHist").onchange=e=>{lst.hist=e.target.value;render();};
   $("#btnCsvL").onclick=csvLic;
   $("#vBusca").oninput=e=>{vst.busca=e.target.value;vst.lim=50;render();};
@@ -879,9 +942,10 @@ function alinha(){
 function render(){
   if(checarAba&&soltaFiltros())checarAba=false;
   writeHash();
-  [["#tabS","#secRes","res"],["#tabD","#secDesp","desp"],["#tabR","#secRec","rec"],["#tabC","#secCred","cred"],["#tabL","#secLic","lic"],["#tabV","#secDiar","diar"]].forEach(([t,sec,k])=>{$(t).setAttribute("aria-selected",st.tab===k);$(sec).classList.toggle("hidden",st.tab!==k);});
+  [["#tabS","#secRes","res"],["#tabD","#secDesp","desp"],["#tabR","#secRec","rec"],["#tabC","#secCred","cred"],["#tabL","#secLic","lic"],["#tabV","#secDiar","diar"],["#tabA","#secAtas","atas"]].forEach(([t,sec,k])=>{$(t).setAttribute("aria-selected",st.tab===k);$(sec).classList.toggle("hidden",st.tab!==k);});
   refreshFilterOptions();
-  if(st.tab==="res") renderRes(); else if(st.tab==="desp"&&DESP.length) renderDesp(); else if(st.tab==="rec") renderRec(); else if(st.tab==="cred") renderCred(); else if(st.tab==="lic") renderLic(); else if(st.tab==="diar") renderDiar();
+  if(st.tab==="res") renderRes(); else if(st.tab==="desp"&&DESP.length) renderDesp(); else if(st.tab==="rec") renderRec(); else if(st.tab==="cred") renderCred(); else if(st.tab==="lic") renderLic(); else if(st.tab==="diar") renderDiar(); else if(st.tab==="atas") renderAtas();
+  $("#filters").classList.toggle("so-abas",st.tab==="atas");
   requestAnimationFrame(alinha);
 }
 function sujeito(){
@@ -997,6 +1061,7 @@ function renderRes(){
   const lic=carga.licitacoes==="ok"&&LIC?LIC.filter(noPer):null,dia=carga.diarias==="ok"&&DIA?DIA.filter(noPer):null;
   const at=[["desp","Despesas","Todos os gastos, por órgão, área, programa e tipo de gasto"],["rec","Receitas","Tudo o que foi arrecadado e as transferências da Prefeitura"],["cred","Credores","Quem recebeu: empresas, entidades e pessoas"],
     ["lic","Licitações",lic?`${nf0.format(lic.length)} licitações publicadas no período, somando ${brl(lic.reduce((t,r)=>t+r.est,0))} estimados`:"Compras públicas em andamento e concluídas"],
+    ["atas","Atas vigentes","O que pode ser comprado pelas atas de registro de preços: itens, preços e fornecedores"],
     ["diar","Diárias e Passagens",dia?`${brl(dia.reduce((t,r)=>t+r.valor,0))} em viagens a serviço no período`:"Viagens a serviço de servidores e autoridades"]];
   const pr=dia?pcResumo(dia):null;
   if(pr&&pr.n)at.push(["diar","Prestação de contas de viagens",`${nf0.format(pct(pr.p,pr.n))}% dos relatórios entregues em até 3 dias → ver por servidor`,"pcServ"]);
@@ -1496,7 +1561,7 @@ function renderLic(){
   $("#licTopo").classList.toggle("hidden",carga.licitacoes!=="ok");
   if(!estadoCarga("licitacoes","DADOS_LICITACOES",lerLic,"#sumL","#licCorpo","licitações"))return;
   $("#licTopo").classList.remove("hidden");
-  document.querySelectorAll(".subtab").forEach(b=>b.setAttribute("aria-selected",b.dataset.la===st.la));
+  document.querySelectorAll(".subtab[data-la]").forEach(b=>b.setAttribute("aria-selected",b.dataset.la===st.la));
   document.querySelectorAll("[data-lpart]").forEach(p=>p.classList.toggle("hidden",p.dataset.lpart!==st.la));
   const q=semAcento(lst.busca.trim());
   const busca=r=>!q||semAcento(r.objeto+" "+r.numero+" "+r.secretaria+" "+r.fornecedor).includes(q);
@@ -1915,6 +1980,130 @@ function csvCred(){
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);
   a.download=`credores_maringa_${st.ano}_${String(st.de).padStart(2,"0")}-${String(st.ate).padStart(2,"0")}.csv`;
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
+
+/* ---------- atas de registro de preços vigentes (carregadas só quando a aba é aberta) ---------- */
+// O portal não publica o saldo das atas: "empenhado no ano" é a soma dos empenhos do ano que citam a ata e o fornecedor.
+let ATAS=null,ATAMETA={};
+const ast={parte:"itens",busca:"",cat:"",venc:"",ent:"",lim:50,sel:null,sortI:{k:"desc",d:1},sortA:{k:"venc",d:1}};
+let ataItensLista=[];
+const ehIpplam=e=>/ipplam/i.test(e);
+function lerAtas(d){d=d||{};ATAMETA=d.meta||{};const hoje=Date.parse(hojeISO()+"T12:00");
+  ATAS=(d.atas||[]).map(a=>{const venc=String(a.vigencia||""),ue=a.empenhado_por_entidade||{};
+    const ip=Object.entries(ue).filter(([e])=>ehIpplam(e)).reduce((t,[,v])=>t+num(v),0);
+    const r={id:String(a.id||""),entidade:nomeEnt(txtv(a.entidade)),ata:String(a.ata||""),forn:legivel(a.fornecedor||"Não informado"),cnpj:String(a.cnpj||""),
+      objeto:String(a.objeto||""),cat:txtv(a.categoria),tipo:String(a.tipo||""),lic:String(a.licitacao||""),inicio:String(a.inicio||""),venc,
+      dias:venc?Math.round((Date.parse(venc+"T12:00")-hoje)/864e5):null,valor:num(a.valor),emp:num(a.empenhado_ano),ip,
+      usaram:Object.keys(ue).map(e=>nomeEnt(txtv(e))),link:/^https?:\/\//.test(a.link||"")?a.link:"",itens:[]};
+    r.itens=(a.itens||[]).map(i=>({ata:r,lote:i[0],ordem:i[1],desc:String(i[2]||""),un:String(i[3]||""),qtd:num(i[4]),vu:num(i[5]),vt:num(i[6])}));
+    r._q=semAcento(r.objeto+" "+r.forn+" "+r.ata+" "+r.lic+" "+r.cnpj);r.itens.forEach(i=>i._q=semAcento(i.desc));
+    return r;});
+}
+const qtdF=v=>Number.isInteger(v)?nf0.format(v):nf2.format(v);
+const vencTxt=a=>a.dias==null?"–":`<span class="venc${a.dias<=60?" perto":""}" title="${a.dias} dias">${dataBR(a.venc)}</span>`;
+function atasFiltro(semCat){
+  const q=semAcento(ast.busca.trim());
+  const at=ATAS.filter(a=>(semCat||!ast.cat||a.cat===ast.cat)&&(!ast.venc||(a.dias!=null&&a.dias<=+ast.venc))&&(!ast.ent||a.entidade===ast.ent));
+  if(!q)return {atas:at,itens:at.flatMap(a=>a.itens.length?a.itens:[])};
+  const atas=[],itens=[];
+  at.forEach(a=>{const naAta=a._q.includes(q),its=naAta?a.itens:a.itens.filter(i=>i._q.includes(q));if(naAta||its.length){atas.push(a);itens.push(...its);}});
+  return {atas,itens};
+}
+function renderAtas(){
+  if(!estadoCarga("atas","DADOS_ATAS",lerAtas,"#sumA","#atasCorpo","atas de registro de preços"))return;
+  $("#atasCorpo").classList.remove("hidden");
+  // opções dos filtros
+  const cats=[...new Set(ATAS.map(a=>a.cat))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  $("#aCat").innerHTML='<option value="">Todos os tipos</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");$("#aCat").value=ast.cat;
+  const ents=[...new Set(ATAS.map(a=>a.entidade))].sort(ordEnt);
+  $("#aEntF").classList.toggle("hidden",ents.length<2);
+  $("#aEnt").innerHTML='<option value="">Todas</option>'+ents.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");$("#aEnt").value=ast.ent;
+  $("#aVenc").value=ast.venc;
+  [["#aCat",ast.cat],["#aVenc",ast.venc],["#aEnt",ast.ent]].forEach(([s,v])=>$(s).classList.toggle("on",!!v));
+  document.querySelectorAll(".subtab[data-aa]").forEach(b=>b.setAttribute("aria-selected",b.dataset.aa===ast.parte));
+  document.querySelectorAll("[data-apart]").forEach(p=>p.classList.toggle("hidden",p.dataset.apart!==ast.parte));
+  const {atas,itens}=atasFiltro();
+  const S=(l,f)=>l.reduce((t,x)=>t+f(x),0);
+  const nForn=new Set(atas.map(a=>a.cnpj||a.forn)).size,v60=atas.filter(a=>a.dias!=null&&a.dias<=60).length;
+  const valor=S(atas,a=>a.valor),emp=S(atas,a=>a.emp),ipA=atas.filter(a=>a.ip>0),ip=S(ipA,a=>a.ip),ano=ATAMETA.ano_empenhos||new Date().getFullYear();
+  const filtrado=ast.busca.trim()||ast.cat||ast.venc||ast.ent;
+  const bq=ast.busca.trim();
+  $("#sumA").innerHTML=atas.length?`${filtrado?`Com os filtros escolhidos${bq?` (“${esc(bq)}”)`:""}, há`:"Há"} <b>${nf0.format(atas.length)} ${atas.length===1?"ata vigente":"atas vigentes"}</b> de <b>${nf0.format(nForn)} ${nForn===1?"fornecedor":"fornecedores"}</b>, com <b>${nf0.format(itens.length)} ${itens.length===1?"item":"itens"}</b> e <b>${brl(valor)}</b> registrados. ${v60?`<b>${nf0.format(v60)}</b> ${v60===1?"vence":"vencem"} nos próximos 60 dias.`:"Nenhuma vence nos próximos 60 dias."}`
+    :`Nenhuma ata vigente encontrada para os filtros escolhidos. <button class="btn" type="button" id="aLimpar2">Limpar</button>`;
+  const l2=$("#aLimpar2");if(l2)l2.onclick=()=>$("#aLimpar").click();
+  const tile=(lbl,val,sub,tip,color,meter)=>`<div class="card kpi"><div class="lbl">${color?`<i class="sw" style="background:${color}"></i>`:""}${juntaFim(lbl,`<span class="help" tabindex="0" data-tip="${esc(tip)}">?</span>`)}</div><div class="val">${val}</div><div class="sub">${sub}</div>${meter!=null?`<div class="meter"><i style="width:${Math.min(100,Math.max(0,meter))}%;background:${color}"></i></div>`:""}</div>`;
+  $("#kpisA").innerHTML=
+    tile("Atas vigentes",nf0.format(atas.length),`${nf0.format(nForn)} ${nForn===1?"fornecedor":"fornecedores"} · ${brl(valor)} registrados`,"Atas de registro de preços em vigor hoje. Cada fornecedor de uma mesma licitação tem a sua ata.")+
+    tile("Itens",nf0.format(itens.length),"produtos e serviços com preço registrado","Cada item tem descrição, unidade, quantidade registrada e preço unitário definidos na licitação.")+
+    tile("Vencem em 60 dias",nf0.format(v60),v60?"atas para renovar ou usar logo":"nenhuma no período","Atas cuja vigência (já com aditivos) termina nos próximos 60 dias. Depois disso não dá mais para comprar por elas.","var(--orange)",atas.length?pct(v60,atas.length):null)+
+    tile(`Empenhado em ${ano}`,`<span title="${esc(brlFull(emp))}">${brl(emp)}</span>`,`${pctS(emp,valor)} do valor das atas · ${ipA.length?`IPPLAM: ${brl(ip)} em ${nf0.format(ipA.length)} ${ipA.length===1?"ata":"atas"}`:"o IPPLAM não usou estas atas no ano"}`,"Estimativa: soma dos empenhos do ano, de qualquer entidade, que citam a ata e o mesmo fornecedor. O portal não publica o saldo oficial das atas; confirme com a SELOG antes de comprar.","var(--emp)",pct(emp,valor));
+  ataDetalhe();
+  if(ast.parte==="itens")ataTabItens(itens);else if(ast.parte==="atas")ataTabAtas(atas);else ataTipos();
+  $("#ataNota").innerHTML=`Fonte: Portal da Transparência, módulo Contratos / Atas (Tipo ato = Ata de Registro de Preços), atualizado toda segunda. O portal não publica o saldo de cada ata: a coluna de empenhado é uma estimativa feita com os empenhos de ${ano}, e empenhos de anos anteriores não entram. Antes de comprar, confirme o saldo e a adesão com a SELOG.`;
+}
+function ataSort(l,sort,get){const k=sort.k,d=sort.d,v=get(k);l.sort((a,b)=>{const x=v(a),y=v(b);return (typeof x==="string"?x.localeCompare(y,"pt-BR"):(x-y))*d;});}
+function thSort(tbl,sort,cols,cb){$(tbl).querySelectorAll("th[data-k]").forEach(th=>th.onclick=()=>{const c=th.dataset.k;if(sort.k===c)sort.d*=-1;else{sort.k=c;sort.d=cols[c]||1;}cb();});}
+function ataTabItens(itens){
+  const l=itens.slice();
+  ataSort(l,ast.sortI,k=>({desc:i=>semAcento(i.desc).replace(/^[^a-z0-9]+/,""),un:i=>i.un,qtd:i=>i.qtd,vu:i=>i.vu,forn:i=>semAcento(i.ata.forn),venc:i=>i.ata.venc||"9"}[k]));
+  ataItensLista=l;
+  const vis=l.slice(0,ast.lim),k=ast.sortI.k,d=ast.sortI.d;
+  const cols=[["desc","Item"],["un","Unidade"],["qtd","Quantidade da ata"],["vu","Preço unitário"],["forn","Fornecedor e ata"],["venc","Vigência até"]],tl=["un","forn"];
+  $("#tblAtaItens").innerHTML=`<thead><tr>${cols.map(([c,n])=>`<th data-k="${c}"${tl.includes(c)?' class="tl"':""} ${k===c?`aria-sort="${d<0?"descending":"ascending"}"`:""}>${n}</th>`).join("")}</tr></thead>
+    <tbody>${vis.length?vis.map((i,n)=>`<tr data-n="${n}" style="cursor:pointer"${i.ata.ip>0?' class="ata-ipr"':""}><td><div class="clamp">${esc(i.desc)}</div></td><td class="tl">${esc(i.un)}</td><td>${qtdF(i.qtd)}</td><td title="Valor total do item: ${esc(brlFull(i.vt))}">${brlFull(i.vu)}</td><td class="tl">${esc(i.ata.forn)}<div style="font-size:12px;color:var(--muted)">Ata ${esc(i.ata.ata)} · ${esc(i.ata.lic)}${i.ata.ip>0?'<span class="ata-ip">IPPLAM já usou</span>':""}</div></td><td>${vencTxt(i.ata)}</td></tr>`).join(""):`<tr><td colspan="6" class="empty">Nenhum item encontrado${ast.busca.trim()?` para “${esc(ast.busca.trim())}”`:""}.</td></tr>`}</tbody>`;
+  thSort("#tblAtaItens",ast.sortI,{qtd:-1,vu:-1},render);
+  $("#tblAtaItens").querySelectorAll("tbody tr[data-n]").forEach(tr=>tr.onclick=e=>{if(e.target.closest(".clamp"))return;selAta(vis[+tr.dataset.n].ata);});
+  $("#aItensCont").textContent=`${nf0.format(l.length)} ${l.length===1?"item":"itens"}`;
+  $("#aItensMais").innerHTML=l.length>ast.lim?`<span class="desc" style="margin-right:10px">Mostrando ${nf0.format(vis.length)} de ${nf0.format(l.length)} itens.</span><button class="btn" id="btnMaisAI" type="button">Mostrar mais 50</button>`:"";
+  const bm=$("#btnMaisAI");if(bm)bm.onclick=()=>{ast.lim+=50;render();};
+}
+function ataTabAtas(atas){
+  const l=atas.slice();
+  ataSort(l,ast.sortA,k=>({ata:a=>a.ata,obj:a=>semAcento(a.objeto),forn:a=>semAcento(a.forn),venc:a=>a.venc||"9",valor:a=>a.valor,uso:a=>a.valor>0?a.emp/a.valor:-1,n:a=>a.itens.length}[k]));
+  const vis=l.slice(0,ast.lim),k=ast.sortA.k,d=ast.sortA.d;
+  const pc=(a,b)=>b>0?`<span class="pct">${nf0.format(a/b*100)}%<span class="m"><i style="width:${Math.max(0,Math.min(100,a/b*100))}%"></i></span></span>`:"–";
+  const cols=[["ata","Ata"],["obj","Objeto"],["forn","Fornecedor"],["n","Itens"],["venc","Vigência até"],["valor","Valor da ata"],["uso","Empenhado no ano"]],tl=["obj","forn"];
+  $("#tblAtas").innerHTML=`<thead><tr>${cols.map(([c,n])=>`<th data-k="${c}"${tl.includes(c)?' class="tl"':""} ${k===c?`aria-sort="${d<0?"descending":"ascending"}"`:""}>${n}</th>`).join("")}</tr></thead>
+    <tbody>${vis.length?vis.map((a,n)=>`<tr data-n="${n}" style="cursor:pointer"${a.ip>0?' class="ata-ipr"':""}><td style="white-space:nowrap;min-width:0">${esc(a.ata)}<div style="font-size:12px;color:var(--muted)">${esc(a.lic)}</div></td><td class="tl"><div class="clamp">${esc(a.objeto)}</div><div style="font-size:12px;color:var(--muted)">${esc(a.cat)}${a.ip>0?'<span class="ata-ip">IPPLAM já usou</span>':""}</div></td><td class="tl">${esc(a.forn)}</td><td>${nf0.format(a.itens.length)}</td><td>${vencTxt(a)}</td><td title="${esc(brlFull(a.valor))}">${brl(a.valor)}</td><td title="${esc(brlFull(a.emp))}">${pc(a.emp,a.valor)}</td></tr>`).join(""):`<tr><td colspan="7" class="empty">Nenhuma ata encontrada.</td></tr>`}</tbody>`;
+  thSort("#tblAtas",ast.sortA,{valor:-1,uso:-1,n:-1},render);
+  $("#tblAtas").querySelectorAll("tbody tr[data-n]").forEach(tr=>tr.onclick=e=>{if(e.target.closest(".clamp"))return;selAta(vis[+tr.dataset.n]);});
+  $("#aAtasCont").textContent=`${nf0.format(l.length)} ${l.length===1?"ata":"atas"}`;
+  $("#aAtasMais").innerHTML=l.length>ast.lim?`<span class="desc" style="margin-right:10px">Mostrando ${nf0.format(vis.length)} de ${nf0.format(l.length)} atas.</span><button class="btn" id="btnMaisAA" type="button">Mostrar mais 50</button>`:"";
+  const bm=$("#btnMaisAA");if(bm)bm.onclick=()=>{ast.lim+=50;render();};
+}
+function ataTipos(){
+  const {atas}=atasFiltro(true),g=new Map();
+  atas.forEach(a=>{const o=g.get(a.cat)||{nome:a.cat,v:0,n:0};o.v+=a.valor;o.n++;g.set(a.cat,o);});
+  hbarras("#barsAtaCat",[...g.values()].sort((a,b)=>b.v-a.v).map(o=>({nome:o.nome,v:o.v,txt:brl(o.v),cor:ast.cat&&ast.cat!==o.nome?"var(--cinza)":"var(--liq)",tip:`${o.nome}: ${nf0.format(o.n)} atas, ${brlFull(o.v)}`})),
+    {sel:ast.cat,onClick:i=>{ast.cat=ast.cat===i.nome?"":i.nome;ast.lim=50;render();}});
+  const {atas:at2}=atasFiltro(),hoje=new Date(hojeISO()+"T12:00"),ms=[];
+  for(let k=0;k<12;k++){const d=new Date(hoje.getFullYear(),hoje.getMonth()+k,1);ms.push({ano:d.getFullYear(),mes:d.getMonth()+1,n:0,v:0});}
+  at2.forEach(a=>{if(!a.venc)return;const y=+a.venc.slice(0,4),m=+a.venc.slice(5,7),p=ms.find(x=>x.ano===y&&x.mes===m);if(p){p.n++;p.v+=a.valor;}});
+  colunas("#chAtaVenc",ms.map(p=>MESES[p.mes-1]+(p.mes===1||p===ms[0]?"/"+String(p.ano).slice(2):"")),[{nome:"Atas",cor:"var(--orange)",vals:ms.map(p=>p.n)}],
+    {rot:[0],minRot:18,tip:i=>ttH(`${MESES_L[ms[i].mes-1]} de ${ms[i].ano}`,[["Atas que vencem",nf0.format(ms[i].n)],["Valor registrado",brl(ms[i].v)]])});
+}
+function selAta(a){ast.sel=ast.sel===a.id?null:a.id;render();if(ast.sel)$("#ataDet").scrollIntoView({behavior:"smooth",block:"nearest"});}
+function ataDetalhe(){
+  const box=$("#ataDet"),a=ast.sel&&ATAS.find(x=>x.id===ast.sel);
+  if(!a){box.classList.add("hidden");box.innerHTML="";return;}
+  box.classList.remove("hidden");
+  const usos=a.usaram.length?`Empenharam nesta ata em ${ATAMETA.ano_empenhos||""}: ${a.usaram.map(esc).join(", ")}.`:"Nenhum empenho neste ano cita esta ata.";
+  box.innerHTML=`<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+      <div style="min-width:0;flex:1 1 400px"><h2>Ata ${esc(a.ata)} · ${esc(a.forn)}</h2>
+        <p class="desc">${esc(a.objeto)}</p>
+        <p class="desc">${esc(a.lic)} · ${esc(a.entidade)} · CNPJ ${esc(a.cnpj)} · vigência de ${dataBR(a.inicio)} a <b>${dataBR(a.venc)}</b>${a.dias!=null?` (${a.dias} dias)`:""} · valor ${brl(a.valor)} · empenhado no ano ${brl(a.emp)} (${pctS(a.emp,a.valor)}). ${usos}</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${a.link?`<a class="btn" href="${esc(a.link)}" target="_blank" rel="noopener">Ver no portal</a>`:""}<button class="btn" id="btnFecharA" type="button">Fechar</button></div></div>
+    <div class="tablewrap"><table><thead><tr><th style="cursor:default;min-width:0">Lote</th><th style="cursor:default" class="tl">Item</th><th style="cursor:default" class="tl">Unidade</th><th style="cursor:default">Quantidade</th><th style="cursor:default">Preço unitário</th><th style="cursor:default">Valor total</th></tr></thead>
+      <tbody>${a.itens.length?a.itens.map(i=>`<tr><td style="min-width:0">${esc(i.lote??"")}${i.ordem!=null?"."+esc(i.ordem):""}</td><td class="tl" style="min-width:260px"><div class="clamp">${esc(i.desc)}</div></td><td class="tl">${esc(i.un)}</td><td>${qtdF(i.qtd)}</td><td>${brlFull(i.vu)}</td><td>${brlFull(i.vt)}</td></tr>`).join(""):'<tr><td colspan="6" class="empty">O portal não trouxe os itens desta ata nesta atualização.</td></tr>'}</tbody></table></div>`;
+  $("#btnFecharA").onclick=()=>{ast.sel=null;render();};
+}
+function csvAtas(){
+  const f=v=>String(v).replace(".",","),q=t=>'"'+String(t).replace(/"/g,'""')+'"';
+  const lines=[["Item","Unidade","Quantidade da ata","Preço unitário","Valor total do item","Ata","Fornecedor","CNPJ","Licitação","Tipo de compra","Vigência até","Objeto da ata","Valor da ata","Empenhado no ano (estimado)","Link"].join(";")];
+  ataItensLista.forEach(i=>{const a=i.ata;lines.push([q(i.desc),q(i.un),f(i.qtd),f(i.vu),f(i.vt),q(a.ata),q(a.forn),q(a.cnpj),q(a.lic),q(a.cat),a.venc,q(a.objeto),f(a.valor),f(a.emp),a.link].join(";"));});
+  const blob=new Blob(["﻿"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const el=document.createElement("a");el.href=URL.createObjectURL(blob);el.download=`atas_vigentes_maringa_${hojeISO()}.csv`;
+  document.body.appendChild(el);el.click();setTimeout(()=>{URL.revokeObjectURL(el.href);el.remove();},500);
 }
 
 if(document.fonts)document.fonts.ready.then(()=>alinha());

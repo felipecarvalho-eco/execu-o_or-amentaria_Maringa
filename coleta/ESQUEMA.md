@@ -79,6 +79,8 @@ entra sozinha, com o nome oficial):
 | `licitacoes.js` / `.json` | aba Licitações | `window.DADOS_LICITACOES = {meta, licitacoes, mudancas}` |
 | `diarias.js` / `.json` | aba Diárias e passagens | `window.DADOS_DIARIAS = {meta, diarias}` |
 | `gastos.js` | aba "Para onde vai o dinheiro" (carregar só ao abrir a aba: ~11 MB, ~2 MB comprimido) | `window.DADOS_GASTOS = {meta, colunas, dicionarios, linhas}` |
+| `atas.js` / `.json` | aba Atas vigentes | `window.DADOS_ATAS = {meta, atas}` (atas de registro de preços vigentes, com os itens) |
+| `atas.csv` | análise | um item de ata por linha |
 | `licitacoes.csv`, `diarias.csv` | análise | mesmo conteúdo das listas acima |
 | `empenhos.csv` | só com `--com-empenhos` | um empenho por linha |
 
@@ -269,6 +271,24 @@ link_licitacao, credor_documento, credor, fonte_recurso, historico, detalhe, emp
 - Reaproveitamento: os campos do detalhe não mudam, então a coleta lê o `gastos.js` anterior e só consulta
   `/empenhos/detalhe` para empenhos novos (`--gastos-max-minutos`, padrão 30, limita o tempo por coleta).
 
+### `atas` (atas de registro de preços vigentes, `coleta/atas.py`; `--sem-atas` pula)
+
+Uma linha por ata e fornecedor (o portal divide a mesma ata entre os fornecedores vencedores, cada um com
+o seu número). Só atas vigentes hoje, de todas as entidades (em 11/2026: 1.737 da Prefeitura, 3 da Câmara e
+6 da SBMG; o IPPLAM e as outras autarquias não têm atas próprias e usam as da Prefeitura).
+
+`id` (idOxy no portal), `entidade` (dona da ata), `ata` (nº/ano), `fornecedor`, `cnpj`, `objeto`, `categoria`
+(lida do objeto, ver `CATEGORIAS` em `atas.py`), `tipo` (Compra ou Prestação de Serviço), `licitacao`
+("Pregão 84/2026"), `inicio`, `vigencia` (fim, já com aditivos), `valor` (contratado + aditivos),
+`empenhado_ano` e `empenhado_por_entidade` (estimativa, ver abaixo), `link` (página da ata no portal) e
+`itens`: lista de `[lote, ordem, descricao, unidade, quantidade, valor_unitario, valor]` (`meta.colunas_itens`).
+
+O portal não publica o saldo das atas. `empenhado_ano` soma os empenhos do ano corrente (`meta.ano_empenhos`),
+de qualquer entidade, cujo detalhe cita a ata (`noContrato/anoContrato`) com o mesmo CNPJ do fornecedor; vem
+do `gastos.js` (se a coleta de gastos não rodar, usa o `gastos.js` anterior). Empenhos de anos anteriores não
+entram. Os itens do empenho batem com a descrição do item da ata em ~97% dos casos, o que permitiria estimar o
+saldo por item numa próxima etapa.
+
 ### `empenhos.csv`
 
 `entidade, entidade_id, ano, empenho (nº/ano), data, mes, credor_documento, credor, fonte_recurso, historico, empenhado, anulado,
@@ -296,6 +316,9 @@ Todos exigem os cabeçalhos HTTP `entidade: <id>` e `exercicio: <ano>` (nos exem
 | detalhe do empenho | `/empenhos/detalhe?entidade=E&exercicio=A&empenho=N` |
 | elemento do empenho (folha) | `/empenhos/lista?...&programatica.elemento=<6 dígitos>` |
 | arquivos da prestação de contas | `/api/diarias-prestacao-conta/arquivos?idEmpenho=<idEmpenho>` |
+| atas vigentes | `/api/contratos?entidade=E&tipoAto=2&contratosVigentes=true&page=N&size=1000` (`tipoAto` 1 = contrato, 2 = ata de registro de preços) |
+| itens da ata | `/api/contratos/<idOxy>` |
+| página da ata | `https://transparencia.maringa.pr.gov.br/portaltransparencia/<E>/contratos/detalhes?id=<idOxy>` |
 | órgão do empenho | `/empenhos/lista?...&programatica.orgao=<código do órgão>` |
 
 A API devolve valores do intervalo de datas pedido (inclusive créditos adicionais). Por isso o script pede
