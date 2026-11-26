@@ -317,6 +317,56 @@ tr.ata-ipr td{background:color-mix(in srgb,var(--liq) 7%,transparent)}
 .tl{text-align:left!important;white-space:normal!important}
 .venc{white-space:nowrap}.venc.perto{color:var(--orange);font-weight:600}
 @media (max-width:640px){#tblAtaItens td:first-child,#tblAtas td:nth-child(2){min-width:200px}}
+/* aba IPPLAM: controles próprios (ano e mês), sem os filtros do topo */
+.ipl-ctl{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center}
+.ipl-anos{display:inline-flex;border:1px solid var(--liq);border-radius:3px;overflow:hidden}
+.ipl-anos button{font:inherit;font-size:14px;border:0;background:var(--surface);color:var(--ink);padding:6px 14px;cursor:pointer}
+.ipl-anos button[aria-pressed="true"]{background:var(--liq);color:#fff;font-weight:700}
+.ipl-slider{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;flex:1 1 360px;min-width:0;font-size:14px;color:var(--ink-2)}
+.ipl-slider input{flex:1 1 200px;min-width:0;accent-color:var(--liq)}
+.ipl-slider output{font-weight:700;color:var(--title);min-width:10em}
+.ipl-pill{display:inline-block;font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px;white-space:nowrap;border:1px solid}
+.ipl-pill.falta{color:var(--bad);border-color:var(--bad)}
+.ipl-pill.sobra{color:var(--ink);background:color-mix(in srgb,var(--orange) 22%,transparent);border-color:color-mix(in srgb,var(--orange) 70%,transparent)}
+.ipl-pill.ok{color:var(--good);border-color:color-mix(in srgb,var(--good) 60%,transparent)}
+.ipl-pill.na{color:var(--muted);border-color:var(--border)}
+#tblIpl td:first-child,#tblIplMapa td:first-child{min-width:230px}
+#secIpl tr.grp td{background:var(--surface-2);font-weight:700;color:var(--title);font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
+#secIpl tr.el{cursor:pointer}
+#secIpl tr.el:hover td{background:color-mix(in srgb,var(--liq) 7%,transparent)}
+#secIpl tr.el.aberto td{background:color-mix(in srgb,var(--liq) 12%,transparent)}
+#secIpl .iseta{display:inline-block;width:14px;color:var(--title)}
+#secIpl tr.grp td:not(:first-child){text-transform:none}
+.ipl-forn td{white-space:nowrap}
+#secIpl .cod{color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums;margin-right:4px}
+#secIpl .ibar{display:block;width:150px;max-width:100%;height:6px;background:var(--track);border-radius:3px;margin-top:5px;position:relative;overflow:hidden}
+#secIpl .ibar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px}
+#secIpl tr.det>td{white-space:normal;text-align:left;background:color-mix(in srgb,var(--liq) 4%,var(--surface));padding:12px}
+.ipl-det{display:flex;flex-direction:column;gap:10px;position:sticky;left:12px;width:min(980px,calc(100vw - 80px))}
+.ipl-nums{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.ipl-nums b{color:var(--ink)}
+.ipl-mini svg{display:block;width:100%;max-width:720px;height:auto}
+.ipl-forn{border:1px solid var(--border);border-radius:3px;background:var(--surface);overflow:hidden}
+.ipl-fh,.ipl-forn summary{display:grid;grid-template-columns:minmax(0,1fr) 112px 112px 112px 104px;gap:8px;align-items:center;padding:7px 10px}
+.ipl-fh{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);background:var(--surface-2)}
+.ipl-fh span:not(:first-child),.ipl-forn .fv{text-align:right;font-variant-numeric:tabular-nums}
+.ipl-forn details{border-top:1px solid var(--grid)}
+.ipl-forn summary{cursor:pointer;list-style:none;font-size:13.5px}
+.ipl-forn summary::-webkit-details-marker{display:none}
+.ipl-forn summary:hover{background:color-mix(in srgb,var(--liq) 7%,transparent)}
+.ipl-forn .fn{min-width:0;overflow-wrap:anywhere}
+.ipl-forn .fbody{padding:6px 10px 12px;display:flex;flex-direction:column;gap:8px}
+.ipl-ctr{font-size:13px;background:color-mix(in srgb,var(--liq) 9%,transparent);border-radius:3px;padding:8px 10px}
+.ipl-ctr a{color:var(--title);font-weight:700}
+.ipl-forn table{font-size:13px}.ipl-forn th,.ipl-forn td{padding:5px 8px}
+.ipl-forn th{position:static;cursor:default}
+.ipl-forn td.tl{min-width:220px;max-width:440px;color:var(--ink-2)}
+#tblIplMapa td.cel{padding:2px;min-width:40px}
+#tblIplMapa td.cel span{display:block;height:28px;line-height:28px;text-align:center;font-size:12px;border-radius:3px;background:color-mix(in srgb,var(--liq) calc(var(--a)*90%),transparent);color:var(--ink)}
+#tblIplMapa td.cel span.dk{color:#fff;font-weight:700}
+#tblIplMapa td.cel.fut span{background:color-mix(in srgb,var(--orange) calc(var(--a)*45%),transparent);outline:1px dashed var(--orange);outline-offset:-2px}
+#tblIplMapa th.fut{color:var(--amber)}
+@media (max-width:640px){.ipl-fh,.ipl-forn summary{grid-template-columns:minmax(0,1fr) 92px}.ipl-fh span:nth-child(n+3),.ipl-forn summary .fv:nth-child(n+3){display:none}.ipl-slider output{min-width:0}}
 </style>
 </head>
 <body>
@@ -342,6 +392,7 @@ tr.ata-ipr td{background:color-mix(in srgb,var(--liq) 7%,transparent)}
       <button class="tab" role="tab" id="tabL" aria-selected="false" data-tab="lic">Licitações</button>
       <button class="tab" role="tab" id="tabV" aria-selected="false" data-tab="diar">Diárias e Passagens</button>
       <button class="tab" role="tab" id="tabA" aria-selected="false" data-tab="atas">Atas vigentes</button>
+      <button class="tab" role="tab" id="tabI" aria-selected="false" data-tab="ipl">IPPLAM</button>
     </div>
     <div class="frow">
       <div class="f"><label for="fAno">Ano</label><select id="fAno"></select></div>
@@ -623,6 +674,39 @@ tr.ata-ipr td{background:color-mix(in srgb,var(--liq) 7%,transparent)}
     </div>
   </section>
 
+  <!-- ORÇAMENTO DO IPPLAM -->
+  <section id="secIpl" class="hidden">
+    <p class="summary" id="sumI"></p>
+    <div id="iplCorpo">
+      <div class="card full ipl-ctl">
+        <div class="ipl-anos" id="iplAnos" role="group" aria-label="Ano"></div>
+        <label class="ipl-slider" for="iplMes"><span>Olhar o ano como se fosse o fim de</span>
+          <input id="iplMes" type="range" min="1" max="12" step="1" value="12">
+          <output id="iplMesOut" for="iplMes"></output>
+        </label>
+      </div>
+      <div class="kpis kpis6" id="kpisI" style="margin-top:12px"></div>
+      <div class="card full">
+        <h2 id="iplCurvaTit">Curva do ano</h2>
+        <p class="desc" id="iplCurvaTxt"></p>
+        <div class="legend"><span><i style="background:var(--orcado)"></i>Dotação atualizada (o que pode gastar)</span><span><i style="background:var(--emp)"></i>Empenhado (reservado para um fornecedor)</span><span><i style="background:var(--liq)"></i>Liquidado (entregue e atestado)</span><span><i style="background:var(--orange)"></i>Projeção até 31/12</span><span id="iplLegReal" class="hidden"><i class="dash" style="border-top-color:var(--muted)"></i>O que aconteceu de fato</span></div>
+        <div class="chart" id="chIpl"></div>
+      </div>
+      <div class="card full">
+        <h2>Por elemento: vai sobrar ou faltar?</h2>
+        <p class="desc">Um tipo de despesa por linha, na ordem das contas. Clique numa linha para abrir ali mesmo o gasto mês a mês e para quem foi o dinheiro.</p>
+        <div class="subtabs" role="tablist" aria-label="Formato da tabela do IPPLAM">
+          <button class="subtab" role="tab" data-ipv="lista">Lista</button>
+          <button class="subtab" role="tab" data-ipv="mapa">Mapa do ano</button>
+        </div>
+        <p class="desc" id="iplVistaTxt"></p>
+        <div class="tablewrap" id="iplLista"><table id="tblIpl"></table></div>
+        <div class="tablewrap hidden" id="iplMapa"><table id="tblIplMapa"></table></div>
+        <p class="desc" style="margin:10px 0 0">Projeção: o liquidado até o mês escolhido mais o ritmo dos últimos 3 meses completos até 31/12; na folha (grupo 3.1 e auxílio-alimentação) soma mais um mês, pelo 13º. Se o já empenhado for maior, vale o empenhado. "Sobra grande" = mais de 20% da dotação e mais de R$ 5 mil. Os valores batem com a consulta Saldo da Dotação do sistema contábil; a reserva de dotação não é publicada no portal e fica de fora.</p>
+      </div>
+    </div>
+  </section>
+
   <!-- DIÁRIAS E PASSAGENS -->
   <section id="secDiar" class="hidden">
     <p class="summary" id="sumV"></p>
@@ -788,7 +872,7 @@ function readHash(){
   st.de=p.has("de")?Math.max(1,Math.min(12,+p.get("de"))):1;
   st.ate=p.has("ate")?Math.max(1,Math.min(um,+p.get("ate"))):um;
   if(st.de>st.ate) st.de=1;
-  const aba=p.get("aba");st.tab=aba==="rec"&&REC.length?"rec":["desp","cred","lic","diar","atas"].includes(aba)?aba:"res";
+  const aba=p.get("aba");st.tab=aba==="rec"&&REC.length?"rec":["desp","cred","lic","diar","atas","ipl"].includes(aba)?aba:"res";
   if(p.get("er"))st.entRes=nomeEnt(p.get("er"));
   if(["lista","acomp","hist"].includes(p.get("la")))st.la=p.get("la");
   FDIMS.forEach(k=>{if(p.get(k)) st.f[k]=p.get(k);});
@@ -942,10 +1026,10 @@ function alinha(){
 function render(){
   if(checarAba&&soltaFiltros())checarAba=false;
   writeHash();
-  [["#tabS","#secRes","res"],["#tabD","#secDesp","desp"],["#tabR","#secRec","rec"],["#tabC","#secCred","cred"],["#tabL","#secLic","lic"],["#tabV","#secDiar","diar"],["#tabA","#secAtas","atas"]].forEach(([t,sec,k])=>{$(t).setAttribute("aria-selected",st.tab===k);$(sec).classList.toggle("hidden",st.tab!==k);});
+  [["#tabS","#secRes","res"],["#tabD","#secDesp","desp"],["#tabR","#secRec","rec"],["#tabC","#secCred","cred"],["#tabL","#secLic","lic"],["#tabV","#secDiar","diar"],["#tabA","#secAtas","atas"],["#tabI","#secIpl","ipl"]].forEach(([t,sec,k])=>{$(t).setAttribute("aria-selected",st.tab===k);$(sec).classList.toggle("hidden",st.tab!==k);});
   refreshFilterOptions();
-  if(st.tab==="res") renderRes(); else if(st.tab==="desp"&&DESP.length) renderDesp(); else if(st.tab==="rec") renderRec(); else if(st.tab==="cred") renderCred(); else if(st.tab==="lic") renderLic(); else if(st.tab==="diar") renderDiar(); else if(st.tab==="atas") renderAtas();
-  $("#filters").classList.toggle("so-abas",st.tab==="atas");
+  if(st.tab==="res") renderRes(); else if(st.tab==="desp"&&DESP.length) renderDesp(); else if(st.tab==="rec") renderRec(); else if(st.tab==="cred") renderCred(); else if(st.tab==="lic") renderLic(); else if(st.tab==="diar") renderDiar(); else if(st.tab==="atas") renderAtas(); else if(st.tab==="ipl") renderIpl();
+  $("#filters").classList.toggle("so-abas",st.tab==="atas"||st.tab==="ipl");
   requestAnimationFrame(alinha);
 }
 function sujeito(){
@@ -1062,6 +1146,7 @@ function renderRes(){
   const at=[["desp","Despesas","Todos os gastos, por órgão, área, programa e tipo de gasto"],["rec","Receitas","Tudo o que foi arrecadado e as transferências da Prefeitura"],["cred","Credores","Quem recebeu: empresas, entidades e pessoas"],
     ["lic","Licitações",lic?`${nf0.format(lic.length)} licitações publicadas no período, somando ${brl(lic.reduce((t,r)=>t+r.est,0))} estimados`:"Compras públicas em andamento e concluídas"],
     ["atas","Atas vigentes","O que pode ser comprado pelas atas de registro de preços: itens, preços e fornecedores"],
+    ["ipl","Orçamento do IPPLAM","Quanto ainda dá para gastar até 31/12, por elemento, e para quem foi o dinheiro"],
     ["diar","Diárias e Passagens",dia?`${brl(dia.reduce((t,r)=>t+r.valor,0))} em viagens a serviço no período`:"Viagens a serviço de servidores e autoridades"]];
   const pr=dia?pcResumo(dia):null;
   if(pr&&pr.n)at.push(["diar","Prestação de contas de viagens",`${nf0.format(pct(pr.p,pr.n))}% dos relatórios entregues em até 3 dias → ver por servidor`,"pcServ"]);
@@ -2008,6 +2093,164 @@ function atasFiltro(semCat){
   const atas=[],itens=[];
   at.forEach(a=>{const naAta=a._q.includes(q),its=naAta?a.itens:a.itens.filter(i=>i._q.includes(q));if(naAta||its.length){atas.push(a);itens.push(...its);}});
   return {atas,itens};
+}
+// ===== aba IPPLAM: orçamento do IPPLAM mês a mês, projeção até 31/12 e detalhe por fornecedor =====
+let IPL=null;
+const ist={ano:null,mes:null,aberto:null,vista:(()=>{try{return localStorage.getItem("iplvista")==="mapa"?"mapa":"lista";}catch(e){return "lista";}})()};
+const IPL_GRUPOS=[["3.1","Pessoal e encargos sociais"],["3.3","Outras despesas correntes"],["4.4","Investimentos"]];
+const IPL_NOMES={"3.1.90.11":"Vencimentos (folha)","3.1.90.13":"Obrigações patronais (INSS)","3.1.91.13":"Obrigações patronais (RPPS)","3.3.90.39":"Serviços de terceiros: pessoa jurídica","3.3.90.36":"Serviços de terceiros: pessoa física","3.3.90.40":"Serviços de tecnologia da informação","3.3.90.35":"Serviços de consultoria","4.4.90.52":"Equipamentos e material permanente","3.3.90.30":"Material de consumo","3.3.90.46":"Auxílio-alimentação","3.3.90.14":"Diárias","3.1.90.94":"Indenizações trabalhistas","3.3.90.47":"Obrigações tributárias e contributivas"};
+const iR=v=>"R$ "+nf0.format(Math.round(v));
+const iplNome=k=>IPL_NOMES[k]||acentua(legivel(IPL.nomes[k]||k));
+const iplFolha=k=>k.startsWith("3.1")||k==="3.3.90.46";
+const iplOrd=(a,b)=>{const x=a.split(".").map(Number),y=b.split(".").map(Number);for(let i=0;i<x.length;i++)if(x[i]!==y[i])return x[i]-y[i];return 0;};
+function lerIpl(d){IPL=d&&d.anos?d:null;if(!IPL)return;const anos=Object.keys(IPL.anos).map(Number).sort((a,b)=>a-b);
+  ist.ano=anos[anos.length-1];ist.mes=iplNMeses(ist.ano);}
+function iplNMeses(y){const v=Object.values(IPL.anos[y]||{})[0];return v?v.length:0;}
+function iplParcial(y,M){const p=IPL.parcial;if(!p||p.ano!==y||p.mes!==M)return false;return p.dia<new Date(y,M,0).getDate();}
+function iplLinha(k,v,M,y){
+  // mês em andamento: o ritmo e a base vêm do último mês completo (a folha do mês ainda não entrou)
+  const base=iplParcial(y,M)?M-1:M, L=i=>i>0?v[i-1][3]:0, a=Math.max(0,base-3);
+  const ritmo=base>0?Math.max(0,(L(base)-L(a))/(base-a)):0;
+  const at=v[M-1], proj=Math.max(at[2],L(base)+ritmo*(12-base)+(iplFolha(k)?ritmo:0));
+  return {k,ritmo,proj,dot:at[1],emp:at[2],liq:at[3],pago:at[4],sobra:at[1]-proj};
+}
+function iplLinhas(){return Object.entries(IPL.anos[ist.ano]).map(([k,v])=>iplLinha(k,v,ist.mes,ist.ano));}
+function iplSit(r){
+  if(r.dot<=0&&r.proj<=0)return ["Sem dotação","na"];
+  if(r.sobra< -500)return ["Vai faltar","falta"];
+  if(r.sobra>Math.max(5000,.2*r.dot))return ["Sobra grande","sobra"];
+  return ["Ok","ok"];
+}
+function iplSoma(rs){return rs.reduce((s,r)=>{["dot","emp","liq","ritmo","proj","sobra"].forEach(f=>s[f]+=r[f]);return s;},{dot:0,emp:0,liq:0,ritmo:0,proj:0,sobra:0});}
+function iplGrupos(L){L=L.filter(r=>r.dot>0||r.emp>0).sort((a,b)=>iplOrd(a.k,b.k));
+  const gs=IPL_GRUPOS.map(g=>[g,L.filter(r=>r.k.startsWith(g[0]))]);
+  const resto=L.filter(r=>!IPL_GRUPOS.some(g=>r.k.startsWith(g[0])));if(resto.length)gs.push([["","Outros"],resto]);
+  return gs.filter(x=>x[1].length);}
+function iplMensal(k){const v=IPL.anos[ist.ano][k];return v.map((m,i)=>[m[2]-(i?v[i-1][2]:0),m[3]-(i?v[i-1][3]:0)]);}
+function iplSerie(){const vs=Object.values(IPL.anos[ist.ano]),n=vs[0].length;const t=Array.from({length:n},()=>[0,0,0,0,0]);vs.forEach(v=>v.forEach((m,i)=>m.forEach((x,j)=>t[i][j]+=x)));return t;}
+const iplSobraTd=s=>`<td style="font-weight:700;color:${s< -500?"var(--bad)":"inherit"}">${s>=0?"+":"−"}${iR(Math.abs(s))}</td>`;
+const iplPill=r=>{const [t,c]=iplSit(r);return `<span class="ipl-pill ${c}">${t}</span>`;};
+
+function renderIpl(){
+  if(!estadoCarga("ipplam","DADOS_IPPLAM",lerIpl,"#sumI","#iplCorpo","o orçamento do IPPLAM"))return;
+  if(!IPL){$("#sumI").innerHTML='<span class="card empty" style="display:block">Os dados do IPPLAM ainda não estão disponíveis. Eles aparecem aqui depois que a coleta automática rodar.</span>';$("#iplCorpo").classList.add("hidden");return;}
+  $("#iplCorpo").classList.remove("hidden");
+  const anos=Object.keys(IPL.anos).map(Number).sort((a,b)=>a-b),n=iplNMeses(ist.ano);
+  if(ist.mes>n)ist.mes=n;
+  $("#iplAnos").innerHTML=anos.map(y=>`<button type="button" data-y="${y}" aria-pressed="${y===ist.ano}">${y}</button>`).join("");
+  $("#iplAnos").querySelectorAll("button").forEach(b=>b.onclick=()=>{ist.ano=+b.dataset.y;ist.mes=Math.min(ist.mes,iplNMeses(ist.ano));render();});
+  const inp=$("#iplMes");inp.max=n;inp.value=ist.mes;inp.oninput=e=>{ist.mes=+e.target.value;render();};
+  const parc=iplParcial(ist.ano,ist.mes);
+  $("#iplMesOut").textContent=parc?`${IPL.parcial.dia} de ${MESES_L[ist.mes-1]} de ${ist.ano}`:`${MESES_L[ist.mes-1]} de ${ist.ano}`;
+  const L=iplLinhas(),T=iplSoma(L),S=iplSerie(),fechado=S.length===12;
+  const ateTxt=parc?`até ${IPL.parcial.dia}/${String(ist.mes).padStart(2,"0")}`:`até o fim de ${MESES_L[ist.mes-1]}`;
+  const real=fechado&&ist.mes<12?S[11][1]-S[11][2]:null;
+  $("#sumI").innerHTML=`Instituto de Pesquisa e Planejamento Urbano de Maringá (IPPLAM), ${ist.ano}, ${ateTxt}: <b>${brl(T.emp)}</b> empenhados de <b>${brl(T.dot)}</b> de dotação. No ritmo dos últimos meses, o ano fecharia com <b>${brl(T.proj)}</b> gastos, ${T.sobra>=0?"sobrando":"faltando"} <b>${brl(Math.abs(T.sobra))}</b>.`+(real!=null?` Em 31/12 sobrou de fato <b>${brl(real)}</b>.`:"");
+  const corS=T.sobra< -500?"var(--bad)":T.sobra>.05*T.dot?"var(--amber)":"var(--good)";
+  $("#kpisI").innerHTML=[
+    kpiT("Dotação atualizada",brl(T.dot),"o que o IPPLAM pode gastar no ano","Orçamento aprovado mais os créditos adicionais (remanejamentos e suplementações) até o mês escolhido.","var(--orcado)"),
+    kpiT("Empenhado",brl(T.emp),pctS(T.emp,T.dot)+" da dotação","Valor já reservado para um fornecedor ou para a folha. É o que deixa de estar livre no orçamento.","var(--emp)",pct(T.emp,T.dot)),
+    kpiT("Liquidado",brl(T.liq),"a liquidar: "+brl(T.emp-T.liq),"Valor entregue e atestado. O que foi empenhado e não for liquidado até 31/12 vira restos a pagar.","var(--liq)",pct(T.liq,T.dot)),
+    kpiT("Livre na dotação",brl(T.dot-T.emp),"ainda não empenhado","Dotação menos o empenhado. Inclui a folha dos meses que faltam, que já tem destino.","var(--cinza)"),
+    kpiT("Projeção até 31/12",brl(T.proj),"no ritmo atual de gasto","Liquidado até agora mais o ritmo dos últimos 3 meses até dezembro (na folha, mais um mês pelo 13º).","var(--orange)"),
+    kpiT(T.sobra>=0?"Vai sobrar":"Vai faltar",`<span style="color:${corS}">${brl(Math.abs(T.sobra))}</span>`,pctS(Math.abs(T.sobra),T.dot)+" da dotação"+(real!=null?` · sobrou de fato ${brl(real)}`:""),"Dotação menos a projeção. É o que vale remanejar com antecedência.",corS)
+  ].join("");
+  $("#iplCurvaTit").textContent="Curva do ano "+ist.ano;
+  $("#iplCurvaTxt").textContent=`Empenhado e liquidado acumulados mês a mês. A linha laranja tracejada parte do mês escolhido e mostra onde o liquidado chega em 31/12 no ritmo atual.`+(fechado&&ist.mes<12?" A linha cinza pontilhada é o que aconteceu de fato.":"");
+  iplCurva(S,T);
+  document.querySelectorAll(".subtab[data-ipv]").forEach(b=>{b.setAttribute("aria-selected",b.dataset.ipv===ist.vista);b.onclick=()=>{ist.vista=b.dataset.ipv;try{localStorage.setItem("iplvista",ist.vista);}catch(e){}render();};});
+  $("#iplLista").classList.toggle("hidden",ist.vista!=="lista");$("#iplMapa").classList.toggle("hidden",ist.vista!=="mapa");
+  $("#iplVistaTxt").textContent=ist.vista==="lista"?"Barra de cada linha: quanto da dotação já foi empenhado (claro) e liquidado (escuro).":"Cada quadrado é o liquidado no mês, em R$ mil; quanto mais escuro, maior o gasto. Depois do mês escolhido, os quadrados laranja tracejados são a projeção.";
+  ist.vista==="lista"?iplTabela(L):iplMapa(L);
+}
+function iplCurva(S,T){
+  const W=860,H=320,x0=64,x1=W-150,y0=16,y1=H-30,M=ist.mes;
+  const mx=Math.max(...S.map(m=>m[1]),T.proj,...S.map(m=>m[2]))*1.08||1;
+  const X=i=>x0+(x1-x0)*i/12,Y=v=>y1-(y1-y0)*v/mx;
+  let g="";
+  for(let t=0;t<=4;t++){const v=mx*t/4;g+=`<line x1="${x0}" x2="${x1}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)"/><text x="${x0-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--ink-2)">${v>=1e6?nf1.format(v/1e6)+" mi":nf0.format(v/1e3)+" mil"}</text>`;}
+  MESES.forEach((m,i)=>g+=`<text x="${X(i+1)}" y="${y1+18}" text-anchor="middle" font-size="11" fill="var(--ink-2)">${m}</text>`);
+  // empenhado acumulado (área clara)
+  let a=`M${X(0)},${y1}`;for(let i=0;i<M;i++)a+=` L${X(i+1)},${Y(S[i][2])}`;a+=` L${X(M)},${y1} Z`;
+  g+=`<path d="${a}" fill="var(--emp)" fill-opacity=".75"/>`;
+  // dotação (degraus)
+  let d=`M${X(0)},${Y(S[0][1])}`;S.forEach((m,i)=>{d+=` L${X(i)},${Y(m[1])} L${X(i+1)},${Y(m[1])}`;});if(S.length<12)d+=` L${X(12)},${Y(S[S.length-1][1])}`;
+  g+=`<path d="${d}" fill="none" stroke="var(--orcado)" stroke-width="2.5"/>`;
+  if(S.length>M){let r=`M${X(M)},${Y(S[M-1][2])}`;for(let i=M;i<S.length;i++)r+=` L${X(i+1)},${Y(S[i][2])}`;
+    g+=`<path d="${r}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="2 4"/>`;
+    if(S.length===12)g+=`<circle cx="${X(12)}" cy="${Y(S[11][2])}" r="3.5" fill="var(--muted)"/>`;}
+  let l=`M${X(0)},${Y(0)}`;for(let i=0;i<M;i++)l+=` L${X(i+1)},${Y(S[i][3])}`;
+  g+=`<path d="${l}" fill="none" stroke="var(--liq)" stroke-width="2.5"/>`;
+  const yp=Y(T.proj),yd=Y(T.dot),base=iplParcial(ist.ano,M)?M-1:M,ybase=base>0?Y(S[base-1][3]):Y(0);
+  g+=`<path d="M${X(base)},${ybase} L${X(12)},${yp}" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-dasharray="7 5"/><circle cx="${X(12)}" cy="${yp}" r="4.5" fill="var(--orange)"/>`;
+  const lab=[[yd,`dotação ${brl(T.dot)}`,"var(--ink-2)",400],[yp,`projeção ${brl(T.proj)}`,"var(--amber)",700]];
+  if(S.length===12&&S.length>M)lab.push([Y(S[11][2]),`real ${brl(S[11][2])}`,"var(--muted)",400]);
+  lab.sort((p,q)=>p[0]-q[0]);for(let i=1;i<lab.length;i++)if(lab[i][0]-lab[i-1][0]<15)lab[i][0]=lab[i-1][0]+15;
+  lab.forEach(([y,t,c,w])=>g+=`<text x="${X(12)+10}" y="${y+4}" font-size="12" font-weight="${w}" fill="${c}">${t}</text>`);
+  if(Math.abs(yd-yp)>40)g+=`<line x1="${X(12)}" x2="${X(12)}" y1="${yd}" y2="${yp}" stroke="var(--orange)" stroke-width="1.5"/><text x="${X(12)-8}" y="${(yd+yp)/2+4}" text-anchor="end" font-size="12" font-weight="700" fill="var(--amber)">${T.sobra>=0?"sobra":"falta"} ${brl(Math.abs(T.sobra))}</text>`;
+  g+=`<line x1="${X(M)}" x2="${X(M)}" y1="${y0}" y2="${y1}" stroke="var(--title)" stroke-width="1" stroke-dasharray="3 3"/><text x="${X(M)-6}" y="${y0+10}" text-anchor="end" font-size="11" font-weight="700" fill="var(--title)">mês escolhido</text>`;
+  $("#chIpl").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Curva do ano do IPPLAM: dotação, empenhado, liquidado e projeção até 31 de dezembro" style="width:100%;height:auto;display:block">${g}</svg>`;
+  $("#iplLegReal").classList.toggle("hidden",!(S.length>M));
+}
+function iplLiga(sel){document.querySelectorAll(sel).forEach(tr=>{const go=()=>{ist.aberto=ist.aberto===tr.dataset.k?null:tr.dataset.k;render();};
+  tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};});}
+function iplTabela(L){
+  const ncol=7;
+  $("#tblIpl").innerHTML=`<thead><tr><th style="cursor:default">Elemento</th><th style="cursor:default">Dotação</th><th style="cursor:default">Empenhado</th><th style="cursor:default">Liquidado</th><th style="cursor:default">Projeção 31/12</th><th style="cursor:default">Sobra (+) / falta (−)</th><th style="cursor:default">Situação</th></tr></thead><tbody>`+
+  iplGrupos(L).map(([g,rs])=>{const t=iplSoma(rs);
+    return `<tr class="grp"><td>${g[0]} ${g[1]}</td><td>${iR(t.dot)}</td><td>${iR(t.emp)}</td><td>${iR(t.liq)}</td><td>${iR(t.proj)}</td>${iplSobraTd(t.sobra)}<td></td></tr>`+
+    rs.map(r=>{const w=Math.min(100,pct(r.emp,r.dot)),wl=Math.min(100,pct(r.liq,r.dot)),ab=ist.aberto===r.k;
+      return `<tr class="el${ab?" aberto":""}" data-k="${r.k}" tabindex="0" aria-expanded="${ab}"><td><span class="iseta" aria-hidden="true">${ab?"▾":"▸"}</span><span class="cod">${r.k}</span> ${esc(iplNome(r.k))}<span class="ibar" title="Empenhado ${nf1.format(w)}% da dotação"><i style="width:${w}%;background:var(--emp)"></i><i style="width:${wl}%;background:var(--liq)"></i></span></td>
+        <td>${iR(r.dot)}</td><td>${iR(r.emp)}</td><td>${iR(r.liq)}</td><td>${iR(r.proj)}</td>${iplSobraTd(r.sobra)}<td>${iplPill(r)}</td></tr>`+
+        (ab?`<tr class="det"><td colspan="${ncol}">${iplDetalhe(r)}</td></tr>`:"");}).join("");}).join("")+"</tbody>";
+  iplLiga("#tblIpl tr.el");
+}
+function iplMapa(L){
+  const n=iplNMeses(ist.ano),M=ist.mes;
+  const cel=(v,mx,fut,proj,tit)=>{if(fut)return `<td class="cel fut" title="${esc(tit)}"><span style="--a:${mx>0?Math.min(1,proj/mx):0}">${proj>=500?nf0.format(proj/1e3):""}</span></td>`;
+    const a=mx>0?Math.max(0,Math.min(1,v/mx)):0;return `<td class="cel" title="${esc(tit)}"><span class="${a>.55?"dk":""}" style="--a:${a}">${Math.abs(v)>=500?nf0.format(v/1e3):(v?"·":"")}</span></td>`;};
+  $("#tblIplMapa").innerHTML=`<thead><tr><th style="cursor:default">Elemento</th>${MESES.map((m,i)=>`<th style="cursor:default;text-align:center" class="${i+1>M?"fut":""}">${m}</th>`).join("")}<th style="cursor:default">Dotação</th><th style="cursor:default">Sobra/falta</th><th style="cursor:default">Situação</th></tr></thead><tbody>`+
+  iplGrupos(L).map(([g,rs])=>{const t=iplSoma(rs);const ms=Array.from({length:12},(_,i)=>i<n?rs.reduce((s,r)=>s+iplMensal(r.k)[i][1],0):0);const mx=Math.max(1,...ms.slice(0,M));
+    return `<tr class="grp"><td>${g[0]} ${g[1]}</td>${ms.map((v,i)=>cel(v,mx,i+1>M,t.ritmo,`${g[1]}, ${MESES_L[i]}: ${i+1>M?"projeção "+iR(t.ritmo):"liquidado "+iR(v)}`)).join("")}<td>${brl(t.dot)}</td><td style="font-weight:700;color:${t.sobra< -500?"var(--bad)":"inherit"}">${t.sobra>=0?"+":"−"}${brl(Math.abs(t.sobra))}</td><td></td></tr>`+
+    rs.map(r=>{const m=iplMensal(r.k).map(x=>x[1]),mx2=Math.max(1,...m.slice(0,M)),ab=ist.aberto===r.k;
+      return `<tr class="el${ab?" aberto":""}" data-k="${r.k}" tabindex="0" aria-expanded="${ab}"><td><span class="iseta" aria-hidden="true">${ab?"▾":"▸"}</span><span class="cod">${r.k}</span> ${esc(iplNome(r.k))}</td>`+
+        Array.from({length:12},(_,i)=>cel(i<n?m[i]:0,mx2,i+1>M,r.ritmo,`${iplNome(r.k)}, ${MESES_L[i]}: ${i+1>M?"projeção "+iR(r.ritmo):"liquidado "+iR(i<n?m[i]:0)}`)).join("")+
+        `<td>${brl(r.dot)}</td><td style="font-weight:700;color:${r.sobra< -500?"var(--bad)":"inherit"}">${r.sobra>=0?"+":"−"}${brl(Math.abs(r.sobra))}</td><td>${iplPill(r)}</td></tr>`+
+        (ab?`<tr class="det"><td colspan="16">${iplDetalhe(r)}</td></tr>`:"");}).join("");}).join("")+"</tbody>";
+  iplLiga("#tblIplMapa tr.el");
+}
+function iplBarras(r){
+  const m=iplMensal(r.k),n=m.length,M=ist.mes,W=720,H=150,x0=50,y0=12,y1=H-24,bw=(W-x0-8)/12;
+  const mx=Math.max(1,...m.slice(0,M).flat(),r.ritmo)*1.1,Y=v=>y1-(y1-y0)*Math.max(0,v)/mx;
+  let g=`<line x1="${x0}" x2="${W-8}" y1="${y1}" y2="${y1}" stroke="var(--axis)"/>`;
+  [.5,1].forEach(t=>{const v=mx*t/1.1;g+=`<line x1="${x0}" x2="${W-8}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)"/><text x="${x0-6}" y="${Y(v)+4}" text-anchor="end" font-size="10" fill="var(--ink-2)">${v>=1e3?nf0.format(v/1e3)+" mil":nf0.format(v)}</text>`;});
+  for(let i=0;i<12;i++){const x=x0+i*bw;
+    if(i<M&&i<n){const [e,l]=m[i];
+      g+=`<rect x="${x+bw*.12}" y="${Y(e)}" width="${bw*.36}" height="${y1-Y(e)}" fill="var(--emp)"><title>${MESES_L[i]}: empenhado ${iR(e)}</title></rect><rect x="${x+bw*.5}" y="${Y(l)}" width="${bw*.36}" height="${y1-Y(l)}" fill="var(--liq)"><title>${MESES_L[i]}: liquidado ${iR(l)}</title></rect>`;}
+    else if(r.ritmo>0)g+=`<rect x="${x+bw*.5}" y="${Y(r.ritmo)}" width="${bw*.36}" height="${y1-Y(r.ritmo)}" fill="none" stroke="var(--orange)" stroke-dasharray="3 2"><title>${MESES_L[i]}: projeção ${iR(r.ritmo)}</title></rect>`;
+    g+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--ink-2)">${MESES[i]}</text>`;}
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gasto mês a mês: ${esc(iplNome(r.k))}">${g}</svg>`;
+}
+function iplDetalhe(r){
+  const m=iplMensal(r.k).slice(0,ist.mes),maior=m.reduce((b,x,i)=>x[1]>b[1]?[i,x[1]]:b,[0,-1]);
+  let h=`<div class="ipl-det"><div class="ipl-nums"><span>Ritmo dos últimos 3 meses <b>${iR(r.ritmo)}/mês</b></span><span>Maior mês <b>${MESES_L[maior[0]]} (${iR(Math.max(0,maior[1]))})</b></span><span>A liquidar <b>${iR(r.emp-r.liq)}</b></span><span>Livre na dotação <b>${iR(r.dot-r.emp)}</b></span></div>
+    <div class="ipl-mini">${iplBarras(r)}</div>
+    <div class="legend" style="margin:0"><span><i style="background:var(--emp)"></i>Empenhado no mês</span><span><i style="background:var(--liq)"></i>Liquidado no mês</span><span><i style="background:none;border:1px dashed var(--orange)"></i>Projeção dos próximos meses</span></div>`;
+  if(ist.ano!==IPL.ano_empenhos||!IPL.empenhos)return h+`<p class="desc" style="margin:0">A lista de fornecedores, contratos e pagamentos está disponível para ${IPL.ano_empenhos}.</p></div>`;
+  const lim=`${ist.ano}-${String(ist.mes).padStart(2,"0")}-31`;
+  const g={};IPL.empenhos.filter(e=>e.el===r.k&&e.d<=lim).forEach(e=>{const key=(e.ctr&&e.ctr.n?"C"+e.ctr.n+"|":"")+e.cr;(g[key]=g[key]||{cr:e.cr,doc:e.doc,ctr:e.ctr,emps:[]}).emps.push(e);});
+  const G=Object.values(g).map(x=>{x.emp=x.emps.reduce((s,e)=>s+e.emp,0);x.liq=x.emps.reduce((s,e)=>s+e.liq,0);x.ult=x.emps.flatMap(e=>e.pg.map(p=>p[0])).sort().pop()||"";return x;}).sort((a,b)=>b.emp-a.emp);
+  if(!G.length)return h+`<p class="desc" style="margin:0">Nenhum empenho neste elemento até ${MESES_L[ist.mes-1]}.</p></div>`;
+  h+=`<h3 style="margin:4px 0 0;font-size:15px">Para quem foi o dinheiro (${G.length})</h3><div class="ipl-forn"><div class="ipl-fh"><span>Fornecedor</span><span>Empenhado</span><span>Liquidado</span><span>A liquidar</span><span>Últ. pagamento</span></div>`+
+  G.map(x=>{const c=x.ctr;let ctr="";
+    if(c&&c.valor)ctr=`<div class="ipl-ctr">${esc(c.tipo||"Contrato")} <a href="${PORTAL_BASE}${c.ent||15}/contratos/detalhes?id=${encodeURIComponent(c.id)}" target="_blank" rel="noopener">nº ${esc(c.n)}</a>${+c.ent===1?" (da Prefeitura)":""}${c.lic?" · "+esc(c.lic):""} · valor ${iR(c.valor)} · vigência até ${dataBR(c.fim)}<br><span style="color:var(--ink-2)">${esc(c.obj)}</span></div>`;
+    else if(c&&c.n)ctr=`<div class="ipl-ctr">Contrato nº ${esc(c.n)}</div>`;
+    const pg=x.emps.flatMap(e=>e.pg.map(p=>[p[0],p[1],p[2],e.n])).sort((a,b)=>b[0].localeCompare(a[0])),al=x.emp-x.liq;
+    return `<details><summary><span class="fn">${esc(x.cr)}${c&&c.n?` <span style="color:var(--ink-2)">· contrato ${esc(c.n)}</span>`:""}</span><span class="fv">${iR(x.emp)}</span><span class="fv">${iR(x.liq)}</span><span class="fv" style="color:${al>1?"var(--amber)":"inherit"}">${iR(al)}</span><span class="fv">${x.ult?dataBR(x.ult):"–"}</span></summary><div class="fbody">${ctr}
+      <div class="tablewrap"><table><thead><tr><th>Empenho</th><th>Data</th><th class="tl">Histórico</th><th>Empenhado</th><th>Liquidado</th><th>Pago</th></tr></thead><tbody>${x.emps.slice().sort((a,b)=>b.d.localeCompare(a.d)).map(e=>`<tr><td style="min-width:0">${e.n}/${ist.ano}</td><td>${dataBR(e.d)}</td><td class="tl">${esc(e.h)}</td><td>${iR(e.emp)}${e.anul?`<br><small style="color:var(--ink-2)">anulado ${iR(e.anul)}</small>`:""}</td><td>${iR(e.liq)}</td><td>${iR(e.pago)}</td></tr>`).join("")}</tbody></table></div>
+      ${pg.length?`<div class="tablewrap"><table><thead><tr><th>Pago em</th><th>Valor líquido</th><th>Empenho</th><th class="tl">Nota fiscal / observação</th></tr></thead><tbody>${pg.map(p=>`<tr><td style="min-width:0">${dataBR(p[0])}</td><td>${iR(p[1])}</td><td>${p[3]}/${ist.ano}</td><td class="tl">${esc(p[2])}</td></tr>`).join("")}</tbody></table></div><p class="desc" style="margin:0">Valor pago líquido de retenções (ISS, IR, INSS).</p>`:""}</div></details>`;}).join("")+
+  `</div><p class="desc" style="margin:0">Clique num fornecedor para ver contrato, empenhos e pagamentos.</p></div>`;
+  return h;
 }
 function renderAtas(){
   if(!estadoCarga("atas","DADOS_ATAS",lerAtas,"#sumA","#atasCorpo","atas de registro de preços"))return;
