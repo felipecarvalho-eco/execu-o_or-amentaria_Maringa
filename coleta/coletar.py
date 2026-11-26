@@ -25,6 +25,7 @@ coleta falhar):
   credores.js      o mesmo objeto como `window.DADOS_CREDORES = {...};`
   atas.js/.json    atas de registro de preços vigentes, com os itens (aba Atas vigentes)
   atas.csv         um item de ata por linha
+  ipplam.js/.json  orçamento do IPPLAM mês a mês (3 anos), com empenhos, contratos e pagamentos (aba IPPLAM)
 
 O esquema está documentado em coleta/ESQUEMA.md.
 Sai com código != 0 em qualquer falha ou se a validação dos totais não bater.
@@ -52,6 +53,7 @@ import gastos as gs  # noqa: E402  (cada empenho com secretaria, elemento e lici
 import repasses as rp  # noqa: E402  (repasses da Prefeitura às outras entidades)
 import prestacao as pc  # noqa: E402  (data da prestação de contas das diárias, lida dos PDFs)
 import atas as at  # noqa: E402  (atas de registro de preços vigentes, com os itens)
+import ipplam as ip  # noqa: E402  (orçamento do IPPLAM mês a mês, empenhos, contratos e pagamentos)
 
 # A mesma API é servida em dois endereços oficiais: o domínio da Prefeitura e o do fornecedor (Elotech).
 # A coleta usa o primeiro que responder. PORTAL_API (variável de ambiente) força um endereço.
@@ -482,6 +484,8 @@ def main() -> int:
     ap.add_argument("--com-gastos-csv", action="store_true", help="grava também gastos.csv (~35 MB)")
     ap.add_argument("--gastos-threads", type=int, default=4, help="consultas simultâneas ao detalhe (padrão 4)")
     ap.add_argument("--sem-atas", action="store_true", help="não coleta as atas de registro de preços vigentes")
+    ap.add_argument("--sem-ipplam", action="store_true",
+                    help="não coleta o orçamento do IPPLAM mês a mês com empenhos e pagamentos (aba IPPLAM)")
     ap.add_argument("--com-empenhos", action="store_true",
                     help="grava também empenhos.csv (um empenho por linha, ~20 MB por ano)")
     args = ap.parse_args()
@@ -619,6 +623,16 @@ def main() -> int:
             log(f"  aviso: atas não coletadas ({e})")
             AVISOS.append("Atas de registro de preços não puderam ser atualizadas nesta semana; a aba mostra a lista anterior")
             atas = None
+    # ---- orçamento do IPPLAM mês a mês, com empenhos, contratos e pagamentos (aba IPPLAM)
+    ipplam = None
+    if not args.sem_ipplam:
+        try:
+            ipplam = ip.coletar(lambda path, ex, params, entidade=None: get(path, ex, params, entidade=entidade, tentativas=3),
+                                hoje, AVISOS, log)
+        except RuntimeError as e:
+            log(f"  aviso: IPPLAM não coletado ({e})")
+            AVISOS.append("O orçamento do IPPLAM não pôde ser atualizado nesta semana; a aba IPPLAM mostra a semana anterior")
+            ipplam = None
     empresas = [] if args.sem_sbmg else sbmg.coletar(
         lambda path, ex, params, entidade: get(path, ex, params, entidade=entidade),
         lambda path, ex, entidade: get(path, ex, entidade=entidade, binario=True),
@@ -758,6 +772,17 @@ def main() -> int:
         escrever_atomico(saida / "atas.json", js_a)
         escrever_atomico(saida / "atas.js", "window.DADOS_ATAS = " + js_a + ";\n")
         escrever_atomico(saida / "atas.csv", csv_texto(at.itens_csv(atas)))
+    if ipplam is not None:
+        meta_i = {k: meta[k] for k in ("municipio", "fonte", "api", "atualizado_em", "avisos")}
+        obj_i = {"meta": {**meta_i, "observacoes": (
+            "Orçamento do IPPLAM (entidade 15). anos: {ano: {elemento: [[dotação inicial, dotação atualizada, "
+            "empenhado, liquidado, pago] acumulados no fim de cada mês]}}; no ano atual o último mês vai até o dia "
+            "da coleta (parcial). empenhos: ano atual, um por empenho, com contrato (ctr) e pagamentos (pg: data, "
+            "valor líquido de retenções, nota fiscal). Os valores batem com Consultas > Saldo da Dotação do OXY; o "
+            "portal não publica reserva de dotação nem pré-empenho.")}, **ipplam}
+        js_i = json.dumps(obj_i, ensure_ascii=False, separators=(",", ":"))
+        escrever_atomico(saida / "ipplam.json", js_i)
+        escrever_atomico(saida / "ipplam.js", "window.DADOS_IPPLAM = " + js_i + ";\n")
     escrever_atomico(saida / "execucao.json", js)
     escrever_atomico(saida / "execucao.js", "window.DADOS_EXECUCAO = " + js + ";\n")
     log(f"OK: {len(despesas)} linhas de despesa, {len(receitas)} de receita, {len(credores)} de credores -> {saida}")

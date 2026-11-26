@@ -289,12 +289,30 @@ do `gastos.js` (se a coleta de gastos não rodar, usa o `gastos.js` anterior). E
 entram. Os itens do empenho batem com a descrição do item da ata em ~97% dos casos, o que permitiria estimar o
 saldo por item numa próxima etapa.
 
+### `ipplam` (orçamento do IPPLAM mês a mês, `coleta/ipplam.py`; `--sem-ipplam` pula)
+
+Arquivos `docs/dados/ipplam.js` (`window.DADOS_IPPLAM`) e `ipplam.json`, lidos pela aba IPPLAM.
+
+| Campo | Conteúdo |
+|---|---|
+| `anos` | `{ano: {elemento: [[dotação inicial, dotação atualizada, empenhado, liquidado, pago], ...]}}`, valores acumulados no fim de cada mês. Ano atual e os dois anteriores; no ano atual o último mês vai até o dia da coleta. Elemento = `3.3.90.39` (soma as fontes). |
+| `nomes` | nome de cada elemento no portal |
+| `parcial` | `{ano, mes, dia}` da coleta: o painel trata esse mês como em andamento |
+| `ano_empenhos` | ano dos empenhos abaixo (o atual) |
+| `empenhos[]` | `n` número, `d` data, `el` elemento, `cr` credor, `doc` CNPJ/CPF, `h` histórico, `emp` empenhado menos anulado, `anul`, `liq`, `pago`, `ctr` contrato (`n`, `obj`, `valor` com aditivos, `fim` vigência, `tipo`, `lic` modalidade, `ent` entidade dona, `id` idOxy), `pg` pagamentos `[data, valor líquido de retenções, nota fiscal]` |
+
+A soma de `empenhos[].emp` confere com o empenhado do ano; se não bater, vai um aviso em `meta.avisos`.
+Os valores batem com a consulta Saldo da Dotação do sistema contábil (OXY). O portal não publica reserva de dotação nem pré-empenho.
+
 ### `empenhos.csv`
 
 `entidade, entidade_id, ano, empenho (nº/ano), data, mes, credor_documento, credor, fonte_recurso, historico, empenhado, anulado,
 liquidado, pago, a_pagar`
 
 ## Endpoints usados
+
+IPPLAM: `/despesapornivel/detalhada` (entidade 15, um pedido por mês), `/empenhos/lista`, `/empenhos/detalhe`, `/api/liquidacoes/pagas` (pagamentos com data e nota fiscal) e `/api/contratos/<idOxy>` (cabeçalho entidade 15; atas da Prefeitura respondem com entidade 1).
+
 
 Todos exigem os cabeçalhos HTTP `entidade: <id>` e `exercicio: <ano>` (nos exemplos, `1` = Prefeitura).
 
